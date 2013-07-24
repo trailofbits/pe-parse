@@ -8,7 +8,7 @@
 typedef boost::uint32_t RVA;
 
 typedef struct _bounded_buffer {
-  boost::uint8_t  *bufBegin;
+  boost::uint8_t  *buf;
   boost::uint32_t bufLen;
 } bounded_buffer;
 
