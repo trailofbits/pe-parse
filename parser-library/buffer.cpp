@@ -95,3 +95,7 @@ bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
   return newBuff;
 }
 
+void deleteBuffer(bounded_buffer *b) {
+  free(b->buf);
+  delete b;
+}

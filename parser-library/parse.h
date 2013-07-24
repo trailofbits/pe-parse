@@ -18,9 +18,14 @@ bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
 
 bounded_buffer *readFileToFileBuffer(const char *filePath);
 
+void deleteBuffer(bounded_buffer *b);
+
+struct parsed_pe_internal;
+
 typedef struct _parsed_pe {
-  std::string     originalFilePath;
-  bounded_buffer  *fileBuffer;
+  std::string         originalFilePath;
+  bounded_buffer      *fileBuffer;
+  parsed_pe_internal  *internal;
 } parsed_pe;
 
 //get a PE parse context from a file 
