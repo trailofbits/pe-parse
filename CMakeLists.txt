@@ -9,7 +9,6 @@ if(WIN32)
 endif(WIN32)
 find_package(Boost COMPONENTS thread system filesystem program_options date_time regex REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Protobuf REQUIRED)
 
 add_subdirectory(parser-library)
 add_subdirectory(dump-prog)
