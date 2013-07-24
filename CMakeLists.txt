@@ -10,5 +10,7 @@ endif(WIN32)
 find_package(Boost COMPONENTS thread system filesystem program_options date_time regex REQUIRED)
 find_package(Threads REQUIRED)
 
+include_directories(${Boost_INCLUDE_DIRS})
+
 add_subdirectory(parser-library)
 add_subdirectory(dump-prog)

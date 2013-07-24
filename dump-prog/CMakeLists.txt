@@ -1,4 +1,4 @@
-include_directories(${pe-parse_SOURCE_DIR/parser-library})
+include_directories(${pe-parse_SOURCE_DIR}/parser-library)
 
 add_executable( dump-prog 
                 dump.cpp )
