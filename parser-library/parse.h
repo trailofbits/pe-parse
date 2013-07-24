@@ -10,6 +10,7 @@ typedef boost::uint32_t RVA;
 typedef struct _bounded_buffer {
   boost::uint8_t  *buf;
   boost::uint32_t bufLen;
+  bool            copy;
 } bounded_buffer;
 
 bool readByte(bounded_buffer *b, boost::uint32_t offset, boost::uint8_t &out);
@@ -22,10 +23,15 @@ void deleteBuffer(bounded_buffer *b);
 
 struct parsed_pe_internal;
 
+typedef struct _pe_header {
+  RVA             entryPoint;
+  bounded_buffer  headerData;
+} pe_header;
+
 typedef struct _parsed_pe {
-  std::string         originalFilePath;
   bounded_buffer      *fileBuffer;
   parsed_pe_internal  *internal;
+  pe_header           peHeader;
 } parsed_pe;
 
 //get a PE parse context from a file 

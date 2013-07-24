@@ -66,6 +66,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
     memset(p->buf, 0, fileSize);
     p->bufLen = fileSize;
+    p->copy = false;
     
     inFile.seekg(0, ios::beg);
     inFile.read((char *)p->buf, fileSize);
@@ -89,6 +90,8 @@ bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
     return NULL;
   }
 
+  newBuff->copy = true;
+
   ::uint8_t   *curPtr = b->buf;
   ::uint8_t   *newPtr = curPtr+from;
 
@@ -96,6 +99,10 @@ bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
 }
 
 void deleteBuffer(bounded_buffer *b) {
-  free(b->buf);
+  if(b->copy == false) {
+    free(b->buf);
+  }
+
   delete b;
 }
+

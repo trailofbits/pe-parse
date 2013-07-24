@@ -6,12 +6,24 @@ using namespace std;
 struct section {
   string          sectionName;
   RVA             sectionBase;
-  bounded_buffer  *sectionData;
+  bounded_buffer  sectionData;
 };
 
 struct parsed_pe_internal {
-  list<section> secs;
+  list<section>   secs;
 };
+
+list<section> getSections(bounded_buffer *file) {
+  list<section> sections;
+
+  return sections;
+}
+
+pe_header getHeader(bounded_buffer *file) {
+  pe_header p;
+
+  return p;
+}
 
 parsed_pe *ParsePEFromFile(const char *filePath) {
   //first, create a new parsed_pe structure
@@ -37,13 +49,16 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     return NULL;
   }
 
-  //now, we need to do some actual PE parsing and file carving. sigh. 
+  //now, we need to do some actual PE parsing and file carving.
+  p->peHeader = getHeader(p->fileBuffer);
+  p->internal->secs = getSections(p->fileBuffer);
 
   return p;
 }
 
 void DestructParsedPE(parsed_pe *p) {
 
+  delete p;
   return;
 }
 
@@ -74,7 +89,7 @@ void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
       ++sit)
   {
     section s = *sit;
-    cb(cbd, s.sectionBase, s.sectionName, s.sectionData);
+    cb(cbd, s.sectionBase, s.sectionName, &s.sectionData);
   }
 
   return;
