@@ -7,6 +7,15 @@
 
 typedef boost::uint32_t RVA;
 
+typedef struct _bounded_buffer {
+  boost::uint8_t  *bufBegin;
+  boost::uint32_t bufLen;
+} bounded_buffer;
+
+bool readByte(bounded_buffer *b, boost::uint32_t offset, boost::uint8_t &out);
+bool readWord(bounded_buffer *b, boost::uint32_t offset, boost::uint16_t &out);
+bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
+
 typedef struct _parsed_pe {
   std::string originalFilePath;
 } parsed_pe;
@@ -28,5 +37,9 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 //iterate over the exports by RVA
 typedef void (*iterRVA)(void *, RVA);
 void IterExpRVA(parsed_pe *pe, iterRVA cb, void *cbd);
+
+//iterate over sections
+typedef void (*iterSec)(void *, RVA secBase, std::string &, bounded_buffer *b);
+void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
 #endif
