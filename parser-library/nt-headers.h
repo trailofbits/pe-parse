@@ -10,6 +10,7 @@
 const boost::uint16_t MZ_MAGIC = 0x5A4D;
 const boost::uint32_t NT_MAGIC = 0x00004550;
 const boost::uint16_t NUM_DIR_ENTRIES = 16;
+const boost::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
 
 struct dos_header {
     boost::uint16_t   e_magic;           

@@ -41,6 +41,11 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
   }
 
   READ_WORD(Magic);
+
+  if(header.Magic != NT_OPTIONAL_32_MAGIC) {
+    return false;
+  }
+
   READ_BYTE(MajorLinkerVersion);
   READ_BYTE(MinorLinkerVersion);
   READ_DWORD(SizeOfCode);
