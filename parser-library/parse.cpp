@@ -79,11 +79,16 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
 #undef READ_WORD
 #undef READ_DWORD
 #undef READ_BYTE
+
+  ::uint32_t  maxEnt = header.NumberOfRvaAndSizes;
+  for(::uint32_t i = 0; i < maxEnt; i++) {
+
+  }
+
   return true;
 }
 
 bool readFileHeader(bounded_buffer *b, file_header &header) {
- 
 #define READ_WORD(x) \
   if(readWord(b, _offset(file_header, x), header.x) == false) { \
     return false; \
@@ -132,7 +137,7 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
     return false;
   }
 
-  return false;
+  return true;
 }
 
 bool getHeader(bounded_buffer *file) {
