@@ -26,8 +26,39 @@ list<section> getSections(bounded_buffer *file) {
   return sections;
 }
 
+bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
+
+  return false;
+}
+
+bool readFileHeader(bounded_buffer *b, file_header &header) {
+
+  return false;
+}
+
 bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   if(b == NULL) {
+    return false;
+  }
+
+  ::uint32_t  pe_magic;
+  ::uint32_t  curOffset =0;
+  if(readDword(b, curOffset, pe_magic) == false || pe_magic != NT_MAGIC) {
+    return false;
+  }
+
+  header.Signature = pe_magic;
+  bounded_buffer  *fhb = 
+    splitBuffer(b, _offset(nt_header_32, FileHeader), b->bufLen);
+
+  if(readFileHeader(fhb, header.FileHeader) == false) {
+    return false;
+  }
+
+  bounded_buffer *ohb = 
+    splitBuffer(b, _offset(nt_header_32, OptionalHeader), b->bufLen);
+
+  if(readOptionalHeader(ohb, header.OptionalHeader) == false) {
     return false;
   }
 
@@ -51,15 +82,14 @@ bool getHeader(bounded_buffer *file) {
 
   //read the offset to the NT headers
   ::uint32_t  offset;
-  curOffset = _offset(dos_header, e_lfanew)+curOffset;
-  if(readDword(file, curOffset, offset) == false) {
+  if(readDword(file, _offset(dos_header, e_lfanew), offset) == false) {
     return false;
   }
   curOffset += offset; 
 
   //now, we can read out the fields of the NT headers
   nt_header_32 nt;
-  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen-1), nt) == false) {
+  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen), nt) == false) {
     return false;
   }
 
