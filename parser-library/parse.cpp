@@ -26,10 +26,37 @@ list<section> getSections(bounded_buffer *file) {
   return sections;
 }
 
-pe_header getHeader(bounded_buffer *file) {
+bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
+
+  return false;
+}
+
+bool getHeader(bounded_buffer *file) {
   pe_header p;
 
-  return p;
+  //start by reading MZ
+  ::uint16_t  tmp = 0;
+  ::uint32_t  curOffset = 0;
+  readWord(file, curOffset, tmp);
+  if(tmp != MZ_MAGIC) {
+    return false;
+  }
+
+  //read the offset to the NT headers
+  ::uint32_t  offset;
+  curOffset = _offset(dos_header, e_lfanew)+curOffset;
+  if(readDword(file, curOffset, offset) == false) {
+    return false;
+  }
+  curOffset += offset; 
+
+  //now, we can read out the fields of the NT headers
+  nt_header_32 nthdr;
+  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen), nthdr) == false) {
+    return false;
+  }
+
+  return true;
 }
 
 parsed_pe *ParsePEFromFile(const char *filePath) {
@@ -59,7 +86,11 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   //now, we need to do some actual PE parsing and file carving.
 
   //get header information
-  p->peHeader = getHeader(p->fileBuffer);
+  if(getHeader(p->fileBuffer) == false) {
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    return NULL;
+  }
 
   //get the raw data of each section
   p->internal->secs = getSections(p->fileBuffer);
