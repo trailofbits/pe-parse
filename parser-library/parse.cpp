@@ -27,8 +27,54 @@ list<section> getSections(bounded_buffer *file) {
 }
 
 bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
+#define READ_WORD(x) \
+  if(readWord(b, _offset(optional_header_32, x), header.x) == false) { \
+    return false; \
+  } 
+#define READ_DWORD(x) \
+  if(readDword(b, _offset(optional_header_32, x), header.x) == false) { \
+    return false; \
+  } 
+#define READ_BYTE(x) \
+  if(readByte(b, _offset(optional_header_32, x), header.x) == false) { \
+    return false; \
+  }
 
-  return false;
+  READ_WORD(Magic);
+  READ_BYTE(MajorLinkerVersion);
+  READ_BYTE(MinorLinkerVersion);
+  READ_DWORD(SizeOfCode);
+  READ_DWORD(SizeOfInitializedData);
+  READ_DWORD(SizeOfUninitializedData);
+  READ_DWORD(AddressOfEntryPoint);
+  READ_DWORD(BaseOfCode);
+  READ_DWORD(BaseOfData);
+  READ_DWORD(ImageBase);
+  READ_DWORD(SectionAlignment);
+  READ_DWORD(FileAlignment);
+  READ_WORD(MajorOperatingSystemVersion);
+  READ_WORD(MinorOperatingSystemVersion);
+  READ_WORD(MajorImageVersion);
+  READ_WORD(MinorImageVersion);
+  READ_WORD(MajorSubsystemVersion);
+  READ_WORD(MinorSubsystemVersion);
+  READ_DWORD(Win32VersionValue);
+  READ_DWORD(SizeOfImage);
+  READ_DWORD(SizeOfHeaders);
+  READ_DWORD(CheckSum);
+  READ_WORD(Subsystem);
+  READ_WORD(DllCharacteristics);
+  READ_DWORD(SizeOfStackReserve);
+  READ_DWORD(SizeOfStackCommit);
+  READ_DWORD(SizeOfHeapReserve);
+  READ_DWORD(SizeOfHeapCommit);
+  READ_DWORD(LoaderFlags);
+  READ_DWORD(NumberOfRvaAndSizes);
+
+#undef READ_WORD
+#undef READ_DWORD
+#undef READ_BYTE
+  return true;
 }
 
 bool readFileHeader(bounded_buffer *b, file_header &header) {
@@ -52,7 +98,7 @@ bool readFileHeader(bounded_buffer *b, file_header &header) {
 
 #undef READ_DWORD
 #undef READ_WORD
-  return false;
+  return true;
 }
 
 bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
