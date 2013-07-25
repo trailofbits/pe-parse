@@ -82,6 +82,9 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 //split buffer inclusively from from to to by offset
 bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
   //safety checks
+  if(to < from || to >= b->bufLen) {
+    return NULL;
+  }
   
   //make a new buffer
   bounded_buffer  *newBuff = new bounded_buffer();
@@ -91,9 +94,9 @@ bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
   }
 
   newBuff->copy = true;
-
-  ::uint8_t   *curPtr = b->buf;
-  ::uint8_t   *newPtr = curPtr+from;
+  ::uint8_t   *newPtr = b->buf+from;
+  newBuff->buf = newPtr;
+  newBuff->bufLen = b->bufLen-(to-from);
 
   return newBuff;
 }

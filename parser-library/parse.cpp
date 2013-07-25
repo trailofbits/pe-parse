@@ -27,12 +27,19 @@ list<section> getSections(bounded_buffer *file) {
 }
 
 bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
+  if(b == NULL) {
+    return false;
+  }
 
   return false;
 }
 
 bool getHeader(bounded_buffer *file) {
   pe_header p;
+
+  if(file == NULL) {
+    return false;
+  }
 
   //start by reading MZ
   ::uint16_t  tmp = 0;
@@ -51,8 +58,8 @@ bool getHeader(bounded_buffer *file) {
   curOffset += offset; 
 
   //now, we can read out the fields of the NT headers
-  nt_header_32 nthdr;
-  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen), nthdr) == false) {
+  nt_header_32 nt;
+  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen-1), nt) == false) {
     return false;
   }
 
