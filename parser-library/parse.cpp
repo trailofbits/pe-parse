@@ -104,9 +104,19 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
 #undef READ_DWORD
 #undef READ_BYTE
 
-  ::uint32_t  maxEnt = header.NumberOfRvaAndSizes;
-  for(::uint32_t i = 0; i < maxEnt; i++) {
+  for(::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
+    ::uint32_t  c = (i*sizeof(data_directory));
+    ::uint32_t  o; 
 
+    o = c + _offset(data_directory, VirtualAddress);
+    if(readDword(b, o, header.DataDirectory[i].VirtualAddress) == false) {
+      return false;
+    }
+
+    o = c+ _offset(data_directory, Size);
+    if(readDword(b, o, header.DataDirectory[i].Size) == false) {
+      return false;
+    }
   }
 
   return true;
