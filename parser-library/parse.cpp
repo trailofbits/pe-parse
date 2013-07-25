@@ -9,6 +9,11 @@ struct section {
   bounded_buffer  sectionData;
 };
 
+struct reloc {
+  RVA shiftedAddr;
+  RVA shiftedTo;
+};
+
 struct parsed_pe_internal {
   list<section>   secs;
 };
@@ -50,8 +55,16 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   }
 
   //now, we need to do some actual PE parsing and file carving.
+
+  //get header information
   p->peHeader = getHeader(p->fileBuffer);
+
+  //get the raw data of each section
   p->internal->secs = getSections(p->fileBuffer);
+
+  //get exports
+
+  //get relocations
 
   return p;
 }
