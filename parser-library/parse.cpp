@@ -32,7 +32,26 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
 }
 
 bool readFileHeader(bounded_buffer *b, file_header &header) {
+ 
+#define READ_WORD(x) \
+  if(readWord(b, _offset(file_header, x), header.x) == false) { \
+    return false; \
+  } 
+#define READ_DWORD(x) \
+  if(readDword(b, _offset(file_header, x), header.x) == false) { \
+    return false; \
+  } 
 
+  READ_WORD(Machine);
+  READ_WORD(NumberOfSections);
+  READ_DWORD(TimeDateStamp);
+  READ_DWORD(PointerToSymbolTable);
+  READ_DWORD(NumberOfSymbols);
+  READ_WORD(SizeOfOptionalHeader);
+  READ_WORD(Characteristics);
+
+#undef READ_DWORD
+#undef READ_WORD
   return false;
 }
 
