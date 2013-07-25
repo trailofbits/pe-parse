@@ -1,7 +1,9 @@
 #include <list>
 #include "parse.h"
+#include "nt-headers.h"
 
 using namespace std;
+using namespace boost;
 
 struct section {
   string          sectionName;
