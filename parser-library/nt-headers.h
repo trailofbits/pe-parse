@@ -2,6 +2,12 @@
 #define _NT_HEADERS
 #include <boost/cstdint.hpp>
 
+//need an offsetof macro
+
+//need to pack these structure definitions
+
+//some constant definitions
+
 struct dos_header {
     boost::uint16_t   e_magic;           
     boost::uint16_t   e_cblp;            
@@ -22,6 +28,16 @@ struct dos_header {
     boost::uint16_t   e_oeminfo; 
     boost::uint16_t   e_res2[10];        
     boost::uint32_t   e_lfanew;          
+};
+
+struct file_header {
+    boost::uint16_t   Machine;
+    boost::uint16_t   NumberOfSections;
+    boost::uint32_t   TimeDateStamp;
+    boost::uint32_t   PointerToSymbolTable;
+    boost::uint32_t   NumberOfSymbols;
+    boost::uint16_t   SizeOfOptionalHeader;
+    boost::uint16_t   Characteristics;
 };
 
 #endif

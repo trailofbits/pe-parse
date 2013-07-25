@@ -18,6 +18,8 @@ bool readWord(bounded_buffer *b, boost::uint32_t offset, boost::uint16_t &out);
 bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
 
 bounded_buffer *readFileToFileBuffer(const char *filePath);
+bounded_buffer *splitBuffer(bounded_buffer *b, boost::uint32_t from, boost::uint32_t to);
+void deleteBuffer(bounded_buffer *b);
 
 void deleteBuffer(bounded_buffer *b);
 
