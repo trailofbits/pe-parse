@@ -35,6 +35,7 @@ const boost::uint16_t MZ_MAGIC = 0x5A4D;
 const boost::uint32_t NT_MAGIC = 0x00004550;
 const boost::uint16_t NUM_DIR_ENTRIES = 16;
 const boost::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
+const boost::uint16_t NT_SHORT_NAME_LEN = 8;
 
 struct dos_header {
     boost::uint16_t   e_magic;           
@@ -111,6 +112,22 @@ struct nt_header_32 {
   boost::uint32_t     Signature;
   file_header         FileHeader;
   optional_header_32  OptionalHeader;
+};
+
+struct image_section_header {
+    boost::uint8_t    Name[NT_SHORT_NAME_LEN];
+    union {
+            boost::uint32_t   PhysicalAddress;
+            boost::uint32_t   VirtualSize;
+    } Misc;
+    boost::uint32_t   VirtualAddress;
+    boost::uint32_t   SizeOfRawData;
+    boost::uint32_t   PointerToRawData;
+    boost::uint32_t   PointerToRelocations;
+    boost::uint32_t   PointerToLinenumbers;
+    boost::uint16_t    NumberOfRelocations;
+    boost::uint16_t    NumberOfLinenumbers;
+    boost::uint32_t   Characteristics;
 };
 
 #endif

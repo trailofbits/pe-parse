@@ -44,8 +44,10 @@ struct parsed_pe_internal {
   list<section>   secs;
 };
 
-list<section> getSections(bounded_buffer *file) {
+list<section> getSections(bounded_buffer *file, nt_header_32 nthdr) {
   list<section> sections;
+
+  //get each of the sections...
 
   return sections;
 }
@@ -238,7 +240,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   }
 
   //get the raw data of each section
-  p->internal->secs = getSections(p->fileBuffer);
+  p->internal->secs = getSections(p->fileBuffer, p->peHeader.nt);
 
   //get exports
 
