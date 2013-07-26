@@ -174,9 +174,7 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   return true;
 }
 
-bool getHeader(bounded_buffer *file) {
-  pe_header p;
-
+bool getHeader(bounded_buffer *file, pe_header &p) {
   if(file == NULL) {
     return false;
   }
@@ -197,10 +195,11 @@ bool getHeader(bounded_buffer *file) {
   curOffset += offset; 
 
   //now, we can read out the fields of the NT headers
-  nt_header_32 nt;
-  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen), nt) == false) {
+  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen), p.nt) == false) {
     return false;
   }
+
+  //and done, headers populated
 
   return true;
 }
@@ -232,7 +231,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   //now, we need to do some actual PE parsing and file carving.
 
   //get header information
-  if(getHeader(p->fileBuffer) == false) {
+  if(getHeader(p->fileBuffer, p->peHeader) == false) {
     deleteBuffer(p->fileBuffer);
     delete p;
     return NULL;

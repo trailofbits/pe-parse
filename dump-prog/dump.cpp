@@ -23,9 +23,19 @@ THE SOFTWARE.
 */
 
 #include <iostream>
+#include <sstream>
 #include "parse.h"
 
 using namespace std;
+using namespace boost;
+
+template <class T>
+static
+string to_string(T t, ios_base & (*f)(ios_base&)) {
+    ostringstream oss;
+    oss << f << t;
+    return oss.str();
+}
 
 void printImports(void *N, RVA  impAddr, string &impName) {
 
@@ -43,6 +53,21 @@ int main(int argc, char *argv[]) {
 
     if(p != NULL) {
       //print out some things
+#define DUMP_FIELD(x) \
+      cout << "" #x << ": "; \
+      cout << to_string<uint32_t>(p->peHeader.x, hex) << endl;
+
+      DUMP_FIELD(nt.Signature);
+      DUMP_FIELD(nt.FileHeader.Machine);
+      DUMP_FIELD(nt.FileHeader.NumberOfSections);
+      DUMP_FIELD(nt.FileHeader.TimeDateStamp);
+      DUMP_FIELD(nt.FileHeader.PointerToSymbolTable);
+      DUMP_FIELD(nt.FileHeader.NumberOfSymbols);
+      DUMP_FIELD(nt.FileHeader.SizeOfOptionalHeader);
+      DUMP_FIELD(nt.FileHeader.Characteristics);
+     
+#undef DUMP_FIELD
+
       IterImpRVAString(p, printImports, NULL);
       IterRelocs(p, printRelocs, NULL);
 

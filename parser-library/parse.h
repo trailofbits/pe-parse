@@ -27,6 +27,8 @@ THE SOFTWARE.
 #include <string>
 #include <boost/cstdint.hpp>
 
+#include "nt-headers.h"
+
 typedef boost::uint32_t RVA;
 
 typedef struct _bounded_buffer {
@@ -46,8 +48,7 @@ void deleteBuffer(bounded_buffer *b);
 struct parsed_pe_internal;
 
 typedef struct _pe_header {
-  RVA             entryPoint;
-  bounded_buffer  headerData;
+  nt_header_32  nt;
 } pe_header;
 
 typedef struct _parsed_pe {
