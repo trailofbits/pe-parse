@@ -31,13 +31,13 @@ using namespace boost;
 
 struct section {
   string                sectionName;
-  RVA                   sectionBase;
+  ::uint32_t            sectionBase;
   bounded_buffer        *sectionData;
   image_section_header  sec;
 };
 
-struct exportent {
-  RVA     exportAddr;
+struct importent {
+  RVA     addr;
   string  symbolName;
   string  moduleName;
 };
@@ -49,8 +49,27 @@ struct reloc {
 
 struct parsed_pe_internal {
   list<section>   secs;
-  list<exportent> exports;
+  list<importent> imports;
 };
+
+bool getSecForRVA(list<section> &secs, RVA v, section &sec) {
+  for(list<section>::iterator it = secs.begin(), e = secs.end();
+      it != e;
+      ++it)
+  {
+    section s = *it;
+  
+    ::uint32_t  low = s.sectionBase;
+    ::uint32_t  high = low + s.sec.Misc.VirtualSize;
+
+    if(v >= low && v < high) {
+      sec = s;
+      return true;
+    }
+  }
+
+  return false;
+}
 
 bool getSections( bounded_buffer  *b, 
                   bounded_buffer  *fileBegin,
@@ -76,7 +95,8 @@ bool getSections( bounded_buffer  *b,
   if(readDword(b, o+_offset(image_section_header, x), curSec.x) == false) { \
     return false; \
   } 
-  
+ 
+    READ_DWORD(Misc.VirtualSize);
     READ_DWORD(VirtualAddress);
     READ_DWORD(SizeOfRawData);
     READ_DWORD(PointerToRawData);
@@ -168,6 +188,7 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
 
   for(::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
     ::uint32_t  c = (i*sizeof(data_directory));
+    c+= _offset(optional_header_32, DataDirectory[0]);
     ::uint32_t  o; 
 
     o = c + _offset(data_directory, VirtualAddress);
@@ -175,7 +196,7 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
       return false;
     }
 
-    o = c+ _offset(data_directory, Size);
+    o = c + _offset(data_directory, Size);
     if(readDword(b, o, header.DataDirectory[i].Size) == false) {
       return false;
     }
@@ -324,10 +345,27 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     return NULL;
   }
   //get exports
+  data_directory  exportDir = 
+    p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
 
   //get relocations
+  data_directory  relocDir = 
+    p->peHeader.nt.OptionalHeader.DataDirectory[DIR_BASERELOC];
 
   //get imports
+  data_directory  importDir = 
+    p->peHeader.nt.OptionalHeader.DataDirectory[DIR_IMPORT];
+  //get section for the RVA in importDir
+  section c;
+  ::uint32_t  addr = 
+    importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+
+  if(getSecForRVA(p->internal->secs, addr, c) == false) {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    return NULL;
+  }
 
   deleteBuffer(remaining);
 

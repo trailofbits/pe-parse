@@ -64,7 +64,7 @@ parsed_pe *ParsePEFromFile(const char *filePath);
 void DestructParsedPE(parsed_pe *pe);
 
 //iterate over the imports by RVA and string 
-typedef void (*iterRVAStr)(void *, RVA, std::string &);
+typedef void (*iterRVAStr)(void *, RVA, std::string &, std::string &);
 void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd);
 
 //iterate over relocations in the PE file

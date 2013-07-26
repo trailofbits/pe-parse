@@ -37,7 +37,7 @@ string to_string(T t, ios_base & (*f)(ios_base&)) {
     return oss.str();
 }
 
-void printImports(void *N, RVA  impAddr, string &impName) {
+void printImports(void *N, RVA impAddr, string &modName, string &symName) {
 
   return;
 }
