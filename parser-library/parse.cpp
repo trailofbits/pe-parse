@@ -367,8 +367,60 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     return NULL;
   }
 
+  //get import directory from this section
+  ::uint32_t  offt = addr - c.sectionBase;
+  do {
+#define READ_DWORD(x) \
+  if(readDword(c.sectionData, offt+_offset(import_dir_entry, x), curEnt.x) == false) { \
+    return NULL; \
+  }
+    //read each directory entry out
+    import_dir_entry  curEnt;
+
+    READ_DWORD(LookupTableRVA);
+    READ_DWORD(TimeStamp);
+    READ_DWORD(ForwarderChain);
+    READ_DWORD(NameRVA);
+    READ_DWORD(AddressRVA);
+
+    //are all the fields in curEnt null? then we break
+    if( curEnt.LookupTableRVA == 0 && 
+        curEnt.NameRVA == 0 &&
+        curEnt.AddressRVA == 0) {
+      break;
+    }
+
+    //then, try and get the name of this particular module...
+    ::uint32_t  name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+    section nameSec;
+    if(getSecForRVA(p->internal->secs, name, nameSec) == false) {
+      return NULL;
+    }
+
+    ::uint32_t  nameOff = name - nameSec.sectionBase;
+    string      modName;
+    ::uint8_t   c;
+    do {
+      if(readByte(nameSec.sectionData, nameOff, c) == false) {
+        return NULL;
+      }
+      
+      if(c == 0) {
+        break;
+      }
+
+      modName.push_back(c);
+      nameOff++;
+    }while(true);
+
+    //then, try and get all of the sub-symbols
+
+    offt += sizeof(import_dir_entry);
+  } while(true);
+
   deleteBuffer(remaining);
 
+#undef READ_DWORD
   return p;
 }
 

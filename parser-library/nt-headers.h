@@ -145,4 +145,12 @@ struct image_section_header {
     boost::uint32_t   Characteristics;
 };
 
+struct import_dir_entry {
+  boost::uint32_t LookupTableRVA;
+  boost::uint32_t TimeStamp;
+  boost::uint32_t ForwarderChain;
+  boost::uint32_t NameRVA;
+  boost::uint32_t AddressRVA;
+};
+
 #endif
