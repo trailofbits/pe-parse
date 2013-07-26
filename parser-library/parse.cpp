@@ -54,9 +54,32 @@ bool getSections(bounded_buffer *b, nt_header_32 &nthdr, list<section> &secs) {
   for(::uint32_t i = 0; i < nthdr.FileHeader.NumberOfSections; i++) {
     image_section_header  curSec;
     
+    ::uint32_t  o = i*sizeof(image_section_header);
     for(::uint32_t k = 0; k < NT_SHORT_NAME_LEN; k++) {
-      readByte(b, k, curSec.Name[k]);
+      readByte(b, o+k, curSec.Name[k]);
     }
+#define READ_WORD(x) \
+  if(readWord(b, o+_offset(image_section_header, x), curSec.x) == false) { \
+    return false; \
+  } 
+#define READ_DWORD(x) \
+  if(readDword(b, o+_offset(image_section_header, x), curSec.x) == false) { \
+    return false; \
+  } 
+  
+  READ_DWORD(VirtualAddress);
+  READ_DWORD(SizeOfRawData);
+  READ_DWORD(PointerToRawData);
+  READ_DWORD(PointerToRelocations);
+  READ_DWORD(PointerToLinenumbers);
+  READ_WORD(NumberOfRelocations);
+  READ_WORD(NumberOfLinenumbers);
+  READ_DWORD(Characteristics);
+#undef READ_WORD
+#undef READ_DWORD
+
+  //now we have the section header information
+
   }
 
   return true;
