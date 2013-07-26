@@ -47,6 +47,13 @@ void printRelocs(void *N, RVA relocAddr) {
   return;
 }
 
+void printSecs(void *N, RVA secBase, string &secName, bounded_buffer *data) {
+  cout << "Sec Name: " << secName << endl;
+  cout << "Sec Base: " << to_string<uint64_t>(secBase, hex) << endl;
+  cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
+  return;
+}
+
 int main(int argc, char *argv[]) {
   if(argc == 2) {
     parsed_pe *p = ParsePEFromFile(argv[1]);
@@ -100,6 +107,7 @@ int main(int argc, char *argv[]) {
 
       IterImpRVAString(p, printImports, NULL);
       IterRelocs(p, printRelocs, NULL);
+      IterSec(p, printSecs, NULL);
 
       DestructParsedPE(p);
     }

@@ -32,7 +32,7 @@ using namespace boost;
 struct section {
   string                sectionName;
   RVA                   sectionBase;
-  bounded_buffer        sectionData;
+  bounded_buffer        *sectionData;
   image_section_header  sec;
 };
 
@@ -45,7 +45,10 @@ struct parsed_pe_internal {
   list<section>   secs;
 };
 
-bool getSections(bounded_buffer *b, nt_header_32 &nthdr, list<section> &secs) {
+bool getSections( bounded_buffer  *b, 
+                  bounded_buffer  *fileBegin,
+                  nt_header_32    &nthdr, 
+                  list<section>   &secs) {
   if(b == NULL) {
     return false;
   }
@@ -67,19 +70,36 @@ bool getSections(bounded_buffer *b, nt_header_32 &nthdr, list<section> &secs) {
     return false; \
   } 
   
-  READ_DWORD(VirtualAddress);
-  READ_DWORD(SizeOfRawData);
-  READ_DWORD(PointerToRawData);
-  READ_DWORD(PointerToRelocations);
-  READ_DWORD(PointerToLinenumbers);
-  READ_WORD(NumberOfRelocations);
-  READ_WORD(NumberOfLinenumbers);
-  READ_DWORD(Characteristics);
+    READ_DWORD(VirtualAddress);
+    READ_DWORD(SizeOfRawData);
+    READ_DWORD(PointerToRawData);
+    READ_DWORD(PointerToRelocations);
+    READ_DWORD(PointerToLinenumbers);
+    READ_WORD(NumberOfRelocations);
+    READ_WORD(NumberOfLinenumbers);
+    READ_DWORD(Characteristics);
 #undef READ_WORD
 #undef READ_DWORD
 
-  //now we have the section header information
+    //now we have the section header information, so fill in a section 
+    //object appropriately
+    section thisSec;
+    for(::uint32_t i = 0; i < NT_SHORT_NAME_LEN; i++) {
+      ::uint8_t c = curSec.Name[i];
+      if(c == 0) {
+        break;
+      }
 
+      thisSec.sectionName.push_back((char)c);
+    }
+
+    thisSec.sectionBase = nthdr.OptionalHeader.ImageBase+curSec.VirtualAddress;
+    thisSec.sec = curSec;
+    ::uint32_t  lowOff = curSec.PointerToRawData;
+    ::uint32_t  highOff = lowOff+curSec.SizeOfRawData;
+    thisSec.sectionData = splitBuffer(fileBegin, lowOff, highOff);
+    
+    secs.push_back(thisSec);
   }
 
   return true;
@@ -291,13 +311,15 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     return NULL;
   }
 
-  //get the raw data of each section
-  if(getSections(remaining, p->peHeader.nt, p->internal->secs) == false) {
+  bounded_buffer  *file = p->fileBuffer;
+  if(getSections(remaining, file, p->peHeader.nt, p->internal->secs) == false) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
     return NULL;
   }
+
+  //get raw section data
 
   //get exports
 
@@ -341,7 +363,7 @@ void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
       ++sit)
   {
     section s = *sit;
-    cb(cbd, s.sectionBase, s.sectionName, &s.sectionData);
+    cb(cbd, s.sectionBase, s.sectionName, s.sectionData);
   }
 
   return;
