@@ -125,8 +125,8 @@ struct image_section_header {
     boost::uint32_t   PointerToRawData;
     boost::uint32_t   PointerToRelocations;
     boost::uint32_t   PointerToLinenumbers;
-    boost::uint16_t    NumberOfRelocations;
-    boost::uint16_t    NumberOfLinenumbers;
+    boost::uint16_t   NumberOfRelocations;
+    boost::uint16_t   NumberOfLinenumbers;
     boost::uint32_t   Characteristics;
 };
 

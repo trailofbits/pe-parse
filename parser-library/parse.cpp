@@ -30,9 +30,10 @@ using namespace std;
 using namespace boost;
 
 struct section {
-  string          sectionName;
-  RVA             sectionBase;
-  bounded_buffer  sectionData;
+  string                sectionName;
+  RVA                   sectionBase;
+  bounded_buffer        sectionData;
+  image_section_header  sec;
 };
 
 struct reloc {
@@ -44,12 +45,21 @@ struct parsed_pe_internal {
   list<section>   secs;
 };
 
-list<section> getSections(bounded_buffer *file, nt_header_32 nthdr) {
-  list<section> sections;
+bool getSections(bounded_buffer *b, nt_header_32 &nthdr, list<section> &secs) {
+  if(b == NULL) {
+    return false;
+  }
 
   //get each of the sections...
+  for(::uint32_t i = 0; i < nthdr.FileHeader.NumberOfSections; i++) {
+    image_section_header  curSec;
+    
+    for(::uint32_t k = 0; k < NT_SHORT_NAME_LEN; k++) {
+      readByte(b, k, curSec.Name[k]);
+    }
+  }
 
-  return sections;
+  return true;
 }
 
 bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
@@ -161,22 +171,37 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   header.Signature = pe_magic;
   bounded_buffer  *fhb = 
     splitBuffer(b, _offset(nt_header_32, FileHeader), b->bufLen);
+  
+  if(fhb == NULL) {
+    return false;
+  }
 
   if(readFileHeader(fhb, header.FileHeader) == false) {
+    deleteBuffer(fhb);
     return false;
   }
 
   bounded_buffer *ohb = 
     splitBuffer(b, _offset(nt_header_32, OptionalHeader), b->bufLen);
 
-  if(readOptionalHeader(ohb, header.OptionalHeader) == false) {
+  if(ohb == NULL) {
+    deleteBuffer(fhb);
     return false;
   }
+
+  if(readOptionalHeader(ohb, header.OptionalHeader) == false) {
+    deleteBuffer(ohb);
+    deleteBuffer(fhb);
+    return false;
+  }
+
+  deleteBuffer(ohb);
+  deleteBuffer(fhb);
 
   return true;
 }
 
-bool getHeader(bounded_buffer *file, pe_header &p) {
+bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   if(file == NULL) {
     return false;
   }
@@ -197,11 +222,14 @@ bool getHeader(bounded_buffer *file, pe_header &p) {
   curOffset += offset; 
 
   //now, we can read out the fields of the NT headers
-  if(readNtHeader(splitBuffer(file, curOffset, file->bufLen), p.nt) == false) {
+  bounded_buffer  *ntBuf = splitBuffer(file, curOffset, file->bufLen);
+  if(readNtHeader(ntBuf, p.nt) == false) {
     return false;
   }
 
-  //and done, headers populated
+  //update 'rem' to point to the space after the header
+  rem = splitBuffer(ntBuf, sizeof(nt_header_32), ntBuf->bufLen);
+  deleteBuffer(ntBuf);
 
   return true;
 }
@@ -233,18 +261,26 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   //now, we need to do some actual PE parsing and file carving.
 
   //get header information
-  if(getHeader(p->fileBuffer, p->peHeader) == false) {
+  bounded_buffer  *remaining = NULL;
+  if(getHeader(p->fileBuffer, p->peHeader, remaining) == false) {
     deleteBuffer(p->fileBuffer);
     delete p;
     return NULL;
   }
 
   //get the raw data of each section
-  p->internal->secs = getSections(p->fileBuffer, p->peHeader.nt);
+  if(getSections(remaining, p->peHeader.nt, p->internal->secs) == false) {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    return NULL;
+  }
 
   //get exports
 
   //get relocations
+
+  deleteBuffer(remaining);
 
   return p;
 }

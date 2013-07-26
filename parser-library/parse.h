@@ -48,7 +48,7 @@ void deleteBuffer(bounded_buffer *b);
 struct parsed_pe_internal;
 
 typedef struct _pe_header {
-  nt_header_32  nt;
+  nt_header_32    nt;
 } pe_header;
 
 typedef struct _parsed_pe {

@@ -125,6 +125,10 @@ bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
 }
 
 void deleteBuffer(bounded_buffer *b) {
+  if(b == NULL) {
+    return;
+  }
+
   if(b->copy == false) {
     free(b->buf);
   }
