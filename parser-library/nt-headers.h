@@ -36,6 +36,21 @@ const boost::uint32_t NT_MAGIC = 0x00004550;
 const boost::uint16_t NUM_DIR_ENTRIES = 16;
 const boost::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
 const boost::uint16_t NT_SHORT_NAME_LEN = 8;
+const boost::uint16_t DIR_EXPORT = 0;
+const boost::uint16_t DIR_IMPORT = 1;
+const boost::uint16_t DIR_RESOURCE = 2;
+const boost::uint16_t DIR_EXCEPTION = 3;
+const boost::uint16_t DIR_SECURITY = 4;
+const boost::uint16_t DIR_BASERELOC = 5;
+const boost::uint16_t DIR_DEBUG = 6;
+const boost::uint16_t DIR_ARCHITECTURE = 7;
+const boost::uint16_t DIR_GLOBALPTR = 8;
+const boost::uint16_t DIR_TLS = 9;
+const boost::uint16_t DIR_LOAD_CONFIG = 10;
+const boost::uint16_t DIR_BOUND_IMPORT = 11;
+const boost::uint16_t DIR_IAT = 12;
+const boost::uint16_t DIR_DELAY_IMPORT = 13;
+const boost::uint16_t DIR_COM_DESCRIPTOR = 14;
 
 struct dos_header {
     boost::uint16_t   e_magic;           

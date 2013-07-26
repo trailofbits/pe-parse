@@ -36,6 +36,12 @@ struct section {
   image_section_header  sec;
 };
 
+struct exportent {
+  RVA     exportAddr;
+  string  symbolName;
+  string  moduleName;
+};
+
 struct reloc {
   RVA shiftedAddr;
   RVA shiftedTo;
@@ -43,6 +49,7 @@ struct reloc {
 
 struct parsed_pe_internal {
   list<section>   secs;
+  list<exportent> exports;
 };
 
 bool getSections( bounded_buffer  *b, 
@@ -300,8 +307,6 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     delete p;
     return NULL;
   }
-
-  //now, we need to do some actual PE parsing and file carving.
 
   //get header information
   bounded_buffer  *remaining = NULL;

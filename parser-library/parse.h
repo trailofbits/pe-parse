@@ -71,8 +71,8 @@ void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd);
 typedef void (*iterReloc)(void *, RVA);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
-//iterate over the exports by RVA
-typedef void (*iterRVA)(void *, RVA);
+//iterate over the exports
+typedef void (*iterRVA)(void *, RVA, std::string &, std::string &);
 void IterExpRVA(parsed_pe *pe, iterRVA cb, void *cbd);
 
 //iterate over sections
