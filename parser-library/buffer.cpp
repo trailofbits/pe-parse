@@ -39,6 +39,7 @@ bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
   return true;
 }
 
+//TODO: perform endian swap as needed
 bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
   if(offset >= b->bufLen) {
     return false;
@@ -50,6 +51,7 @@ bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
   return true;
 }
 
+//TODO: perform endian swap as needed
 bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
   if(offset >= b->bufLen) {
     return false;
