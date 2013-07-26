@@ -318,12 +318,11 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     delete p;
     return NULL;
   }
-
-  //get raw section data
-
   //get exports
 
   //get relocations
+
+  //get imports
 
   deleteBuffer(remaining);
 
