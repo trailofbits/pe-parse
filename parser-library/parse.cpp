@@ -471,7 +471,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         //import by ordinal
       }
       
-      lookupOff++;
+      lookupOff += sizeof(::uint32_t);
     } while(true);
 
     offt += sizeof(import_dir_entry);
