@@ -38,7 +38,8 @@ string to_string(T t, ios_base & (*f)(ios_base&)) {
 }
 
 void printImports(void *N, RVA impAddr, string &modName, string &symName) {
-
+  cout << to_string<uint32_t>(impAddr, hex) << modName << "!" << symName;
+  cout << endl;
   return;
 }
 

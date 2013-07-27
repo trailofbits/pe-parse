@@ -414,6 +414,65 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     }while(true);
 
     //then, try and get all of the sub-symbols
+    ::uint32_t  lookupRVA = 
+      curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+
+    section lookupSec;
+    if(getSecForRVA(p->internal->secs, lookupRVA, lookupSec) == false) {
+      return NULL;
+    }
+    
+    ::uint32_t  lookupOff = lookupRVA - lookupSec.sectionBase;
+    do {
+      ::uint32_t  val;
+      if(readDword(lookupSec.sectionData, lookupOff, val) == false) {
+        return NULL;
+      }
+
+      if(val == 0) {
+        break;
+      }
+
+      //check and see if high bit is set
+      if(val >> 31 == 0) {
+        //import by name
+        string  symName;
+        section symNameSec;
+        ::uint32_t  valRVA = val + p->peHeader.nt.OptionalHeader.ImageBase;
+        if(getSecForRVA(p->internal->secs, valRVA, symNameSec) == false) {
+          return NULL;
+        }
+        
+        ::uint32_t  nameOff = valRVA - symNameSec.sectionBase;
+        nameOff += sizeof(::uint16_t);
+        do {
+          ::uint8_t d;
+
+          if(readByte(symNameSec.sectionData, nameOff, d) == false) {
+            return NULL;
+          }
+          
+          if(d == 0) {
+            break;
+          }
+
+          symName.push_back(d);
+          nameOff++;
+        } while(true);
+
+        //okay now we know the pair... add it
+        importent ent;
+
+        ent.addr = 0;
+        ent.symbolName = symName;
+        ent.moduleName = modName;
+        p->internal->imports.push_back(ent);
+      } else {
+        //import by ordinal
+      }
+      
+      lookupOff++;
+    } while(true);
 
     offt += sizeof(import_dir_entry);
   } while(true);
@@ -432,7 +491,12 @@ void DestructParsedPE(parsed_pe *p) {
 
 //iterate over the imports by RVA and string
 void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd) {
+  list<importent> &l = pe->internal->imports;
 
+  for(list<importent>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
+    importent i = *it;
+    cb(cbd, i.addr, i.moduleName, i.symbolName);
+  }
   return;
 }
 
