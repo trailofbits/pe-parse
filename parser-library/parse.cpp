@@ -463,7 +463,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         //okay now we know the pair... add it
         importent ent;
 
-        ent.addr = 0;
+        ent.addr = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
         ent.symbolName = symName;
         ent.moduleName = modName;
         p->internal->imports.push_back(ent);
