@@ -80,4 +80,7 @@ void IterExpRVA(parsed_pe *pe, iterExp cb, void *cbd);
 typedef void (*iterSec)(void *, RVA secBase, std::string &, bounded_buffer *b);
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
+//get byte at VA in PE
+bool ReadByteAtVA(parsed_pe *pe, VA v, boost::uint8_t &b);
+
 #endif

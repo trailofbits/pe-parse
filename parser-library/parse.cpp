@@ -348,6 +348,16 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   //get exports
   data_directory  exportDir = 
     p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
+  if(exportDir.Size != 0) {
+    section s;
+    ::uint32_t  addr = 
+      exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+
+    if(getSecForRVA(p->internal->secs, addr, s) == false) {
+      return NULL;
+    }
+
+  }
 
   //get relocations, if exist
   data_directory  relocDir = 
@@ -605,4 +615,12 @@ void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
   }
 
   return;
+}
+
+bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
+  //find this VA 
+  section s;
+
+
+  return true;
 }
