@@ -44,7 +44,7 @@ void printImports(void *N, RVA impAddr, string &modName, string &symName) {
   return;
 }
 
-void printRelocs(void *N, RVA relocAddr) {
+void printRelocs(void *N, VA relocAddr, reloc_type type) {
 
   return;
 }

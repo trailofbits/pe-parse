@@ -30,6 +30,7 @@ THE SOFTWARE.
 #include "nt-headers.h"
 
 typedef boost::uint32_t RVA;
+typedef boost::uint32_t VA;
 
 typedef struct _bounded_buffer {
   boost::uint8_t  *buf;
@@ -68,12 +69,12 @@ typedef void (*iterRVAStr)(void *, RVA, std::string &, std::string &);
 void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd);
 
 //iterate over relocations in the PE file
-typedef void (*iterReloc)(void *, RVA);
+typedef void (*iterReloc)(void *, VA, reloc_type);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
 //iterate over the exports
-typedef void (*iterRVA)(void *, RVA, std::string &, std::string &);
-void IterExpRVA(parsed_pe *pe, iterRVA cb, void *cbd);
+typedef void (*iterExp)(void *, RVA, std::string &, std::string &);
+void IterExpRVA(parsed_pe *pe, iterExp cb, void *cbd);
 
 //iterate over sections
 typedef void (*iterSec)(void *, RVA secBase, std::string &, bounded_buffer *b);

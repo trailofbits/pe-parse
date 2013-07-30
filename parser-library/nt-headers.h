@@ -153,4 +153,21 @@ struct import_dir_entry {
   boost::uint32_t AddressRVA;
 };
 
+enum reloc_type {
+  ABSOLUTE = 0,
+  HIGH = 1,
+  LOW = 2,
+  HIGHLOW = 3,
+  HIGHADJ = 4,
+  MIPS_JMPADDR = 5,
+  MIPS_JMPADDR16 = 9,
+  IA64_IMM64 = 9,
+  DIR64 = 10
+};
+
+struct reloc_block {
+  boost::uint32_t PageRVA;
+  boost::uint32_t BlockSize;
+};
+
 #endif

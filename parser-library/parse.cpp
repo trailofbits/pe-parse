@@ -43,13 +43,14 @@ struct importent {
 };
 
 struct reloc {
-  RVA shiftedAddr;
-  RVA shiftedTo;
+  VA          shiftedAddr;
+  reloc_type  type;
 };
 
 struct parsed_pe_internal {
   list<section>   secs;
   list<importent> imports;
+  list<reloc>     relocs;
 };
 
 bool getSecForRVA(list<section> &secs, RVA v, section &sec) {
@@ -348,134 +349,204 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   data_directory  exportDir = 
     p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
 
-  //get relocations
+  //get relocations, if exist
   data_directory  relocDir = 
     p->peHeader.nt.OptionalHeader.DataDirectory[DIR_BASERELOC];
+  if(relocDir.Size != 0) {
+    section d;
+    ::uint32_t  rvaAddr = 
+      relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
 
+    if(getSecForRVA(p->internal->secs, rvaAddr, d) == false) {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
+      return NULL;
+    }
+
+    ::uint32_t  rvaofft = rvaAddr - d.sectionBase;
+    ::uint32_t  pageRva;
+    ::uint32_t  blockSize;
+
+    if(readDword( d.sectionData, 
+                  rvaofft+_offset(reloc_block, PageRVA), 
+                  pageRva) == false)
+    {
+      return NULL;
+    }
+   
+    if(readDword( d.sectionData, 
+                  rvaofft+_offset(reloc_block, BlockSize), 
+                  blockSize) == false)
+    {
+      return NULL;
+    }
+
+    //iter over all of the RVA blocks
+    ::uint32_t  blockCount = blockSize/sizeof(::uint16_t);
+
+    rvaofft += sizeof(reloc_block);
+
+    while(blockCount != 0) {
+      ::uint16_t  block;
+      ::uint8_t   type;
+      ::uint16_t  offset;
+
+      if(readWord(d.sectionData, rvaofft, block) == false) {
+        return NULL;
+      }
+
+      //mask out the type and assign
+      type = block >> 12;
+      //mask out the offset and assign
+      offset = block & ~0xf000;
+
+      //produce the VA of the relocation
+      ::uint32_t  relocVA = pageRva + offset + 
+        p->peHeader.nt.OptionalHeader.ImageBase;
+
+      //store in our list
+      reloc r;
+
+      r.shiftedAddr = relocVA;
+      r.type = (reloc_type)type;
+      p->internal->relocs.push_back(r);
+
+      blockCount--;
+      rvaofft += sizeof(::uint16_t);
+    }
+  }
+   
   //get imports
   data_directory  importDir = 
     p->peHeader.nt.OptionalHeader.DataDirectory[DIR_IMPORT];
-  //get section for the RVA in importDir
-  section c;
-  ::uint32_t  addr = 
-    importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+  if(importDir.Size != 0) {
+    //get section for the RVA in importDir
+    section c;
+    ::uint32_t  addr = 
+      importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
 
-  if(getSecForRVA(p->internal->secs, addr, c) == false) {
-    deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
-    return NULL;
-  }
+    if(getSecForRVA(p->internal->secs, addr, c) == false) {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
+      return NULL;
+    }
 
-  //get import directory from this section
-  ::uint32_t  offt = addr - c.sectionBase;
-  do {
+    //get import directory from this section
+    ::uint32_t  offt = addr - c.sectionBase;
+    do {
 #define READ_DWORD(x) \
-  if(readDword(c.sectionData, offt+_offset(import_dir_entry, x), curEnt.x) == false) { \
-    return NULL; \
-  }
-    //read each directory entry out
-    import_dir_entry  curEnt;
-
-    READ_DWORD(LookupTableRVA);
-    READ_DWORD(TimeStamp);
-    READ_DWORD(ForwarderChain);
-    READ_DWORD(NameRVA);
-    READ_DWORD(AddressRVA);
-
-    //are all the fields in curEnt null? then we break
-    if( curEnt.LookupTableRVA == 0 && 
-        curEnt.NameRVA == 0 &&
-        curEnt.AddressRVA == 0) {
-      break;
+    if(readDword(c.sectionData, offt+_offset(import_dir_entry, x), curEnt.x) == false) { \
+      return NULL; \
     }
+      //read each directory entry out
+      import_dir_entry  curEnt;
 
-    //then, try and get the name of this particular module...
-    ::uint32_t  name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-    section nameSec;
-    if(getSecForRVA(p->internal->secs, name, nameSec) == false) {
-      return NULL;
-    }
+      READ_DWORD(LookupTableRVA);
+      READ_DWORD(TimeStamp);
+      READ_DWORD(ForwarderChain);
+      READ_DWORD(NameRVA);
+      READ_DWORD(AddressRVA);
 
-    ::uint32_t  nameOff = name - nameSec.sectionBase;
-    string      modName;
-    ::uint8_t   c;
-    do {
-      if(readByte(nameSec.sectionData, nameOff, c) == false) {
-        return NULL;
-      }
-      
-      if(c == 0) {
+      //are all the fields in curEnt null? then we break
+      if( curEnt.LookupTableRVA == 0 && 
+          curEnt.NameRVA == 0 &&
+          curEnt.AddressRVA == 0) {
         break;
       }
 
-      modName.push_back(c);
-      nameOff++;
-    }while(true);
+      //then, try and get the name of this particular module...
+      ::uint32_t  name = 
+        curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
 
-    //then, try and get all of the sub-symbols
-    ::uint32_t  lookupRVA = 
-      curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-
-    section lookupSec;
-    if(getSecForRVA(p->internal->secs, lookupRVA, lookupSec) == false) {
-      return NULL;
-    }
-    
-    ::uint32_t  lookupOff = lookupRVA - lookupSec.sectionBase;
-    do {
-      ::uint32_t  val;
-      if(readDword(lookupSec.sectionData, lookupOff, val) == false) {
+      section nameSec;
+      if(getSecForRVA(p->internal->secs, name, nameSec) == false) {
         return NULL;
       }
 
-      if(val == 0) {
-        break;
-      }
-
-      //check and see if high bit is set
-      if(val >> 31 == 0) {
-        //import by name
-        string  symName;
-        section symNameSec;
-        ::uint32_t  valRVA = val + p->peHeader.nt.OptionalHeader.ImageBase;
-        if(getSecForRVA(p->internal->secs, valRVA, symNameSec) == false) {
+      ::uint32_t  nameOff = name - nameSec.sectionBase;
+      string      modName;
+      ::uint8_t   c;
+      do {
+        if(readByte(nameSec.sectionData, nameOff, c) == false) {
           return NULL;
         }
         
-        ::uint32_t  nameOff = valRVA - symNameSec.sectionBase;
-        nameOff += sizeof(::uint16_t);
-        do {
-          ::uint8_t d;
+        if(c == 0) {
+          break;
+        }
 
-          if(readByte(symNameSec.sectionData, nameOff, d) == false) {
+        modName.push_back(c);
+        nameOff++;
+      }while(true);
+
+      //then, try and get all of the sub-symbols
+      ::uint32_t  lookupRVA = 
+        curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+
+      section lookupSec;
+      if(getSecForRVA(p->internal->secs, lookupRVA, lookupSec) == false) {
+        return NULL;
+      }
+      
+      ::uint32_t  lookupOff = lookupRVA - lookupSec.sectionBase;
+      do {
+        ::uint32_t  val;
+        if(readDword(lookupSec.sectionData, lookupOff, val) == false) {
+          return NULL;
+        }
+
+        if(val == 0) {
+          break;
+        }
+
+        //check and see if high bit is set
+        if(val >> 31 == 0) {
+          //import by name
+          string  symName;
+          section symNameSec;
+          ::uint32_t  valRVA = val + p->peHeader.nt.OptionalHeader.ImageBase;
+          if(getSecForRVA(p->internal->secs, valRVA, symNameSec) == false) {
             return NULL;
           }
           
-          if(d == 0) {
-            break;
-          }
+          ::uint32_t  nameOff = valRVA - symNameSec.sectionBase;
+          nameOff += sizeof(::uint16_t);
+          do {
+            ::uint8_t d;
 
-          symName.push_back(d);
-          nameOff++;
-        } while(true);
+            if(readByte(symNameSec.sectionData, nameOff, d) == false) {
+              return NULL;
+            }
+            
+            if(d == 0) {
+              break;
+            }
 
-        //okay now we know the pair... add it
-        importent ent;
+            symName.push_back(d);
+            nameOff++;
+          } while(true);
 
-        ent.addr = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        ent.symbolName = symName;
-        ent.moduleName = modName;
-        p->internal->imports.push_back(ent);
-      } else {
-        //import by ordinal
-      }
-      
-      lookupOff += sizeof(::uint32_t);
+          //okay now we know the pair... add it
+          importent ent;
+
+          ent.addr = 
+            curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+
+          ent.symbolName = symName;
+          ent.moduleName = modName;
+          p->internal->imports.push_back(ent);
+        } else {
+          //import by ordinal
+        }
+        
+        lookupOff += sizeof(::uint32_t);
+      } while(true);
+
+      offt += sizeof(import_dir_entry);
     } while(true);
-
-    offt += sizeof(import_dir_entry);
-  } while(true);
+  }
 
   deleteBuffer(remaining);
 
@@ -507,7 +578,7 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
 }
 
 //iterate over the exports by RVA
-void IterExpRVA(parsed_pe *pe, iterRVA cb, void *cbd) {
+void IterExpRVA(parsed_pe *pe, iterExp cb, void *cbd) {
 
   return;
 }
