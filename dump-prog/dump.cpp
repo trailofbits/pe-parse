@@ -45,6 +45,35 @@ void printImports(void *N, RVA impAddr, string &modName, string &symName) {
 }
 
 void printRelocs(void *N, VA relocAddr, reloc_type type) {
+  cout << "TYPE: ";
+  switch(type) {
+    case ABSOLUTE:
+      cout << "ABSOLUTE";
+      break;
+    case HIGH:
+      cout << "HIGH";
+      break;
+    case LOW:
+      cout << "LOW";
+      break;
+    case HIGHLOW:
+      cout << "HIGHLOW";
+      break;
+    case HIGHADJ:
+      cout << "HIGHADJ";
+      break;
+    case MIPS_JMPADDR:
+      cout << "MIPS_JMPADDR";
+      break;
+    case MIPS_JMPADDR16:
+      cout << "MIPS_JMPADD16";
+      break;
+    case DIR64:
+      cout << "DIR64";
+      break;
+  }
+
+  cout << " VA: 0x" << to_string<VA>(relocAddr, hex) << endl;
 
   return;
 }

@@ -568,11 +568,18 @@ void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd) {
     importent i = *it;
     cb(cbd, i.addr, i.moduleName, i.symbolName);
   }
+
   return;
 }
 
 //iterate over relocations in the PE file
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
+  list<reloc> &l = pe->internal->relocs;
+
+  for(list<reloc>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
+    reloc r = *it;
+    cb(cbd, r.shiftedAddr, r.type);
+  }
 
   return;
 }
