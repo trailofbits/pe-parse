@@ -53,7 +53,7 @@ struct parsed_pe_internal {
   list<reloc>     relocs;
 };
 
-bool getSecForRVA(list<section> &secs, RVA v, section &sec) {
+bool getSecForVA(list<section> &secs, RVA v, section &sec) {
   for(list<section>::iterator it = secs.begin(), e = secs.end();
       it != e;
       ++it)
@@ -353,7 +353,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     ::uint32_t  addr = 
       exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
 
-    if(getSecForRVA(p->internal->secs, addr, s) == false) {
+    if(getSecForVA(p->internal->secs, addr, s) == false) {
       return NULL;
     }
 
@@ -367,7 +367,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     ::uint32_t  rvaAddr = 
       relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
 
-    if(getSecForRVA(p->internal->secs, rvaAddr, d) == false) {
+    if(getSecForVA(p->internal->secs, rvaAddr, d) == false) {
       deleteBuffer(remaining);
       deleteBuffer(p->fileBuffer);
       delete p;
@@ -436,7 +436,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     ::uint32_t  addr = 
       importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
 
-    if(getSecForRVA(p->internal->secs, addr, c) == false) {
+    if(getSecForVA(p->internal->secs, addr, c) == false) {
       deleteBuffer(remaining);
       deleteBuffer(p->fileBuffer);
       delete p;
@@ -471,7 +471,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
 
       section nameSec;
-      if(getSecForRVA(p->internal->secs, name, nameSec) == false) {
+      if(getSecForVA(p->internal->secs, name, nameSec) == false) {
         return NULL;
       }
 
@@ -496,7 +496,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
 
       section lookupSec;
-      if(getSecForRVA(p->internal->secs, lookupRVA, lookupSec) == false) {
+      if(getSecForVA(p->internal->secs, lookupRVA, lookupSec) == false) {
         return NULL;
       }
       
@@ -518,7 +518,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           string  symName;
           section symNameSec;
           ::uint32_t  valRVA = val + p->peHeader.nt.OptionalHeader.ImageBase;
-          if(getSecForRVA(p->internal->secs, valRVA, symNameSec) == false) {
+          if(getSecForVA(p->internal->secs, valRVA, symNameSec) == false) {
             return NULL;
           }
           
@@ -618,10 +618,10 @@ void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
 }
 
 bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
-  //find this VA 
+  //find this VA in a section
   section s;
 
-  if(getSecForRVA(pe->internal->secs, v, s) == false) {
+  if(getSecForVA(pe->internal->secs, v, s) == false) {
     return false;
   }
 

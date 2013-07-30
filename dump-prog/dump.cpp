@@ -141,10 +141,11 @@ int main(int argc, char *argv[]) {
       IterSec(p, printSecs, NULL);
 
       //read the first 8 bytes from the entry point and print them
-      cout << "First 8 bytes from entry point:" << endl;
-
+      cout << "First 8 bytes from entry point (0x";
       VA  entryPoint = p->peHeader.nt.OptionalHeader.AddressOfEntryPoint + 
         p->peHeader.nt.OptionalHeader.ImageBase;
+      cout << to_string<VA>(entryPoint, hex);
+      cout << "):" << endl;
       for(int i = 0; i < 8; i++) {
         ::uint8_t b;
         ReadByteAtVA(p, i+entryPoint, b);
