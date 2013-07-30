@@ -621,6 +621,11 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
   //find this VA 
   section s;
 
+  if(getSecForRVA(pe->internal->secs, v, s) == false) {
+    return false;
+  }
 
-  return true;
+  ::uint32_t  off = v - s.sectionBase;
+
+  return readByte(s.sectionData, off, b);
 }

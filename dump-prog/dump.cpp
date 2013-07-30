@@ -143,7 +143,8 @@ int main(int argc, char *argv[]) {
       //read the first 8 bytes from the entry point and print them
       cout << "First 8 bytes from entry point:" << endl;
 
-      VA  entryPoint = p->peHeader.nt.OptionalHeader.AddressOfEntryPoint;
+      VA  entryPoint = p->peHeader.nt.OptionalHeader.AddressOfEntryPoint + 
+        p->peHeader.nt.OptionalHeader.ImageBase;
       for(int i = 0; i < 8; i++) {
         ::uint8_t b;
         ReadByteAtVA(p, i+entryPoint, b);
