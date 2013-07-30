@@ -491,6 +491,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       }
       
       ::uint32_t  lookupOff = lookupRVA - lookupSec.sectionBase;
+      ::uint32_t  offInTable = 0;
       do {
         ::uint32_t  val;
         if(readDword(lookupSec.sectionData, lookupOff, val) == false) {
@@ -531,7 +532,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           //okay now we know the pair... add it
           importent ent;
 
-          ent.addr = 
+          ent.addr = offInTable + 
             curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
 
           ent.symbolName = symName;
@@ -542,6 +543,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         }
         
         lookupOff += sizeof(::uint32_t);
+        offInTable += sizeof(::uint32_t);
       } while(true);
 
       offt += sizeof(import_dir_entry);
