@@ -492,8 +492,14 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       }while(true);
 
       //then, try and get all of the sub-symbols
-      ::uint32_t  lookupRVA = 
+      ::uint32_t  lookupRVA;
+      if(curEnt.LookupTableRVA != 0) { 
+      lookupRVA = 
         curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      } else if(curEnt.AddressRVA != 0 ) {
+      lookupRVA = 
+        curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      }
 
       section lookupSec;
       if(getSecForVA(p->internal->secs, lookupRVA, lookupSec) == false) {
