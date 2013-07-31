@@ -108,7 +108,6 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   void *maddr = mmap(NULL, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
 
   if(maddr == MAP_FAILED) {
-    perror("bla\n");
     close(fd);
     delete d;
     delete p;
