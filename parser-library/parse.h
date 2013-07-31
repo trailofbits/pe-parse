@@ -65,16 +65,16 @@ parsed_pe *ParsePEFromFile(const char *filePath);
 void DestructParsedPE(parsed_pe *pe);
 
 //iterate over the imports by RVA and string 
-typedef void (*iterRVAStr)(void *, RVA, std::string &, std::string &);
-void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd);
+typedef void (*iterVAStr)(void *, VA, std::string &, std::string &);
+void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 
 //iterate over relocations in the PE file
 typedef void (*iterReloc)(void *, VA, reloc_type);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
 //iterate over the exports
-typedef void (*iterExp)(void *, RVA, std::string &, std::string &);
-void IterExpRVA(parsed_pe *pe, iterExp cb, void *cbd);
+typedef void (*iterExp)(void *, VA, std::string &, std::string &);
+void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
 
 //iterate over sections
 typedef void (*iterSec)(void *, RVA secBase, std::string &, bounded_buffer *b);

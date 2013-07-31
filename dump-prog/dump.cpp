@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 #undef DUMP_FIELD
 #undef DUMP_DEC_FIELD
 
-      IterImpRVAString(p, printImports, NULL);
+      IterImpVAString(p, printImports, NULL);
       IterRelocs(p, printRelocs, NULL);
       IterSec(p, printSecs, NULL);
 

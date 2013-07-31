@@ -37,7 +37,7 @@ struct section {
 };
 
 struct importent {
-  RVA     addr;
+  VA      addr;
   string  symbolName;
   string  moduleName;
 };
@@ -53,7 +53,7 @@ struct parsed_pe_internal {
   list<reloc>     relocs;
 };
 
-bool getSecForVA(list<section> &secs, RVA v, section &sec) {
+bool getSecForVA(list<section> &secs, VA v, section &sec) {
   for(list<section>::iterator it = secs.begin(), e = secs.end();
       it != e;
       ++it)
@@ -392,7 +392,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       return NULL;
     }
 
-    //iter over all of the RVA blocks
+    //iter over all of the blocks
     ::uint32_t  blockCount = blockSize/sizeof(::uint16_t);
 
     rvaofft += sizeof(reloc_block);
@@ -492,21 +492,21 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       }while(true);
 
       //then, try and get all of the sub-symbols
-      ::uint32_t  lookupRVA;
+      ::uint32_t  lookupVA;
       if(curEnt.LookupTableRVA != 0) { 
-      lookupRVA = 
+      lookupVA = 
         curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
       } else if(curEnt.AddressRVA != 0 ) {
-      lookupRVA = 
+      lookupVA = 
         curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
       }
 
       section lookupSec;
-      if(getSecForVA(p->internal->secs, lookupRVA, lookupSec) == false) {
+      if(getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
         return NULL;
       }
       
-      ::uint32_t  lookupOff = lookupRVA - lookupSec.sectionBase;
+      ::uint32_t  lookupOff = lookupVA - lookupSec.sectionBase;
       ::uint32_t  offInTable = 0;
       do {
         ::uint32_t  val;
@@ -523,12 +523,12 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           //import by name
           string  symName;
           section symNameSec;
-          ::uint32_t  valRVA = val + p->peHeader.nt.OptionalHeader.ImageBase;
-          if(getSecForVA(p->internal->secs, valRVA, symNameSec) == false) {
+          ::uint32_t  valVA = val + p->peHeader.nt.OptionalHeader.ImageBase;
+          if(getSecForVA(p->internal->secs, valVA, symNameSec) == false) {
             return NULL;
           }
           
-          ::uint32_t  nameOff = valRVA - symNameSec.sectionBase;
+          ::uint32_t  nameOff = valVA - symNameSec.sectionBase;
           nameOff += sizeof(::uint16_t);
           do {
             ::uint8_t d;
@@ -578,8 +578,8 @@ void DestructParsedPE(parsed_pe *p) {
   return;
 }
 
-//iterate over the imports by RVA and string
-void IterImpRVAString(parsed_pe *pe, iterRVAStr cb, void *cbd) {
+//iterate over the imports by VA and string
+void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
   list<importent> &l = pe->internal->imports;
 
   for(list<importent>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
@@ -602,8 +602,8 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
   return;
 }
 
-//iterate over the exports by RVA
-void IterExpRVA(parsed_pe *pe, iterExp cb, void *cbd) {
+//iterate over the exports by VA
+void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
 
   return;
 }
