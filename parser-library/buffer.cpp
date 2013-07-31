@@ -26,8 +26,17 @@ THE SOFTWARE.
 #include <string.h>
 #include "parse.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+
 using namespace boost;
 using namespace std;
+
+struct buffer_detail {
+  int fd;
+};
 
 bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
   if(offset >= b->bufLen) {
@@ -66,6 +75,12 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
 
 
 bounded_buffer *readFileToFileBuffer(const char *filePath) {
+  int fd = open(filePath, O_RDONLY);
+
+  if(fd == -1) {
+    return NULL;
+  }
+
   //make a buffer object
   bounded_buffer  *p = new bounded_buffer();
 
@@ -73,6 +88,38 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     return NULL;
   }
 
+  memset(p, 0, sizeof(bounded_buffer));
+  buffer_detail *d = new buffer_detail();
+
+  if(d == NULL) {
+    delete p;
+    return NULL;
+  }
+  memset(d, 0, sizeof(buffer_detail));
+  p->detail = d;
+
+  p->detail->fd = fd;
+
+  struct stat s = {0};
+
+  /* should work since fd is open */
+  fstat(fd, &s);
+
+  void *maddr = mmap(NULL, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
+
+  if(maddr == MAP_FAILED) {
+    perror("bla\n");
+    close(fd);
+    delete d;
+    delete p;
+    return NULL;
+  }
+
+  p->buf = (::uint8_t *)maddr;
+  p->bufLen = s.st_size;
+  p->copy = false;
+
+#ifdef BUF_RAW
   //open the file in binary mode
   ifstream  inFile(filePath, ios::in|ios::binary|ios::ate);
 
@@ -102,6 +149,8 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     delete p;
     return NULL;
   }
+
+#endif
 
   return p;
 }
@@ -133,7 +182,9 @@ void deleteBuffer(bounded_buffer *b) {
   }
 
   if(b->copy == false) {
+#ifdef BUF_RAW
     free(b->buf);
+#endif
   }
 
   delete b;

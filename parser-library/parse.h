@@ -32,10 +32,13 @@ THE SOFTWARE.
 typedef boost::uint32_t RVA;
 typedef boost::uint32_t VA;
 
+struct buffer_detail;
+
 typedef struct _bounded_buffer {
   boost::uint8_t  *buf;
   boost::uint32_t bufLen;
   bool            copy;
+  buffer_detail   *detail;
 } bounded_buffer;
 
 bool readByte(bounded_buffer *b, boost::uint32_t offset, boost::uint8_t &out);
