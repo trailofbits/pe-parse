@@ -35,7 +35,9 @@ using namespace boost;
 using namespace std;
 
 struct buffer_detail {
+#if 1
   int fd;
+#endif
 };
 
 bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
@@ -75,11 +77,14 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
 
 
 bounded_buffer *readFileToFileBuffer(const char *filePath) {
+#if 1
+  //only where we have mmap / open / etc
   int fd = open(filePath, O_RDONLY);
 
   if(fd == -1) {
     return NULL;
   }
+#endif
 
   //make a buffer object
   bounded_buffer  *p = new bounded_buffer();
@@ -98,6 +103,8 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   memset(d, 0, sizeof(buffer_detail));
   p->detail = d;
 
+  //only where we have mmap / open / etc
+#if 1
   p->detail->fd = fd;
 
   struct stat s = {0};
@@ -117,6 +124,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   p->buf = (::uint8_t *)maddr;
   p->bufLen = s.st_size;
   p->copy = false;
+#endif
 
 #ifdef BUF_RAW
   //open the file in binary mode

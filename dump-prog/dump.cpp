@@ -37,7 +37,7 @@ string to_string(T t, ios_base & (*f)(ios_base&)) {
     return oss.str();
 }
 
-void printImports(void *N, RVA impAddr, string &modName, string &symName) {
+void printImports(void *N, VA impAddr, string &modName, string &symName) {
   cout << "0x" << to_string<uint32_t>(impAddr, hex);
   cout << " " << modName << "!" << symName;
   cout << endl;
