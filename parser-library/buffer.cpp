@@ -23,6 +23,7 @@ THE SOFTWARE.
 */
 
 #include <fstream>
+#include <string.h>
 #include "parse.h"
 
 using namespace boost;
