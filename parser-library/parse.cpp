@@ -364,17 +364,17 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     p->peHeader.nt.OptionalHeader.DataDirectory[DIR_BASERELOC];
   if(relocDir.Size != 0) {
     section d;
-    ::uint32_t  rvaAddr = 
+    ::uint32_t  vaAddr = 
       relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
 
-    if(getSecForVA(p->internal->secs, rvaAddr, d) == false) {
+    if(getSecForVA(p->internal->secs, vaAddr, d) == false) {
       deleteBuffer(remaining);
       deleteBuffer(p->fileBuffer);
       delete p;
       return NULL;
     }
 
-    ::uint32_t  rvaofft = rvaAddr - d.sectionBase;
+    ::uint32_t  rvaofft = vaAddr - d.sectionBase;
     ::uint32_t  pageRva;
     ::uint32_t  blockSize;
 
