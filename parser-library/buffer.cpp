@@ -109,8 +109,12 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   struct stat s = {0};
 
-  /* should work since fd is open */
-  fstat(fd, &s);
+  if(fstat(fd, &s) != 0) {
+    close(fd);
+    delete d;
+    delete p;
+    return NULL;
+  }
 
   void *maddr = mmap(NULL, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
 
@@ -189,11 +193,15 @@ void deleteBuffer(bounded_buffer *b) {
   }
 
   if(b->copy == false) {
+    munmap(b->buf, b->bufLen);
+    close(b->detail->fd);
 #ifdef BUF_RAW
     free(b->buf);
 #endif
   }
 
   delete b;
+
+  return;
 }
 
