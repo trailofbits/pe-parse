@@ -30,7 +30,7 @@ THE SOFTWARE.
 #include "nt-headers.h"
 
 typedef boost::uint32_t RVA;
-typedef boost::uint32_t VA;
+typedef boost::uint64_t VA;
 
 struct buffer_detail;
 
@@ -48,6 +48,7 @@ bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
 bounded_buffer *readFileToFileBuffer(const char *filePath);
 bounded_buffer *splitBuffer(bounded_buffer *b, boost::uint32_t from, boost::uint32_t to);
 void deleteBuffer(bounded_buffer *b);
+uint64_t bufLen(bounded_buffer *b);
 
 struct parsed_pe_internal;
 
@@ -68,22 +69,25 @@ parsed_pe *ParsePEFromFile(const char *filePath);
 void DestructParsedPE(parsed_pe *pe);
 
 //iterate over the imports by RVA and string 
-typedef void (*iterVAStr)(void *, VA, std::string &, std::string &);
+typedef int (*iterVAStr)(void *, VA, std::string &, std::string &);
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 
 //iterate over relocations in the PE file
-typedef void (*iterReloc)(void *, VA, reloc_type);
+typedef int (*iterReloc)(void *, VA, reloc_type);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
 //iterate over the exports
-typedef void (*iterExp)(void *, VA, std::string &, std::string &);
+typedef int (*iterExp)(void *, VA, std::string &, std::string &);
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
 
 //iterate over sections
-typedef void (*iterSec)(void *, RVA secBase, std::string &, bounded_buffer *b);
+typedef int (*iterSec)(void *, VA secBase, std::string &, image_section_header, bounded_buffer *b);
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
 //get byte at VA in PE
 bool ReadByteAtVA(parsed_pe *pe, VA v, boost::uint8_t &b);
+
+//get entry point into PE
+bool GetEntryPoint(parsed_pe *pe, VA &v);
 
 #endif

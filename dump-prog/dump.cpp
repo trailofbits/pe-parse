@@ -37,14 +37,25 @@ string to_string(T t, ios_base & (*f)(ios_base&)) {
     return oss.str();
 }
 
-void printImports(void *N, VA impAddr, string &modName, string &symName) {
+int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
+  cout << "EXP: ";
+  cout << mod;
+  cout << "!";
+  cout << func;
+  cout << ":";
+  cout << to_string<uint32_t>(funcAddr, hex);
+  cout << endl;
+  return 0;
+}
+
+int printImports(void *N, VA impAddr, string &modName, string &symName) {
   cout << "0x" << to_string<uint32_t>(impAddr, hex);
   cout << " " << modName << "!" << symName;
   cout << endl;
-  return;
+  return 0;
 }
 
-void printRelocs(void *N, VA relocAddr, reloc_type type) {
+int printRelocs(void *N, VA relocAddr, reloc_type type) {
   cout << "TYPE: ";
   switch(type) {
     case ABSOLUTE:
@@ -75,14 +86,19 @@ void printRelocs(void *N, VA relocAddr, reloc_type type) {
 
   cout << " VA: 0x" << to_string<VA>(relocAddr, hex) << endl;
 
-  return;
+  return 0 ;
 }
 
-void printSecs(void *N, RVA secBase, string &secName, bounded_buffer *data) {
+int printSecs(void                  *N, 
+              VA                    secBase, 
+              string                &secName, 
+              image_section_header  s,
+              bounded_buffer        *data) 
+{
   cout << "Sec Name: " << secName << endl;
   cout << "Sec Base: " << to_string<uint64_t>(secBase, hex) << endl;
   cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
-  return;
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -136,23 +152,30 @@ int main(int argc, char *argv[]) {
 #undef DUMP_FIELD
 #undef DUMP_DEC_FIELD
 
+      cout << "Imports: " << endl;
       IterImpVAString(p, printImports, NULL);
+      cout << "Relocations: " << endl;
       IterRelocs(p, printRelocs, NULL);
+      cout << "Sections: " << endl;
       IterSec(p, printSecs, NULL);
+      cout << "Exports: " << endl;
+      IterExpVA(p, printExps, NULL);
 
       //read the first 8 bytes from the entry point and print them
-      cout << "First 8 bytes from entry point (0x";
-      VA  entryPoint = p->peHeader.nt.OptionalHeader.AddressOfEntryPoint + 
-        p->peHeader.nt.OptionalHeader.ImageBase;
-      cout << to_string<VA>(entryPoint, hex);
-      cout << "):" << endl;
-      for(int i = 0; i < 8; i++) {
-        ::uint8_t b;
-        ReadByteAtVA(p, i+entryPoint, b);
-        cout << " 0x" << to_string<uint32_t>(b, hex);
-      }
+      VA  entryPoint;
+      if(GetEntryPoint(p, entryPoint)) {
+        cout << "First 8 bytes from entry point (0x";
+        
+        cout << to_string<VA>(entryPoint, hex);
+        cout << "):" << endl;
+        for(int i = 0; i < 8; i++) {
+          ::uint8_t b;
+          ReadByteAtVA(p, i+entryPoint, b);
+          cout << " 0x" << to_string<uint32_t>(b, hex);
+        }
 
-      cout << endl;
+        cout << endl;
+      }
 
       DestructParsedPE(p);
     }

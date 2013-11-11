@@ -52,6 +52,45 @@ const boost::uint16_t DIR_IAT = 12;
 const boost::uint16_t DIR_DELAY_IMPORT = 13;
 const boost::uint16_t DIR_COM_DESCRIPTOR = 14;
 
+const boost::uint32_t IMAGE_SCN_TYPE_NO_PAD = 0x00000008;
+const boost::uint32_t IMAGE_SCN_CNT_CODE = 0x00000020;
+const boost::uint32_t IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040; 
+const boost::uint32_t IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x00000080;
+const boost::uint32_t IMAGE_SCN_LNK_OTHER = 0x00000100;
+const boost::uint32_t IMAGE_SCN_LNK_INFO = 0x00000200;
+const boost::uint32_t IMAGE_SCN_LNK_REMOVE = 0x00000800;
+const boost::uint32_t IMAGE_SCN_LNK_COMDAT = 0x00001000;
+const boost::uint32_t IMAGE_SCN_NO_DEFER_SPEC_EXC = 0x00004000;
+const boost::uint32_t IMAGE_SCN_GPREL = 0x00008000;
+const boost::uint32_t IMAGE_SCN_MEM_FARDATA = 0x00008000;
+const boost::uint32_t IMAGE_SCN_MEM_PURGEABLE = 0x00020000;
+const boost::uint32_t IMAGE_SCN_MEM_16BIT = 0x00020000;
+const boost::uint32_t IMAGE_SCN_MEM_LOCKED = 0x00040000;
+const boost::uint32_t IMAGE_SCN_MEM_PRELOAD = 0x00080000;
+const boost::uint32_t IMAGE_SCN_ALIGN_1BYTES = 0x00100000;
+const boost::uint32_t IMAGE_SCN_ALIGN_2BYTES = 0x00200000;
+const boost::uint32_t IMAGE_SCN_ALIGN_4BYTES = 0x00300000;
+const boost::uint32_t IMAGE_SCN_ALIGN_8BYTES = 0x00400000;
+const boost::uint32_t IMAGE_SCN_ALIGN_16BYTES = 0x00500000;
+const boost::uint32_t IMAGE_SCN_ALIGN_32BYTES = 0x00600000;
+const boost::uint32_t IMAGE_SCN_ALIGN_64BYTES = 0x00700000;
+const boost::uint32_t IMAGE_SCN_ALIGN_128BYTES = 0x00800000;
+const boost::uint32_t IMAGE_SCN_ALIGN_256BYTES = 0x00900000;
+const boost::uint32_t IMAGE_SCN_ALIGN_512BYTES = 0x00A00000;
+const boost::uint32_t IMAGE_SCN_ALIGN_1024BYTES = 0x00B00000;
+const boost::uint32_t IMAGE_SCN_ALIGN_2048BYTES = 0x00C00000;
+const boost::uint32_t IMAGE_SCN_ALIGN_4096BYTES = 0x00D00000;
+const boost::uint32_t IMAGE_SCN_ALIGN_8192BYTES = 0x00E00000;
+const boost::uint32_t IMAGE_SCN_ALIGN_MASK = 0x00F00000;
+const boost::uint32_t IMAGE_SCN_LNK_NRELOC_OVFL = 0x01000000;
+const boost::uint32_t IMAGE_SCN_MEM_DISCARDABLE = 0x02000000;
+const boost::uint32_t IMAGE_SCN_MEM_NOT_CACHED = 0x04000000;
+const boost::uint32_t IMAGE_SCN_MEM_NOT_PAGED = 0x08000000;
+const boost::uint32_t IMAGE_SCN_MEM_SHARED = 0x10000000;
+const boost::uint32_t IMAGE_SCN_MEM_EXECUTE = 0x20000000;
+const boost::uint32_t IMAGE_SCN_MEM_READ = 0x40000000;
+const boost::uint32_t IMAGE_SCN_MEM_WRITE = 0x80000000;
+
 struct dos_header {
     boost::uint16_t   e_magic;           
     boost::uint16_t   e_cblp;            
@@ -151,6 +190,20 @@ struct import_dir_entry {
   boost::uint32_t ForwarderChain;
   boost::uint32_t NameRVA;
   boost::uint32_t AddressRVA;
+};
+
+struct export_dir_table {
+  boost::uint32_t ExportFlags;
+  boost::uint32_t TimeDateStamp;
+  boost::uint16_t MajorVersion;
+  boost::uint16_t MinorVersion;
+  boost::uint32_t NameRVA;
+  boost::uint32_t OrdinalBase;
+  boost::uint32_t AddressTableEntries;
+  boost::uint32_t NumberOfNamePointers;
+  boost::uint32_t ExportAddressTableRVA;
+  boost::uint32_t NamePointerRVA;
+  boost::uint32_t OrdinalTableRVA;
 };
 
 enum reloc_type {

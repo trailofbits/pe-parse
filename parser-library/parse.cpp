@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <list>
 #include "parse.h"
 #include "nt-headers.h"
+#include <to_string.h>
 
 using namespace std;
 using namespace boost;
@@ -42,6 +43,12 @@ struct importent {
   string  moduleName;
 };
 
+struct exportent {
+  VA      addr;
+  string  symbolName;
+  string  moduleName;
+};
+
 struct reloc {
   VA          shiftedAddr;
   reloc_type  type;
@@ -51,6 +58,7 @@ struct parsed_pe_internal {
   list<section>   secs;
   list<importent> imports;
   list<reloc>     relocs;
+  list<exportent> exports;
 };
 
 bool getSecForVA(list<section> &secs, VA v, section &sec) {
@@ -86,7 +94,9 @@ bool getSections( bounded_buffer  *b,
     
     ::uint32_t  o = i*sizeof(image_section_header);
     for(::uint32_t k = 0; k < NT_SHORT_NAME_LEN; k++) {
-      readByte(b, o+k, curSec.Name[k]);
+      if(readByte(b, o+k, curSec.Name[k]) == false) {
+        return false;
+      }
     }
 #define READ_WORD(x) \
   if(readWord(b, o+_offset(image_section_header, x), curSec.x) == false) { \
@@ -281,7 +291,9 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   //start by reading MZ
   ::uint16_t  tmp = 0;
   ::uint32_t  curOffset = 0;
-  readWord(file, curOffset, tmp);
+  if(readWord(file, curOffset, tmp) == false) {
+    return false;
+  }
   if(tmp != MZ_MAGIC) {
     return false;
   }
@@ -345,6 +357,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     delete p;
     return NULL;
   }
+
   //get exports
   data_directory  exportDir = 
     p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
@@ -357,6 +370,181 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       return NULL;
     }
 
+    ::uint32_t  rvaofft = addr - s.sectionBase;
+
+    //get the name of this module
+    ::uint32_t  nameRva;
+    if(readDword( s.sectionData,
+                  rvaofft+_offset(export_dir_table, NameRVA),
+                  nameRva) == false) 
+    {
+      return NULL;
+    }
+
+    ::uint32_t  nameVA = nameRva + p->peHeader.nt.OptionalHeader.ImageBase;
+
+    section nameSec;
+    if(getSecForVA(p->internal->secs, nameVA, nameSec) == false) {
+      return NULL;
+    }
+
+    ::uint32_t  nameOff = nameVA - nameSec.sectionBase;
+    string      modName;
+    ::uint8_t   c;
+    do {
+      if(readByte(nameSec.sectionData, nameOff, c) == false) {
+        return NULL;
+      }
+      
+      if(c == 0) {
+        break;
+      }
+
+      modName.push_back(c);
+      nameOff++;
+    }while(true);
+
+    //now, get all the named export symbols
+    ::uint32_t  numNames;
+    if(readDword( s.sectionData,
+                  rvaofft+_offset(export_dir_table, NumberOfNamePointers),
+                  numNames) == false)
+    {
+      return NULL;
+    }
+
+    if(numNames > 0) {
+      //get the names section
+      ::uint32_t  namesRVA;
+      if(readDword( s.sectionData,
+                    rvaofft+_offset(export_dir_table, NamePointerRVA),
+                    namesRVA) == false) 
+      {
+        return NULL;
+      }
+
+      ::uint32_t  namesVA = 
+        namesRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      section     namesSec;
+
+      if(getSecForVA(p->internal->secs, namesVA, namesSec) == false) {
+        return NULL;
+      }
+
+      ::uint32_t  namesOff = namesVA - namesSec.sectionBase;
+
+      //get the EAT section
+      ::uint32_t  eatRVA;
+      if(readDword( s.sectionData,
+                    rvaofft+_offset(export_dir_table, ExportAddressTableRVA),
+                    eatRVA) == false)
+      {
+        return NULL;
+      }
+
+      ::uint32_t  eatVA = 
+        eatRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      section     eatSec;
+      if(getSecForVA(p->internal->secs, eatVA, eatSec) == false) {
+        return NULL;
+      }
+
+      ::uint32_t  eatOff = eatVA - eatSec.sectionBase;
+
+      //get the ordinal base 
+      ::uint32_t  ordinalBase;
+      if(readDword( s.sectionData,
+                    rvaofft+_offset(export_dir_table, OrdinalBase),
+                    ordinalBase) == false)
+      {
+        return NULL;
+      }
+
+      //get the ordinal table
+      ::uint32_t  ordinalTableRVA;
+      if(readDword( s.sectionData,
+                    rvaofft+_offset(export_dir_table, OrdinalTableRVA),
+                    ordinalTableRVA) == false)
+
+      {
+        return NULL;
+      }
+
+      ::uint32_t  ordinalTableVA = 
+        ordinalTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      section     ordinalTableSec;
+      if(getSecForVA(p->internal->secs, ordinalTableVA, ordinalTableSec) == false) {
+        return NULL;
+      }
+
+      ::uint32_t  ordinalOff = ordinalTableVA - ordinalTableSec.sectionBase;
+
+      for(::uint32_t  i = 0; i < numNames; i++) {
+        ::uint32_t  curNameRVA;
+        if(readDword( namesSec.sectionData,
+                      namesOff+(i*sizeof(::uint32_t)),
+                      curNameRVA) == false)
+        {
+          return NULL;
+        }
+ 
+        ::uint32_t  curNameVA = 
+          curNameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+        section     curNameSec;
+
+        if(getSecForVA(p->internal->secs, curNameVA, curNameSec) == false) {
+          return NULL;
+        }
+
+        ::uint32_t  curNameOff = curNameVA - curNameSec.sectionBase;
+        string      symName;
+        ::uint8_t   d;
+
+        do {
+          if(readByte(curNameSec.sectionData, curNameOff, d) == false) {
+            return NULL;
+          }
+
+          if(d == 0) {
+            break;
+          }
+
+          symName.push_back(d);
+          curNameOff++;
+        }while(true);
+
+        //now, for this i, look it up in the ExportOrdinalTable
+        ::uint16_t  ordinal;
+        if(readWord(ordinalTableSec.sectionData, 
+                    ordinalOff+(i*sizeof(uint16_t)), 
+                    ordinal) == false) 
+        {
+          return NULL;
+        }
+
+        //::uint32_t  eatIdx = ordinal - ordinalBase;
+        ::uint32_t  eatIdx = (ordinal*sizeof(uint32_t));
+
+        ::uint32_t  symRVA;
+        if(readDword(eatSec.sectionData, eatOff+eatIdx, symRVA) == false) {
+          return NULL;
+        }
+
+        bool  isForwarded = 
+          ((symRVA >= exportDir.VirtualAddress) && 
+          (symRVA < exportDir.VirtualAddress+exportDir.Size));
+        
+        if(isForwarded == false) {
+          ::uint32_t  symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+          exportent a;
+
+          a.addr = symVA;
+          a.symbolName = symName;
+          a.moduleName = modName;
+          p->internal->exports.push_back(a);
+        }
+      }
+    }
   }
 
   //get relocations, if exist
@@ -487,7 +675,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           break;
         }
 
-        modName.push_back(c);
+        modName.push_back(toupper(c));
         nameOff++;
       }while(true);
 
@@ -556,6 +744,20 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           p->internal->imports.push_back(ent);
         } else {
           //import by ordinal
+          //mask out 'val' so that oval is the low 16 bits of 'val'
+          ::uint16_t  oval = (val & ~0xFFFF0000);
+          string      symName = 
+            "ORDINAL_" + modName + "_" + to_string<uint32_t>(oval, dec);
+          
+          importent ent;
+
+          ent.addr = offInTable + 
+            curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+          
+          ent.symbolName = symName;
+          ent.moduleName = modName;
+
+          p->internal->imports.push_back(ent);
         }
         
         lookupOff += sizeof(::uint32_t);
@@ -584,7 +786,9 @@ void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
 
   for(list<importent>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
     importent i = *it;
-    cb(cbd, i.addr, i.moduleName, i.symbolName);
+    if(cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
+      break;
+    }
   }
 
   return;
@@ -596,7 +800,9 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
 
   for(list<reloc>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
     reloc r = *it;
-    cb(cbd, r.shiftedAddr, r.type);
+    if(cb(cbd, r.shiftedAddr, r.type) != 0) {
+      break;
+    }
   }
 
   return;
@@ -604,6 +810,15 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
 
 //iterate over the exports by VA
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
+  list<exportent> &l = pe->internal->exports;
+
+  for(list<exportent>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
+    exportent i = *it;
+
+    if(cb(cbd, i.addr, i.moduleName, i.symbolName)) {
+      break;
+    }
+  }
 
   return;
 }
@@ -617,7 +832,9 @@ void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
       ++sit)
   {
     section s = *sit;
-    cb(cbd, s.sectionBase, s.sectionName, s.sectionData);
+    if(cb(cbd, s.sectionBase, s.sectionName, s.sec, s.sectionData) != 0) {
+      break;
+    }
   }
 
   return;
@@ -634,4 +851,17 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
   ::uint32_t  off = v - s.sectionBase;
 
   return readByte(s.sectionData, off, b);
+}
+
+bool GetEntryPoint(parsed_pe *pe, VA &v) {
+
+  if(pe != NULL) {
+    nt_header_32  *nthdr = &pe->peHeader.nt;
+
+    v = nthdr->OptionalHeader.AddressOfEntryPoint + nthdr->OptionalHeader.ImageBase;
+
+    return true;
+  }
+
+  return false;
 }

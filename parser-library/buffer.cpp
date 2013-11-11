@@ -26,21 +26,32 @@ THE SOFTWARE.
 #include <string.h>
 #include "parse.h"
 
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#endif
 
 using namespace boost;
 using namespace std;
 
 struct buffer_detail {
-#if 1
-  int fd;
+#ifdef WIN32
+  HANDLE  file;
+  HANDLE  sec;
+#else
+  int     fd;
 #endif
 };
 
 bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
+  if(b == NULL) {
+    return false;
+  }
+
   if(offset >= b->bufLen) {
     return false;
   }
@@ -53,6 +64,10 @@ bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
 
 //TODO: perform endian swap as needed
 bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
+  if(b == NULL) {
+    return false;
+  }
+
   if(offset >= b->bufLen) {
     return false;
   }
@@ -65,6 +80,10 @@ bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
 
 //TODO: perform endian swap as needed
 bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
+  if(b == NULL) {
+    return false;
+  }
+
   if(offset >= b->bufLen) {
     return false;
   }
@@ -77,7 +96,26 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
 
 
 bounded_buffer *readFileToFileBuffer(const char *filePath) {
-#if 1
+#ifdef WIN32
+  HANDLE  h = CreateFileA(filePath, 
+                          GENERIC_READ, 
+                          0, 
+                          NULL, 
+                          OPEN_EXISTING, 
+                          FILE_ATTRIBUTE_NORMAL, 
+                          NULL);
+  if(h == INVALID_HANDLE_VALUE) {
+    return NULL;
+  }
+
+  DWORD fileSize = GetFileSize(h, NULL);
+
+  if(fileSize == INVALID_FILE_SIZE) {
+    CloseHandle(h);
+    return NULL;
+  }
+
+#else
   //only where we have mmap / open / etc
   int fd = open(filePath, O_RDONLY);
 
@@ -104,7 +142,28 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   p->detail = d;
 
   //only where we have mmap / open / etc
-#if 1
+#ifdef WIN32
+  p->detail->file = h;
+
+  HANDLE  hMap = CreateFileMapping(h, NULL, PAGE_READONLY, 0, 0, NULL);
+
+  if(hMap == NULL) {
+    CloseHandle(h);
+    return NULL;
+  }
+
+  p->detail->sec = hMap;
+
+  LPVOID  ptr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+
+  if(ptr == NULL) {
+    return NULL;
+  }
+
+  p->buf = (::uint8_t *)ptr;
+  p->bufLen = fileSize;
+  p->copy = false;
+#else
   p->detail->fd = fd;
 
   struct stat s = {0};
@@ -130,44 +189,15 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   p->copy = false;
 #endif
 
-#ifdef BUF_RAW
-  //open the file in binary mode
-  ifstream  inFile(filePath, ios::in|ios::binary|ios::ate);
-
-  if(inFile.is_open()) {
-    size_t  fileSize = inFile.tellg();
-
-    if(fileSize == 0) {
-      delete p;
-      return NULL;
-    }
-
-    p->buf = (::uint8_t *)malloc(fileSize);
-
-    if(p->buf == NULL) {
-      delete p;
-      return NULL;
-    }
-
-    memset(p->buf, 0, fileSize);
-    p->bufLen = fileSize;
-    p->copy = false;
-    
-    inFile.seekg(0, ios::beg);
-    inFile.read((char *)p->buf, fileSize);
-    inFile.close();
-  } else {
-    delete p;
-    return NULL;
-  }
-
-#endif
-
   return p;
 }
 
 //split buffer inclusively from from to to by offset
 bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
+  if(b == NULL) {
+    return NULL;
+  }
+
   //safety checks
   if(to < from || to > b->bufLen) {
     return NULL;
@@ -193,10 +223,13 @@ void deleteBuffer(bounded_buffer *b) {
   }
 
   if(b->copy == false) {
+#ifdef WIN32
+    UnmapViewOfFile(b->buf);
+    CloseHandle(b->detail->sec);
+    CloseHandle(b->detail->file);
+#else
     munmap(b->buf, b->bufLen);
     close(b->detail->fd);
-#ifdef BUF_RAW
-    free(b->buf);
 #endif
   }
 
@@ -205,3 +238,6 @@ void deleteBuffer(bounded_buffer *b) {
   return;
 }
 
+uint64_t bufLen(bounded_buffer *b) {
+  return b->bufLen;
+}
