@@ -1,2 +1,4 @@
-A principled, lightweight C/C++ pe parser
+pe-parse
 =========================================
+
+A principled, lightweight C/C++ PE parser
