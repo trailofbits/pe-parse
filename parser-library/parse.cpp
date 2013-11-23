@@ -775,7 +775,11 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 }
 
 void DestructParsedPE(parsed_pe *p) {
+  if(p == NULL) {
+    return;
+  }
 
+  delete p->internal;
   delete p;
   return;
 }
