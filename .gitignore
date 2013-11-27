@@ -1,3 +1,4 @@
 Makefile
 cmake_install.cmake
 dump-prog/dump-prog
+*.swp
