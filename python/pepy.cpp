@@ -124,8 +124,8 @@ int section_callback(void *cbd, VA base, std::string &name, image_section_header
 	Py_ssize_t i = 0;
 
 	/* This order must match the order of the tuple (vals). */
-	char *keys[] = { "name", "base", "size", "virtaddr", "virtsize", "relocs",
-	                 "linenums", "characteristics" };
+	const char *keys[] = { "name", "base", "size", "virtaddr", "virtsize",
+	                       "relocs", "linenums", "characteristics" };
 
 	if (!sect)
 		return 0;
