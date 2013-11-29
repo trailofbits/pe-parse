@@ -39,9 +39,9 @@ typedef struct {
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *signature;
-	PyObject *machine;
-	PyObject *timedatestamp;
+	uint32_t signature;
+	uint16_t machine;
+	uint32_t timedatestamp;
 	parsed_pe *pe;
 } pepy_parsed;
 
@@ -67,17 +67,14 @@ static int pepy_parsed_init(pepy_parsed *self, PyObject *args, PyObject *kwds) {
 		return -2;
 	}
 
-	self->signature = PyInt_FromLong(self->pe->peHeader.nt.Signature);
-	self->machine = PyInt_FromLong(self->pe->peHeader.nt.FileHeader.Machine);
-	self->timedatestamp = PyInt_FromLong(self->pe->peHeader.nt.FileHeader.TimeDateStamp);
+	self->signature = self->pe->peHeader.nt.Signature;
+	self->machine = self->pe->peHeader.nt.FileHeader.Machine;
+	self->timedatestamp = self->pe->peHeader.nt.FileHeader.TimeDateStamp;
 	return 0;
 }
 
 static void pepy_parsed_dealloc(pepy_parsed *self) {
 	DestructParsedPE(self->pe);
-	Py_XDECREF(self->signature);
-	Py_XDECREF(self->machine);
-	Py_XDECREF(self->timedatestamp);
 	self->ob_type->tp_free((PyObject *) self);
 }
 
@@ -177,12 +174,12 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 }
 
 static PyMemberDef pepy_parsed_members[] = {
-	{ (char *) "signature", T_OBJECT_EX,
-	  offsetof(pepy_parsed, signature), RO, (char *) "Signature" },
-	{ (char *) "machine", T_OBJECT_EX, offsetof(pepy_parsed, machine), RO,
+	{ (char *) "signature", T_UINT, offsetof(pepy_parsed, signature), RO,
+	  (char *) "Signature" },
+	{ (char *) "machine", T_SHORT, offsetof(pepy_parsed, machine), RO,
 	  (char *) "Machine" },
-	{ (char *) "timedatestamp", T_OBJECT_EX,
-          offsetof(pepy_parsed, timedatestamp), RO, (char *) "Timestamp" },
+	{ (char *) "timedatestamp", T_UINT, offsetof(pepy_parsed, timedatestamp),
+	  RO, (char *) "Timestamp" },
 	{ NULL }
 };
 
