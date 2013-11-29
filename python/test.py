@@ -3,7 +3,6 @@
 import sys
 import time
 import pepy
-import binascii
 
 from pprint import pprint
 
