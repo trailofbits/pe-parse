@@ -39,9 +39,9 @@ typedef struct {
 
 typedef struct {
 	PyObject_HEAD
-	uint32_t signature;
-	uint32_t machine;
-	uint32_t timedatestamp;
+	PyObject *signature;
+	PyObject *machine;
+	PyObject *timedatestamp;
 	parsed_pe *pe;
 } pepy_parsed;
 
@@ -54,14 +54,11 @@ static PyObject *pepy_parsed_new(PyTypeObject *type, PyObject *args, PyObject *k
 }
 
 static int pepy_parsed_init(pepy_parsed *self, PyObject *args, PyObject *kwds) {
-	PyObject *py_str;
-	char *pe_path = NULL;
+	char *pe_path;
 
-	if (!PyArg_ParseTuple(args, "S:pepy_parse", &py_str)) {
+	if (!PyArg_ParseTuple(args, "s:pepy_parse", &pe_path))
 		return -1;
-	}
 
-	pe_path = PyString_AsString(py_str);
 	if (!pe_path)
 		return -1;
 
@@ -70,16 +67,17 @@ static int pepy_parsed_init(pepy_parsed *self, PyObject *args, PyObject *kwds) {
 		return -2;
 	}
 
-	Py_DECREF(py_str);
-
-	self->signature = self->pe->peHeader.nt.Signature;
-	self->machine = self->pe->peHeader.nt.FileHeader.Machine;
-	self->timedatestamp = self->pe->peHeader.nt.FileHeader.TimeDateStamp;
+	self->signature = PyInt_FromLong(self->pe->peHeader.nt.Signature);
+	self->machine = PyInt_FromLong(self->pe->peHeader.nt.FileHeader.Machine);
+	self->timedatestamp = PyInt_FromLong(self->pe->peHeader.nt.FileHeader.TimeDateStamp);
 	return 0;
 }
 
 static void pepy_parsed_dealloc(pepy_parsed *self) {
 	DestructParsedPE(self->pe);
+	Py_XDECREF(self->signature);
+	Py_XDECREF(self->machine);
+	Py_XDECREF(self->timedatestamp);
 	self->ob_type->tp_free((PyObject *) self);
 }
 
@@ -179,12 +177,12 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 }
 
 static PyMemberDef pepy_parsed_members[] = {
-	{ (char *) "signature", T_UINT, offsetof(pepy_parsed, signature), READONLY,
-	  (char *) "Signature" },
-	{ (char *) "machine", T_UINT, offsetof(pepy_parsed, machine), READONLY,
+	{ (char *) "signature", T_OBJECT_EX,
+	  offsetof(pepy_parsed, signature), RO, (char *) "Signature" },
+	{ (char *) "machine", T_OBJECT_EX, offsetof(pepy_parsed, machine), RO,
 	  (char *) "Machine" },
-	{ (char *) "timedatestamp", T_UINT, offsetof(pepy_parsed, timedatestamp),
-	  READONLY, (char *) "Timestamp" },
+	{ (char *) "timedatestamp", T_OBJECT_EX,
+          offsetof(pepy_parsed, timedatestamp), RO, (char *) "Timestamp" },
 	{ NULL }
 };
 
@@ -200,44 +198,44 @@ static PyMethodDef pepy_parsed_methods[] = {
 
 static PyTypeObject pepy_parsed_type = {
 	PyObject_HEAD_INIT(NULL)
-	0,                                /* ob_size */
-	"pepy.parsed",                    /* tp_name */
-	sizeof(pepy_parsed),              /* tp_basicsize */
-	0,                                /* tp_itemsize */
-	(destructor) pepy_parsed_dealloc, /* tp_dealloc */
-	0,                                /* tp_print */
-	0,                                /* tp_getattr */
-	0,                                /* tp_setattr */
-	0,                                /* tp_compare */
-	0,                                /* tp_repr */
-	0,                                /* tp_as_number */
-	0,                                /* tp_as_sequence */
-	0,                                /* tp_as_mapping */
-	0,                                /* tp_hash */
-	0,                                /* tp_call */
-	0,                                /* tp_str */
-	0,                                /* tp_getattro */
-	0,                                /* tp_setattro */
-	0,                                /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,               /* tp_flags */
-	"parsed object",                  /* tp_doc */
-	0,                                /* tp_traverse */
-	0,                                /* tp_clear */
-	0,                                /* tp_richcompare */
-	0,                                /* tp_weaklistoffset */
-	0,                                /* tp_iter */
-	0,                                /* tp_iternext */
-	pepy_parsed_methods,              /* tp_methods */
-	pepy_parsed_members,              /* tp_members */
-	0,                                /* tp_getset */
-	0,                                /* tp_base */
-	0,                                /* tp_dict */
-	0,                                /* tp_descr_get */
-	0,                                /* tp_descr_set */
-	0,                                /* tp_dictoffset */
-	(initproc) pepy_parsed_init,      /* tp_init */
-	0,                                /* tp_alloc */
-	pepy_parsed_new,                  /* tp_new */
+	0,                                         /* ob_size */
+	"pepy.parsed",                             /* tp_name */
+	sizeof(pepy_parsed),                       /* tp_basicsize */
+	0,                                         /* tp_itemsize */
+	(destructor) pepy_parsed_dealloc,          /* tp_dealloc */
+	0,                                         /* tp_print */
+	0,                                         /* tp_getattr */
+	0,                                         /* tp_setattr */
+	0,                                         /* tp_compare */
+	0,                                         /* tp_repr */
+	0,                                         /* tp_as_number */
+	0,                                         /* tp_as_sequence */
+	0,                                         /* tp_as_mapping */
+	0,                                         /* tp_hash */
+	0,                                         /* tp_call */
+	0,                                         /* tp_str */
+	0,                                         /* tp_getattro */
+	0,                                         /* tp_setattro */
+	0,                                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+	"pepy parsed object",                      /* tp_doc */
+	0,                                         /* tp_traverse */
+	0,                                         /* tp_clear */
+	0,                                         /* tp_richcompare */
+	0,                                         /* tp_weaklistoffset */
+	0,                                         /* tp_iter */
+	0,                                         /* tp_iternext */
+	pepy_parsed_methods,                       /* tp_methods */
+	pepy_parsed_members,                       /* tp_members */
+	0,                                         /* tp_getset */
+	0,                                         /* tp_base */
+	0,                                         /* tp_dict */
+	0,                                         /* tp_descr_get */
+	0,                                         /* tp_descr_set */
+	0,                                         /* tp_dictoffset */
+	(initproc) pepy_parsed_init,               /* tp_init */
+	0,                                         /* tp_alloc */
+	pepy_parsed_new                            /* tp_new */
 };
 
 static PyObject *pepy_parse(PyObject *self, PyObject *args) {
