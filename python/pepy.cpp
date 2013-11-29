@@ -39,6 +39,7 @@ typedef struct {
 
 typedef struct {
 	PyObject_HEAD
+	PyObject *timedatestamp;
 	parsed_pe *pe;
 } pepy_parsed;
 
@@ -67,11 +68,15 @@ static int pepy_parsed_init(pepy_parsed *self, PyObject *args, PyObject *kwds) {
 		return -2;
 	}
 
+	Py_DECREF(py_str);
+
+	self->timedatestamp = PyInt_FromLong(self->pe->peHeader.nt.FileHeader.TimeDateStamp);
 	return 0;
 }
 
 static void pepy_parsed_dealloc(pepy_parsed *self) {
 	DestructParsedPE(self->pe);
+	Py_XDECREF(self->timedatestamp);
 	self->ob_type->tp_free((PyObject *) self);
 }
 
@@ -100,6 +105,11 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 	if (!PyArg_ParseTuple(args, "KK:pepy_parsed_get_bytes", &start, &len))
 		return NULL;
 
+	/*
+	 * XXX: I want this to be using PyByteArray_FromStringAndSize(),
+	 * but, I'm not sure how to get what I need out of the parsed PE
+	 * to make it work.
+	 */
 	ret = PyList_New(len);
 	if (!ret) {
 		PyErr_SetString(pepy_error, "Unable to create new list.");
@@ -165,6 +175,12 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 	return ret;
 }
 
+static PyMemberDef pepy_parsed_members[] = {
+	{ (char *) "timedatestamp", T_OBJECT, offsetof(pepy_parsed, timedatestamp),
+	  READONLY, (char *) "PE Timestamp" },
+	{ NULL }
+};
+
 static PyMethodDef pepy_parsed_methods[] = {
 	{ "get_entry_point", pepy_parsed_get_entry_point, METH_NOARGS,
 	  "Return the entry point address." },
@@ -205,7 +221,7 @@ static PyTypeObject pepy_parsed_type = {
 	0,                                /* tp_iter */
 	0,                                /* tp_iternext */
 	pepy_parsed_methods,              /* tp_methods */
-	0,                                /* tp_members */
+	pepy_parsed_members,              /* tp_members */
 	0,                                /* tp_getset */
 	0,                                /* tp_base */
 	0,                                /* tp_dict */
