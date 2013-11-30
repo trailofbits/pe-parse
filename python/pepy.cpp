@@ -39,9 +39,6 @@ typedef struct {
 
 typedef struct {
 	PyObject_HEAD
-	uint32_t signature;
-	uint16_t machine;
-	uint32_t timedatestamp;
 	parsed_pe *pe;
 } pepy_parsed;
 
@@ -67,9 +64,6 @@ static int pepy_parsed_init(pepy_parsed *self, PyObject *args, PyObject *kwds) {
 		return -2;
 	}
 
-	self->signature = self->pe->peHeader.nt.Signature;
-	self->machine = self->pe->peHeader.nt.FileHeader.Machine;
-	self->timedatestamp = self->pe->peHeader.nt.FileHeader.TimeDateStamp;
 	return 0;
 }
 
@@ -173,13 +167,31 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 	return ret;
 }
 
-static PyMemberDef pepy_parsed_members[] = {
-	{ (char *) "signature", T_UINT, offsetof(pepy_parsed, signature), RO,
-	  (char *) "Signature" },
-	{ (char *) "machine", T_SHORT, offsetof(pepy_parsed, machine), RO,
-	  (char *) "Machine" },
-	{ (char *) "timedatestamp", T_UINT, offsetof(pepy_parsed, timedatestamp),
-	  RO, (char *) "Timestamp" },
+#define PEPY_PARSED_GET(ATTR, VAL) \
+static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
+	PyObject *ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.VAL); \
+	if (!ret) \
+		PyErr_SetString(PyExc_AttributeError, "Attribute does not exist"); \
+	return ret; \
+}
+
+PEPY_PARSED_GET(signature, nt.Signature)
+PEPY_PARSED_GET(machine, nt.FileHeader.Machine)
+PEPY_PARSED_GET(timedatestamp, nt.FileHeader.TimeDateStamp)
+
+static int pepy_parsed_set_not_writable(PyObject *self, PyObject *value, void *closure) {
+	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
+	return -1;
+}
+
+static PyGetSetDef pepy_parsed_getseters[] = {
+	{ (char *) "signature", (getter) pepy_parsed_get_signature,
+	  (setter) pepy_parsed_set_not_writable, (char *) "PE signature", NULL },
+	{ (char *) "machine", (getter) pepy_parsed_get_machine,
+	  (setter) pepy_parsed_set_not_writable, (char *) "PE machine", NULL },
+	{ (char *) "timedatestamp", (getter) pepy_parsed_get_timedatestamp,
+	  (setter) pepy_parsed_set_not_writable, (char *) "PE timedatestamp",
+	  NULL },
 	{ NULL }
 };
 
@@ -223,8 +235,8 @@ static PyTypeObject pepy_parsed_type = {
 	0,                                         /* tp_iter */
 	0,                                         /* tp_iternext */
 	pepy_parsed_methods,                       /* tp_methods */
-	pepy_parsed_members,                       /* tp_members */
-	0,                                         /* tp_getset */
+	0,                                         /* tp_members */
+	pepy_parsed_getseters,                     /* tp_getset */
 	0,                                         /* tp_base */
 	0,                                         /* tp_dict */
 	0,                                         /* tp_descr_get */
