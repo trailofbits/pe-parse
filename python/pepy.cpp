@@ -42,6 +42,123 @@ typedef struct {
 	parsed_pe *pe;
 } pepy_parsed;
 
+typedef struct {
+	PyObject_HEAD
+	PyObject *name;
+	PyObject *base;
+	PyObject *len;
+	PyObject *virtaddr;
+	PyObject *virtsize;
+	PyObject *numrelocs;
+	PyObject *numlinenums;
+	PyObject *characteristics;
+} pepy_section;
+
+static PyObject *pepy_section_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+	pepy_section *self;
+
+	self = (pepy_section *) type->tp_alloc(type, 0);
+
+	return (PyObject *) self;
+}
+
+static int pepy_section_init(pepy_section *self, PyObject *args, PyObject *kwds) {
+	if (!PyArg_ParseTuple(args, "OOOOOOOO:pepy_section_init", &self->name, &self->base, &self->len, &self->virtaddr, &self->virtsize, &self->numrelocs, &self->numlinenums, &self->characteristics))
+		return -1;
+	return 0;
+}
+
+static void pepy_section_dealloc(pepy_section *self) {
+	Py_XDECREF(self->name);
+	Py_XDECREF(self->base);
+	Py_XDECREF(self->len);
+	Py_XDECREF(self->virtaddr);
+	Py_XDECREF(self->virtsize);
+	Py_XDECREF(self->numrelocs);
+	Py_XDECREF(self->numlinenums);
+	Py_XDECREF(self->characteristics);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
+#define PEPY_SECTION_GET(ATTR) \
+static PyObject *pepy_section_get_##ATTR(PyObject *self, void *closure) { \
+	Py_INCREF(((pepy_section *) self)->ATTR); \
+	return ((pepy_section *) self)->ATTR; \
+}
+
+PEPY_SECTION_GET(name)
+PEPY_SECTION_GET(base)
+PEPY_SECTION_GET(len)
+PEPY_SECTION_GET(virtaddr)
+PEPY_SECTION_GET(virtsize)
+PEPY_SECTION_GET(numrelocs)
+PEPY_SECTION_GET(numlinenums)
+PEPY_SECTION_GET(characteristics)
+
+static int pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure) {
+	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
+	return -1;
+}
+
+#define MAKESECTIONGETSET(GS, DOC) \
+	{ (char *) #GS, (getter) pepy_section_get_##GS, \
+	  (setter) pepy_attr_not_writable, \
+	  (char *) #DOC, NULL }
+
+static PyGetSetDef pepy_section_getseters[] = {
+	MAKESECTIONGETSET(name, "Name"),
+	MAKESECTIONGETSET(base, "Base address"),
+	MAKESECTIONGETSET(len, "Length"),
+	MAKESECTIONGETSET(virtaddr, "Virtual address"),
+	MAKESECTIONGETSET(virtsize, "Virtual size"),
+	MAKESECTIONGETSET(numrelocs, "Number of relocations"),
+	MAKESECTIONGETSET(numlinenums, "Number of line numbers"),
+	MAKESECTIONGETSET(characteristics, "Characteristics"),
+	{ NULL }
+};
+
+static PyTypeObject pepy_section_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,                                 /* ob_size */
+	"pepy.section",                    /* tp_name */
+	sizeof(pepy_section),              /* tp_basicsize */
+	0,                                 /* tp_itemsize */
+	(destructor) pepy_section_dealloc, /* tp_dealloc */
+	0,                                 /* tp_print */
+	0,                                 /* tp_getattr */
+	0,                                 /* tp_setattr */
+	0,                                 /* tp_compare */
+	0,                                 /* tp_repr */
+	0,                                 /* tp_as_number */
+	0,                                 /* tp_as_sequence */
+	0,                                 /* tp_as_mapping */
+	0,                                 /* tp_hash */
+	0,                                 /* tp_call */
+	0,                                 /* tp_str */
+	0,                                 /* tp_getattro */
+	0,                                 /* tp_setattro */
+	0,                                 /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,                /* tp_flags */
+	"pepy section object",             /* tp_doc */
+	0,                                 /* tp_traverse */
+	0,                                 /* tp_clear */
+	0,                                 /* tp_richcompare */
+	0,                                 /* tp_weaklistoffset */
+	0,                                 /* tp_iter */
+	0,                                 /* tp_iternext */
+	0,                                 /* tp_methods */
+	0,                                 /* tp_members */
+	pepy_section_getseters,            /* tp_getset */
+	0,                                 /* tp_base */
+	0,                                 /* tp_dict */
+	0,                                 /* tp_descr_get */
+	0,                                 /* tp_descr_set */
+	0,                                 /* tp_dictoffset */
+	(initproc) pepy_section_init,      /* tp_init */
+	0,                                 /* tp_alloc */
+	pepy_section_new                   /* tp_new */
+};
+
 static PyObject *pepy_parsed_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 	pepy_parsed *self;
 
@@ -120,35 +237,34 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 }
 
 int section_callback(void *cbd, VA base, std::string &name, image_section_header s, bounded_buffer *data) {
-	PyObject *vals;
+	PyObject *sect;
+	PyObject *tuple;
 	PyObject *list = (PyObject *) cbd;
-	PyObject *sect = PyDict_New();
-	Py_ssize_t i = 0;
 
-	/* This order must match the order of the tuple (vals). */
-	const char *keys[] = { "name", "base", "size", "virtaddr", "virtsize",
-	                       "relocs", "linenums", "characteristics" };
-
-	if (!sect)
+	/*
+	 * The tuple item order is important here. It is passed into the
+	 * section type initialization and parsed there.
+	 */
+	tuple = Py_BuildValue("sKKIIHHI", name.c_str(), base, data->bufLen,
+	                      s.VirtualAddress, s.Misc.VirtualSize,
+	                      s.NumberOfRelocations, s.NumberOfLinenumbers,
+	                      s.Characteristics);
+	if (!tuple)
 		return 0;
 
-	vals = Py_BuildValue("sKKIIHHI", name.c_str(), base, data->bufLen,
-	                    s.VirtualAddress, s.Misc.VirtualSize,
-	                    s.NumberOfRelocations, s.NumberOfLinenumbers,
-	                    s.Characteristics);
-	if (!vals)
-		Py_DECREF(sect);
+	sect = pepy_section_new(&pepy_section_type, NULL, NULL);
+	if (!sect) {
+		Py_DECREF(tuple);
+		return 0;
+	}
 
-	for (i = 0; i <= 7; i++) {
-		if (PyDict_SetItemString(sect, keys[i], PyTuple_GetItem(vals, i)) == -1) {
-			Py_DECREF(vals);
-			Py_DECREF(sect);
-			return 0;
-		}
+	if (pepy_section_init((pepy_section *) sect, tuple, NULL) == -1) {
+		PyErr_SetString(pepy_error, "Unable to init new section");
+		return 0;
 	}
 
 	if (PyList_Append(list, sect) == -1) {
-		Py_DECREF(vals);
+		Py_DECREF(tuple);
 		Py_DECREF(sect);
 	}
 
@@ -171,7 +287,7 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
 	PyObject *ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.VAL); \
 	if (!ret) \
-		PyErr_SetString(PyExc_AttributeError, "Attribute does not exist"); \
+		PyErr_SetString(PyExc_AttributeError, "Error getting attribute"); \
 	return ret; \
 }
 
@@ -182,23 +298,18 @@ PEPY_PARSED_GET(timedatestamp, nt.FileHeader.TimeDateStamp)
 PEPY_PARSED_GET(numberofsymbols, nt.FileHeader.NumberOfSymbols)
 PEPY_PARSED_GET(characteristics, nt.FileHeader.Characteristics)
 
-static int pepy_parsed_set_not_writable(PyObject *self, PyObject *value, void *closure) {
-	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
-	return -1;
-}
-
-#define MAKEGETSET(GS, DOC) \
+#define MAKEPARSEDGETSET(GS, DOC) \
 	{ (char *) #GS, (getter) pepy_parsed_get_##GS, \
-	  (setter) pepy_parsed_set_not_writable, \
+	  (setter) pepy_attr_not_writable, \
 	  (char *) #DOC, NULL }
 
 static PyGetSetDef pepy_parsed_getseters[] = {
-	MAKEGETSET(signature, "PE Signature"),
-	MAKEGETSET(machine, "Machine"),
-	MAKEGETSET(numberofsections, "Number of sections"),
-	MAKEGETSET(timedatestamp, "Timedate stamp"),
-	MAKEGETSET(numberofsymbols, "Number of symbols"),
-	MAKEGETSET(characteristics, "Characteristics"),
+	MAKEPARSEDGETSET(signature, "PE Signature"),
+	MAKEPARSEDGETSET(machine, "Machine"),
+	MAKEPARSEDGETSET(numberofsections, "Number of sections"),
+	MAKEPARSEDGETSET(timedatestamp, "Timedate stamp"),
+	MAKEPARSEDGETSET(numberofsymbols, "Number of symbols"),
+	MAKEPARSEDGETSET(characteristics, "Characteristics"),
 	{ NULL }
 };
 
@@ -284,7 +395,7 @@ static PyMethodDef pepy_methods[] = {
 PyMODINIT_FUNC initpepy(void) {
 	PyObject *m;
 
-	if (PyType_Ready(&pepy_parsed_type) < 0)
+	if (PyType_Ready(&pepy_parsed_type) < 0 || PyType_Ready(&pepy_section_type) < 0)
 		return;
 
 	m = Py_InitModule3("pepy", pepy_methods, "Python interface to pe-parse.");
@@ -297,6 +408,9 @@ PyMODINIT_FUNC initpepy(void) {
 
 	Py_INCREF(&pepy_parsed_type);
 	PyModule_AddObject(m, "pepy_parsed", (PyObject *) &pepy_parsed_type);
+
+	Py_INCREF(&pepy_section_type);
+	PyModule_AddObject(m, "pepy_section", (PyObject *) &pepy_section_type);
 
 	PyModule_AddStringMacro(m, PEPY_VERSION);
 

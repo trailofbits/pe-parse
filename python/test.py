@@ -16,4 +16,11 @@ print "Timedatestamp: %s" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.
 print "Bytes at 0x%x: %s" % (ep, byts)
 print "Sections:"
 for sect in p.get_sections():
-    print(sect)
+    print "[+] %s" % sect.name
+    print "\tBase: %s" % hex(sect.base)
+    print "\tLength: %s" % sect.base
+    print "\tVirtual address: %s" % hex(sect.base)
+    print "\tVirtual size: %s" % sect.base
+    print "\tNumber of Relocations: %s" % sect.base
+    print "\tNumber of Line Numbers: %i" % sect.base
+    print "\tCharacteristics: %s" % hex(sect.base)
