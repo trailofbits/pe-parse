@@ -9,6 +9,9 @@ ep = p.get_entry_point()
 byts = p.get_bytes(ep, 8)
 print "Signature: %s" % hex(p.signature)
 print "Machine: %s" % hex(p.machine)
+print "Number of sections: %s" % p.numberofsections
+print "Number of symbols: %s" % p.numberofsymbols
+print "Characteristics: %s" % hex(p.characteristics)
 print "Timedatestamp: %s" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.timedatestamp))
 print "Bytes at 0x%x: %s" % (ep, byts)
 print "Sections:"

@@ -177,21 +177,28 @@ static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
 
 PEPY_PARSED_GET(signature, nt.Signature)
 PEPY_PARSED_GET(machine, nt.FileHeader.Machine)
+PEPY_PARSED_GET(numberofsections, nt.FileHeader.NumberOfSections)
 PEPY_PARSED_GET(timedatestamp, nt.FileHeader.TimeDateStamp)
+PEPY_PARSED_GET(numberofsymbols, nt.FileHeader.NumberOfSymbols)
+PEPY_PARSED_GET(characteristics, nt.FileHeader.Characteristics)
 
 static int pepy_parsed_set_not_writable(PyObject *self, PyObject *value, void *closure) {
 	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
 	return -1;
 }
 
+#define MAKEGETSET(GS, DOC) \
+	{ (char *) #GS, (getter) pepy_parsed_get_##GS, \
+	  (setter) pepy_parsed_set_not_writable, \
+	  (char *) #DOC, NULL }
+
 static PyGetSetDef pepy_parsed_getseters[] = {
-	{ (char *) "signature", (getter) pepy_parsed_get_signature,
-	  (setter) pepy_parsed_set_not_writable, (char *) "PE signature", NULL },
-	{ (char *) "machine", (getter) pepy_parsed_get_machine,
-	  (setter) pepy_parsed_set_not_writable, (char *) "PE machine", NULL },
-	{ (char *) "timedatestamp", (getter) pepy_parsed_get_timedatestamp,
-	  (setter) pepy_parsed_set_not_writable, (char *) "PE timedatestamp",
-	  NULL },
+	MAKEGETSET(signature, "PE Signature"),
+	MAKEGETSET(machine, "Machine"),
+	MAKEGETSET(numberofsections, "Number of sections"),
+	MAKEGETSET(timedatestamp, "Timedate stamp"),
+	MAKEGETSET(numberofsymbols, "Number of symbols"),
+	MAKEGETSET(characteristics, "Characteristics"),
 	{ NULL }
 };
 
