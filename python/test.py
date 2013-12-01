@@ -5,8 +5,6 @@ import time
 import pepy
 
 p = pepy.parse(sys.argv[1])
-ep = p.get_entry_point()
-byts = p.get_bytes(ep, 8)
 print "Magic: %s" % hex(p.magic)
 print "Signature: %s" % hex(p.signature)
 print "Machine: %s" % hex(p.machine)
@@ -39,6 +37,8 @@ print "Size of heap reserve: %s" % hex(p.heapreservesize)
 print "Size of heap commit: %s" % hex(p.heapcommitsize)
 print "Loader flags: %s" % hex(p.loaderflags)
 print "Number of RVA and sizes: %s" % hex(p.rvasandsize)
+ep = p.get_entry_point()
+byts = p.get_bytes(ep, 8)
 print "Bytes at 0x%x: %s" % (ep, byts)
 sections = p.get_sections()
 print "Sections: (%i)" % len(sections)
