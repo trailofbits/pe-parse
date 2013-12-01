@@ -31,6 +31,18 @@
 
 #define PEPY_VERSION "0.1"
 
+/* These are used to across multiple objects. */
+#define PEPY_OBJECT_GET(OBJ, ATTR) \
+static PyObject *pepy_##OBJ##_get_##ATTR(PyObject *self, void *closure) { \
+	Py_INCREF(((pepy_##OBJ *) self)->ATTR); \
+	return ((pepy_##OBJ *) self)->ATTR; \
+}
+
+#define OBJECTGETTER(OBJ, ATTR, DOC) \
+	{ (char *) #ATTR, (getter) pepy_##OBJ##_get_##ATTR, \
+	  (setter) pepy_attr_not_writable, \
+	  (char *) #DOC, NULL }
+
 static PyObject *pepy_error;
 
 typedef struct {
@@ -95,25 +107,14 @@ static void pepy_import_dealloc(pepy_import *self) {
 	self->ob_type->tp_free((PyObject *) self);
 }
 
-#define PEPY_IMPORT_GET(ATTR) \
-static PyObject *pepy_import_get_##ATTR(PyObject *self, void *closure) { \
-	Py_INCREF(((pepy_import *) self)->ATTR); \
-	return ((pepy_import *) self)->ATTR; \
-}
-
-PEPY_IMPORT_GET(name)
-PEPY_IMPORT_GET(sym)
-PEPY_IMPORT_GET(addr)
-
-#define MAKEIMPORTGETSET(GS, DOC) \
-	{ (char *) #GS, (getter) pepy_import_get_##GS, \
-	  (setter) pepy_attr_not_writable, \
-	  (char *) #DOC, NULL }
+PEPY_OBJECT_GET(import, name)
+PEPY_OBJECT_GET(import, sym)
+PEPY_OBJECT_GET(import, addr)
 
 static PyGetSetDef pepy_import_getseters[] = {
-	MAKEIMPORTGETSET(name, "Name"),
-	MAKEIMPORTGETSET(sym, "Symbol"),
-	MAKEIMPORTGETSET(addr, "Address"),
+	OBJECTGETTER(import, name, "Name"),
+	OBJECTGETTER(import, sym, "Symbol"),
+	OBJECTGETTER(import, addr, "Address"),
 	{ NULL }
 };
 
@@ -180,25 +181,14 @@ static void pepy_export_dealloc(pepy_export *self) {
 	self->ob_type->tp_free((PyObject *) self);
 }
 
-#define PEPY_EXPORT_GET(ATTR) \
-static PyObject *pepy_export_get_##ATTR(PyObject *self, void *closure) { \
-	Py_INCREF(((pepy_export *) self)->ATTR); \
-	return ((pepy_export *) self)->ATTR; \
-}
-
-PEPY_EXPORT_GET(mod)
-PEPY_EXPORT_GET(func)
-PEPY_EXPORT_GET(addr)
-
-#define MAKEEXPORTGETSET(GS, DOC) \
-	{ (char *) #GS, (getter) pepy_export_get_##GS, \
-	  (setter) pepy_attr_not_writable, \
-	  (char *) #DOC, NULL }
+PEPY_OBJECT_GET(export, mod)
+PEPY_OBJECT_GET(export, func)
+PEPY_OBJECT_GET(export, addr)
 
 static PyGetSetDef pepy_export_getseters[] = {
-	MAKEEXPORTGETSET(mod, "Module"),
-	MAKEEXPORTGETSET(func, "Function"),
-	MAKEEXPORTGETSET(addr, "Address"),
+	OBJECTGETTER(export, mod, "Module"),
+	OBJECTGETTER(export, func, "Function"),
+	OBJECTGETTER(export, addr, "Address"),
 	{ NULL }
 };
 
@@ -270,35 +260,24 @@ static void pepy_section_dealloc(pepy_section *self) {
 	self->ob_type->tp_free((PyObject *) self);
 }
 
-#define PEPY_SECTION_GET(ATTR) \
-static PyObject *pepy_section_get_##ATTR(PyObject *self, void *closure) { \
-	Py_INCREF(((pepy_section *) self)->ATTR); \
-	return ((pepy_section *) self)->ATTR; \
-}
-
-PEPY_SECTION_GET(name)
-PEPY_SECTION_GET(base)
-PEPY_SECTION_GET(length)
-PEPY_SECTION_GET(virtaddr)
-PEPY_SECTION_GET(virtsize)
-PEPY_SECTION_GET(numrelocs)
-PEPY_SECTION_GET(numlinenums)
-PEPY_SECTION_GET(characteristics)
-
-#define MAKESECTIONGETSET(GS, DOC) \
-	{ (char *) #GS, (getter) pepy_section_get_##GS, \
-	  (setter) pepy_attr_not_writable, \
-	  (char *) #DOC, NULL }
+PEPY_OBJECT_GET(section, name)
+PEPY_OBJECT_GET(section, base)
+PEPY_OBJECT_GET(section, length)
+PEPY_OBJECT_GET(section, virtaddr)
+PEPY_OBJECT_GET(section, virtsize)
+PEPY_OBJECT_GET(section, numrelocs)
+PEPY_OBJECT_GET(section, numlinenums)
+PEPY_OBJECT_GET(section, characteristics)
 
 static PyGetSetDef pepy_section_getseters[] = {
-	MAKESECTIONGETSET(name, "Name"),
-	MAKESECTIONGETSET(base, "Base address"),
-	MAKESECTIONGETSET(length, "Length"),
-	MAKESECTIONGETSET(virtaddr, "Virtual address"),
-	MAKESECTIONGETSET(virtsize, "Virtual size"),
-	MAKESECTIONGETSET(numrelocs, "Number of relocations"),
-	MAKESECTIONGETSET(numlinenums, "Number of line numbers"),
-	MAKESECTIONGETSET(characteristics, "Characteristics"),
+	OBJECTGETTER(section, name, "Name"),
+	OBJECTGETTER(section, base, "Base address"),
+	OBJECTGETTER(section, length, "Length"),
+	OBJECTGETTER(section, virtaddr, "Virtual address"),
+	OBJECTGETTER(section, virtsize, "Virtual size"),
+	OBJECTGETTER(section, numrelocs, "Number of relocations"),
+	OBJECTGETTER(section, numlinenums, "Number of line numbers"),
+	OBJECTGETTER(section, characteristics, "Characteristics"),
 	{ NULL }
 };
 
@@ -578,18 +557,13 @@ PEPY_PARSED_GET(timedatestamp, nt.FileHeader.TimeDateStamp)
 PEPY_PARSED_GET(numberofsymbols, nt.FileHeader.NumberOfSymbols)
 PEPY_PARSED_GET(characteristics, nt.FileHeader.Characteristics)
 
-#define MAKEPARSEDGETSET(GS, DOC) \
-	{ (char *) #GS, (getter) pepy_parsed_get_##GS, \
-	  (setter) pepy_attr_not_writable, \
-	  (char *) #DOC, NULL }
-
 static PyGetSetDef pepy_parsed_getseters[] = {
-	MAKEPARSEDGETSET(signature, "PE Signature"),
-	MAKEPARSEDGETSET(machine, "Machine"),
-	MAKEPARSEDGETSET(numberofsections, "Number of sections"),
-	MAKEPARSEDGETSET(timedatestamp, "Timedate stamp"),
-	MAKEPARSEDGETSET(numberofsymbols, "Number of symbols"),
-	MAKEPARSEDGETSET(characteristics, "Characteristics"),
+	OBJECTGETTER(parsed, signature, "PE Signature"),
+	OBJECTGETTER(parsed, machine, "Machine"),
+	OBJECTGETTER(parsed, numberofsections, "Number of sections"),
+	OBJECTGETTER(parsed, timedatestamp, "Timedate stamp"),
+	OBJECTGETTER(parsed, numberofsymbols, "Number of symbols"),
+	OBJECTGETTER(parsed, characteristics, "Characteristics"),
 	{ NULL }
 };
 
