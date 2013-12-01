@@ -556,6 +556,32 @@ PEPY_PARSED_GET(numberofsections, nt.FileHeader.NumberOfSections)
 PEPY_PARSED_GET(timedatestamp, nt.FileHeader.TimeDateStamp)
 PEPY_PARSED_GET(numberofsymbols, nt.FileHeader.NumberOfSymbols)
 PEPY_PARSED_GET(characteristics, nt.FileHeader.Characteristics)
+PEPY_PARSED_GET(magic, nt.OptionalHeader.Magic)
+PEPY_PARSED_GET(majorlinkerver, nt.OptionalHeader.MajorLinkerVersion)
+PEPY_PARSED_GET(minorlinkerver, nt.OptionalHeader.MinorLinkerVersion)
+PEPY_PARSED_GET(codesize, nt.OptionalHeader.SizeOfCode);
+PEPY_PARSED_GET(initdatasize, nt.OptionalHeader.SizeOfInitializedData);
+PEPY_PARSED_GET(uninitdatasize, nt.OptionalHeader.SizeOfUninitializedData);
+PEPY_PARSED_GET(entrypointaddr, nt.OptionalHeader.AddressOfEntryPoint);
+PEPY_PARSED_GET(baseofcode, nt.OptionalHeader.BaseOfCode);
+PEPY_PARSED_GET(baseofdata, nt.OptionalHeader.BaseOfData);
+PEPY_PARSED_GET(imagebase, nt.OptionalHeader.ImageBase);
+PEPY_PARSED_GET(sectionalignement, nt.OptionalHeader.SectionAlignment);
+PEPY_PARSED_GET(filealingment, nt.OptionalHeader.FileAlignment);
+PEPY_PARSED_GET(majorosver, nt.OptionalHeader.MajorOperatingSystemVersion);
+PEPY_PARSED_GET(minorosver, nt.OptionalHeader.MinorOperatingSystemVersion);
+PEPY_PARSED_GET(win32ver, nt.OptionalHeader.Win32VersionValue);
+PEPY_PARSED_GET(imagesize, nt.OptionalHeader.SizeOfImage);
+PEPY_PARSED_GET(headersize, nt.OptionalHeader.SizeOfHeaders);
+PEPY_PARSED_GET(checksum, nt.OptionalHeader.CheckSum);
+PEPY_PARSED_GET(subsystem, nt.OptionalHeader.Subsystem);
+PEPY_PARSED_GET(dllcharacteristics, nt.OptionalHeader.DllCharacteristics);
+PEPY_PARSED_GET(stackreservesize, nt.OptionalHeader.SizeOfStackReserve);
+PEPY_PARSED_GET(stackcommitsize, nt.OptionalHeader.SizeOfStackCommit);
+PEPY_PARSED_GET(heapreservesize, nt.OptionalHeader.SizeOfHeapReserve);
+PEPY_PARSED_GET(heapcommitsize, nt.OptionalHeader.SizeOfHeapCommit);
+PEPY_PARSED_GET(loaderflags, nt.OptionalHeader.LoaderFlags);
+PEPY_PARSED_GET(rvasandsize, nt.OptionalHeader.NumberOfRvaAndSizes);
 
 static PyGetSetDef pepy_parsed_getseters[] = {
 	OBJECTGETTER(parsed, signature, "PE Signature"),
@@ -564,6 +590,32 @@ static PyGetSetDef pepy_parsed_getseters[] = {
 	OBJECTGETTER(parsed, timedatestamp, "Timedate stamp"),
 	OBJECTGETTER(parsed, numberofsymbols, "Number of symbols"),
 	OBJECTGETTER(parsed, characteristics, "Characteristics"),
+	OBJECTGETTER(parsed, magic, "Magic"),
+	OBJECTGETTER(parsed, majorlinkerver, "Major linker version"),
+	OBJECTGETTER(parsed, minorlinkerver, "Minor linker version"),
+	OBJECTGETTER(parsed, codesize, "Size of code"),
+	OBJECTGETTER(parsed, initdatasize, "Size of initialized data"),
+	OBJECTGETTER(parsed, uninitdatasize, "Size of uninitialized data"),
+	OBJECTGETTER(parsed, entrypointaddr, "Address of entry point"),
+	OBJECTGETTER(parsed, baseofcode, "Base address of code"),
+	OBJECTGETTER(parsed, baseofdata, "Base address of data"),
+	OBJECTGETTER(parsed, imagebase, "Image base address"),
+	OBJECTGETTER(parsed, sectionalignement, "Section alignment"),
+	OBJECTGETTER(parsed, filealingment, "File alignment"),
+	OBJECTGETTER(parsed, majorosver, "Major OS version"),
+	OBJECTGETTER(parsed, minorosver, "Minor OS version"),
+	OBJECTGETTER(parsed, win32ver, "Win32 version"),
+	OBJECTGETTER(parsed, imagesize, "Size of image"),
+	OBJECTGETTER(parsed, headersize, "Size of headers"),
+	OBJECTGETTER(parsed, checksum, "Checksum"),
+	OBJECTGETTER(parsed, subsystem, "Subsystem"),
+	OBJECTGETTER(parsed, dllcharacteristics, "DLL characteristics"),
+	OBJECTGETTER(parsed, stackreservesize, "Size of stack reserve"),
+	OBJECTGETTER(parsed, stackcommitsize, "Size of stack commit"),
+	OBJECTGETTER(parsed, heapreservesize, "Size of heap reserve"),
+	OBJECTGETTER(parsed, heapcommitsize, "Size of heap commit"),
+	OBJECTGETTER(parsed, loaderflags, "Loader flags"),
+	OBJECTGETTER(parsed, rvasandsize, "Number of RVA and sizes"),
 	{ NULL }
 };
 
