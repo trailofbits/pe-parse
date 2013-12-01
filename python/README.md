@@ -14,6 +14,8 @@ libraries) you can build pepy.
 
 Using
 =====
+Parsed object
+-------------
 There are a number of objects involved in pepy. The main one is the **parsed**
 object. This object is returned by the *parse* method.
 
@@ -33,38 +35,90 @@ The **parsed** object has a number of methods:
 
 The **parsed** object has a number of attributes:
 
-* signature: PE Signature
-* machine: Machine
-* numberofsections: Number of sections
-* timedatestamp: Timedate stamp
-* numberofsymbols: Number of symbols
-* characteristics: Characteristics
-* magic: Magic
-* majorlinkerver: Major linker version
-* minorlinkerver: Minor linker version
-* codesize: Size of code
-* initdatasize: Size of initialized data
-* uninitdatasize: Size of uninitialized data
-* entrypointaddr: Address of entry point
-* baseofcode: Base address of code
-* baseofdata: Base address of data
-* imagebase: Image base address
-* sectionalignement: Section alignment
-* filealingment: File alignment
-* majorosver: Major OS version
-* minorosver: Minor OS version
-* win32ver: Win32 version
-* imagesize: Size of image
-* headersize: Size of headers
-* checksum: Checksum
-* subsystem: Subsystem
-* dllcharacteristics: DLL characteristics
-* stackreservesize: Size of stack reserve
-* stackcommitsize: Size of stack commit
-* heapreservesize: Size of heap reserve
-* heapcommitsize: Size of heap commit
-* loaderflags: Loader flags
-* rvasandsize: Number of RVA and sizes
+* signature
+* machine
+* numberofsections
+* timedatestamp
+* numberofsymbols
+* characteristics
+* magic
+* majorlinkerver
+* minorlinkerver
+* codesize
+* initdatasize
+* uninitdatasize
+* entrypointaddr
+* baseofcode
+* baseofdata
+* imagebase
+* sectionalignement
+* filealingment
+* majorosver
+* minorosver
+* win32ver
+* imagesize
+* headersize
+* checksum
+* subsystem
+* dllcharacteristics
+* stackreservesize
+* stackcommitsize
+* heapreservesize
+* heapcommitsize
+* loaderflags
+* rvasandsize
+
+Example:
+```
+import time
+import pepy
+
+p = pepy.parse("/path/to/exe")
+print "Timedatestamp: %s" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.timedatestamp))
+ep = p.get_entry_point()
+print "Entry point: 0x%x" % ep
+```
+
+The *get_sections*, *get_imports*, *get_exports* and *get_relocations* methods
+each return a list of objects. The type of object depends upon the method called.
+*get_sections* returns a list of **section** objects, *get_imports* returns a
+list of **import** objects, etc.
+
+
+Section Object
+--------------
+The **section** object has the following attributes:
+
+* base
+* length
+* virtaddr
+* virtsize
+* numrelocs
+* numlinenums
+* characteristics
+
+Import Object
+-------------
+The **import** object has the following attributes:
+
+* sym
+* name
+* addr
+
+Export Object
+-------------
+The **export** object has the following attributes:
+
+* mod
+* func
+* addr
+
+Relocation Object
+-----------------
+The **relocation** object has the following attributes:
+
+* type
+* addr
 
 Authors
 =======
