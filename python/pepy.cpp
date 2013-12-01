@@ -46,13 +46,203 @@ typedef struct {
 	PyObject_HEAD
 	PyObject *name;
 	PyObject *base;
-	PyObject *len;
+	PyObject *length;
 	PyObject *virtaddr;
 	PyObject *virtsize;
 	PyObject *numrelocs;
 	PyObject *numlinenums;
 	PyObject *characteristics;
 } pepy_section;
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *name;
+	PyObject *sym;
+	PyObject *addr;
+} pepy_import;
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *mod;
+	PyObject *func;
+	PyObject *addr;
+} pepy_export;
+
+/* None of the attributes in these objects are writable. */
+static int pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure) {
+	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
+	return -1;
+}
+
+static PyObject *pepy_import_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+	pepy_import *self;
+
+	self = (pepy_import *) type->tp_alloc(type, 0);
+
+	return (PyObject *) self;
+}
+
+static int pepy_import_init(pepy_import *self, PyObject *args, PyObject *kwds) {
+	if (!PyArg_ParseTuple(args, "OOO:pepy_import_init", &self->name, &self->sym, &self->addr))
+		return -1;
+	return 0;
+}
+
+static void pepy_import_dealloc(pepy_import *self) {
+	Py_XDECREF(self->name);
+	Py_XDECREF(self->sym);
+	Py_XDECREF(self->addr);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
+#define PEPY_IMPORT_GET(ATTR) \
+static PyObject *pepy_import_get_##ATTR(PyObject *self, void *closure) { \
+	Py_INCREF(((pepy_import *) self)->ATTR); \
+	return ((pepy_import *) self)->ATTR; \
+}
+
+PEPY_IMPORT_GET(name)
+PEPY_IMPORT_GET(sym)
+PEPY_IMPORT_GET(addr)
+
+#define MAKEIMPORTGETSET(GS, DOC) \
+	{ (char *) #GS, (getter) pepy_import_get_##GS, \
+	  (setter) pepy_attr_not_writable, \
+	  (char *) #DOC, NULL }
+
+static PyGetSetDef pepy_import_getseters[] = {
+	MAKEIMPORTGETSET(name, "Name"),
+	MAKEIMPORTGETSET(sym, "Symbol"),
+	MAKEIMPORTGETSET(addr, "Address"),
+	{ NULL }
+};
+
+static PyTypeObject pepy_import_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,                                /* ob_size */
+	"pepy.import",                    /* tp_name */
+	sizeof(pepy_import),              /* tp_basicsize */
+	0,                                /* tp_itemsize */
+	(destructor) pepy_import_dealloc, /* tp_dealloc */
+	0,                                /* tp_print */
+	0,                                /* tp_getattr */
+	0,                                /* tp_setattr */
+	0,                                /* tp_compare */
+	0,                                /* tp_repr */
+	0,                                /* tp_as_number */
+	0,                                /* tp_as_sequence */
+	0,                                /* tp_as_mapping */
+	0,                                /* tp_hash */
+	0,                                /* tp_call */
+	0,                                /* tp_str */
+	0,                                /* tp_getattro */
+	0,                                /* tp_setattro */
+	0,                                /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,               /* tp_flags */
+	"pepy import object",             /* tp_doc */
+	0,                                /* tp_traverse */
+	0,                                /* tp_clear */
+	0,                                /* tp_richcompare */
+	0,                                /* tp_weaklistoffset */
+	0,                                /* tp_iter */
+	0,                                /* tp_iternext */
+	0,                                /* tp_methods */
+	0,                                /* tp_members */
+	pepy_import_getseters,            /* tp_getset */
+	0,                                /* tp_base */
+	0,                                /* tp_dict */
+	0,                                /* tp_descr_get */
+	0,                                /* tp_descr_set */
+	0,                                /* tp_dictoffset */
+	(initproc) pepy_import_init,      /* tp_init */
+	0,                                /* tp_alloc */
+	pepy_import_new                   /* tp_new */
+};
+
+static PyObject *pepy_export_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+	pepy_export *self;
+
+	self = (pepy_export *) type->tp_alloc(type, 0);
+
+	return (PyObject *) self;
+}
+
+static int pepy_export_init(pepy_export *self, PyObject *args, PyObject *kwds) {
+	if (!PyArg_ParseTuple(args, "OOO:pepy_export_init", &self->mod, &self->func, &self->addr))
+		return -1;
+	return 0;
+}
+
+static void pepy_export_dealloc(pepy_export *self) {
+	Py_XDECREF(self->mod);
+	Py_XDECREF(self->func);
+	Py_XDECREF(self->addr);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
+#define PEPY_EXPORT_GET(ATTR) \
+static PyObject *pepy_export_get_##ATTR(PyObject *self, void *closure) { \
+	Py_INCREF(((pepy_export *) self)->ATTR); \
+	return ((pepy_export *) self)->ATTR; \
+}
+
+PEPY_EXPORT_GET(mod)
+PEPY_EXPORT_GET(func)
+PEPY_EXPORT_GET(addr)
+
+#define MAKEEXPORTGETSET(GS, DOC) \
+	{ (char *) #GS, (getter) pepy_export_get_##GS, \
+	  (setter) pepy_attr_not_writable, \
+	  (char *) #DOC, NULL }
+
+static PyGetSetDef pepy_export_getseters[] = {
+	MAKEEXPORTGETSET(mod, "Module"),
+	MAKEEXPORTGETSET(func, "Function"),
+	MAKEEXPORTGETSET(addr, "Address"),
+	{ NULL }
+};
+
+static PyTypeObject pepy_export_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,                                /* ob_size */
+	"pepy.export",                    /* tp_name */
+	sizeof(pepy_export),              /* tp_basicsize */
+	0,                                /* tp_itemsize */
+	(destructor) pepy_export_dealloc, /* tp_dealloc */
+	0,                                /* tp_print */
+	0,                                /* tp_getattr */
+	0,                                /* tp_setattr */
+	0,                                /* tp_compare */
+	0,                                /* tp_repr */
+	0,                                /* tp_as_number */
+	0,                                /* tp_as_sequence */
+	0,                                /* tp_as_mapping */
+	0,                                /* tp_hash */
+	0,                                /* tp_call */
+	0,                                /* tp_str */
+	0,                                /* tp_getattro */
+	0,                                /* tp_setattro */
+	0,                                /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,               /* tp_flags */
+	"pepy export object",             /* tp_doc */
+	0,                                /* tp_traverse */
+	0,                                /* tp_clear */
+	0,                                /* tp_richcompare */
+	0,                                /* tp_weaklistoffset */
+	0,                                /* tp_iter */
+	0,                                /* tp_iternext */
+	0,                                /* tp_methods */
+	0,                                /* tp_members */
+	pepy_export_getseters,            /* tp_getset */
+	0,                                /* tp_base */
+	0,                                /* tp_dict */
+	0,                                /* tp_descr_get */
+	0,                                /* tp_descr_set */
+	0,                                /* tp_dictoffset */
+	(initproc) pepy_export_init,      /* tp_init */
+	0,                                /* tp_alloc */
+	pepy_export_new                   /* tp_new */
+};
 
 static PyObject *pepy_section_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 	pepy_section *self;
@@ -63,7 +253,7 @@ static PyObject *pepy_section_new(PyTypeObject *type, PyObject *args, PyObject *
 }
 
 static int pepy_section_init(pepy_section *self, PyObject *args, PyObject *kwds) {
-	if (!PyArg_ParseTuple(args, "OOOOOOOO:pepy_section_init", &self->name, &self->base, &self->len, &self->virtaddr, &self->virtsize, &self->numrelocs, &self->numlinenums, &self->characteristics))
+	if (!PyArg_ParseTuple(args, "OOOOOOOO:pepy_section_init", &self->name, &self->base, &self->length, &self->virtaddr, &self->virtsize, &self->numrelocs, &self->numlinenums, &self->characteristics))
 		return -1;
 	return 0;
 }
@@ -71,7 +261,7 @@ static int pepy_section_init(pepy_section *self, PyObject *args, PyObject *kwds)
 static void pepy_section_dealloc(pepy_section *self) {
 	Py_XDECREF(self->name);
 	Py_XDECREF(self->base);
-	Py_XDECREF(self->len);
+	Py_XDECREF(self->length);
 	Py_XDECREF(self->virtaddr);
 	Py_XDECREF(self->virtsize);
 	Py_XDECREF(self->numrelocs);
@@ -88,17 +278,12 @@ static PyObject *pepy_section_get_##ATTR(PyObject *self, void *closure) { \
 
 PEPY_SECTION_GET(name)
 PEPY_SECTION_GET(base)
-PEPY_SECTION_GET(len)
+PEPY_SECTION_GET(length)
 PEPY_SECTION_GET(virtaddr)
 PEPY_SECTION_GET(virtsize)
 PEPY_SECTION_GET(numrelocs)
 PEPY_SECTION_GET(numlinenums)
 PEPY_SECTION_GET(characteristics)
-
-static int pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure) {
-	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
-	return -1;
-}
 
 #define MAKESECTIONGETSET(GS, DOC) \
 	{ (char *) #GS, (getter) pepy_section_get_##GS, \
@@ -108,7 +293,7 @@ static int pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure
 static PyGetSetDef pepy_section_getseters[] = {
 	MAKESECTIONGETSET(name, "Name"),
 	MAKESECTIONGETSET(base, "Base address"),
-	MAKESECTIONGETSET(len, "Length"),
+	MAKESECTIONGETSET(length, "Length"),
 	MAKESECTIONGETSET(virtaddr, "Virtual address"),
 	MAKESECTIONGETSET(virtsize, "Virtual size"),
 	MAKESECTIONGETSET(numrelocs, "Number of relocations"),
@@ -250,22 +435,23 @@ int section_callback(void *cbd, VA base, std::string &name, image_section_header
 	                      s.NumberOfRelocations, s.NumberOfLinenumbers,
 	                      s.Characteristics);
 	if (!tuple)
-		return 0;
+		return 1;
 
 	sect = pepy_section_new(&pepy_section_type, NULL, NULL);
 	if (!sect) {
 		Py_DECREF(tuple);
-		return 0;
+		return 1;
 	}
 
 	if (pepy_section_init((pepy_section *) sect, tuple, NULL) == -1) {
 		PyErr_SetString(pepy_error, "Unable to init new section");
-		return 0;
+		return 1;
 	}
 
 	if (PyList_Append(list, sect) == -1) {
 		Py_DECREF(tuple);
 		Py_DECREF(sect);
+		return 1;
 	}
 
 	return 0;
@@ -278,7 +464,101 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 		return NULL;
 	}
 
-	IterSec(((pepy_parsed *)self)->pe, section_callback, ret);
+	IterSec(((pepy_parsed *) self)->pe, section_callback, ret);
+
+	return ret;
+}
+
+int import_callback(void *cbd, VA addr, std::string &name, std::string &sym) {
+	PyObject *imp;
+	PyObject *tuple;
+	PyObject *list = (PyObject *) cbd;
+
+	/*
+	 * The tuple item order is important here. It is passed into the
+	 * import type initialization and parsed there.
+	 */
+	tuple = Py_BuildValue("ssI", name.c_str(), sym.c_str(), addr);
+	if (!tuple)
+		return 1;
+
+	imp = pepy_import_new(&pepy_import_type, NULL, NULL);
+	if (!imp) {
+		Py_DECREF(tuple);
+		return 1;
+	}
+
+	if (pepy_import_init((pepy_import *) imp, tuple, NULL) == -1) {
+		PyErr_SetString(pepy_error, "Unable to init new section");
+		return 1;
+	}
+
+	if (PyList_Append(list, imp) == -1) {
+		Py_DECREF(tuple);
+		Py_DECREF(imp);
+		return 1;
+	}
+
+	return 0;
+}
+
+static PyObject *pepy_parsed_get_imports(PyObject *self, PyObject *args) {
+	PyObject *ret = PyList_New(0);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to create new list.");
+		return NULL;
+	}
+
+	IterImpVAString(((pepy_parsed *) self)->pe, import_callback, ret);
+
+	return ret;
+}
+
+int export_callback(void *cbd, VA addr, std::string &mod, std::string &func) {
+	PyObject *exp;
+	PyObject *tuple;
+	PyObject *list = (PyObject *) cbd;
+
+	/*
+	 * The tuple item order is important here. It is passed into the
+	 * export type initialization and parsed there.
+	 */
+	tuple = Py_BuildValue("ssI", mod.c_str(), func.c_str(), addr);
+	if (!tuple)
+		return 1;
+
+	exp = pepy_export_new(&pepy_export_type, NULL, NULL);
+	if (!exp) {
+		Py_DECREF(tuple);
+		return 1;
+	}
+
+	if (pepy_export_init((pepy_export *) exp, tuple, NULL) == -1) {
+		PyErr_SetString(pepy_error, "Unable to init new section");
+		return 1;
+	}
+
+	if (PyList_Append(list, exp) == -1) {
+		Py_DECREF(tuple);
+		Py_DECREF(exp);
+		return 1;
+	}
+
+	return 0;
+}
+
+static PyObject *pepy_parsed_get_exports(PyObject *self, PyObject *args) {
+	PyObject *ret = PyList_New(0);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to create new list.");
+		return NULL;
+	}
+
+	/*
+	 * This could use the same callback and object as imports but the names
+	 * of the attributes would be slightly off.
+	 */
+	IterExpVA(((pepy_parsed *) self)->pe, export_callback, ret);
 
 	return ret;
 }
@@ -319,7 +599,11 @@ static PyMethodDef pepy_parsed_methods[] = {
 	{ "get_bytes", pepy_parsed_get_bytes, METH_VARARGS,
 	  "Return the first N bytes at a given address." },
 	{ "get_sections", pepy_parsed_get_sections, METH_NOARGS,
-	  "Return a list of dictionaries describing the sections." },
+	  "Return a list of section objects." },
+	{ "get_imports", pepy_parsed_get_imports, METH_NOARGS,
+	  "Return a list of import objects." },
+	{ "get_exports", pepy_parsed_get_exports, METH_NOARGS,
+	  "Return a list of export objects." },
 	{ NULL }
 };
 
@@ -395,7 +679,10 @@ static PyMethodDef pepy_methods[] = {
 PyMODINIT_FUNC initpepy(void) {
 	PyObject *m;
 
-	if (PyType_Ready(&pepy_parsed_type) < 0 || PyType_Ready(&pepy_section_type) < 0)
+	if (PyType_Ready(&pepy_parsed_type) < 0 ||
+	    PyType_Ready(&pepy_section_type) < 0 ||
+	    PyType_Ready(&pepy_import_type) < 0 ||
+	    PyType_Ready(&pepy_export_type) < 0)
 		return;
 
 	m = Py_InitModule3("pepy", pepy_methods, "Python interface to pe-parse.");
@@ -411,6 +698,12 @@ PyMODINIT_FUNC initpepy(void) {
 
 	Py_INCREF(&pepy_section_type);
 	PyModule_AddObject(m, "pepy_section", (PyObject *) &pepy_section_type);
+
+	Py_INCREF(&pepy_import_type);
+	PyModule_AddObject(m, "pepy_import", (PyObject *) &pepy_import_type);
+
+	Py_INCREF(&pepy_export_type);
+	PyModule_AddObject(m, "pepy_export", (PyObject *) &pepy_export_type);
 
 	PyModule_AddStringMacro(m, PEPY_VERSION);
 

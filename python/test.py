@@ -14,13 +14,22 @@ print "Number of symbols: %s" % p.numberofsymbols
 print "Characteristics: %s" % hex(p.characteristics)
 print "Timedatestamp: %s" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.timedatestamp))
 print "Bytes at 0x%x: %s" % (ep, byts)
-print "Sections:"
-for sect in p.get_sections():
+sections = p.get_sections()
+print "Sections: (%i)" % len(sections)
+for sect in sections:
     print "[+] %s" % sect.name
     print "\tBase: %s" % hex(sect.base)
-    print "\tLength: %s" % sect.base
-    print "\tVirtual address: %s" % hex(sect.base)
-    print "\tVirtual size: %s" % sect.base
-    print "\tNumber of Relocations: %s" % sect.base
-    print "\tNumber of Line Numbers: %i" % sect.base
-    print "\tCharacteristics: %s" % hex(sect.base)
+    print "\tLength: %s" % sect.length
+    print "\tVirtual address: %s" % hex(sect.virtaddr)
+    print "\tVirtual size: %i" % sect.virtsize
+    print "\tNumber of Relocations: %i" % sect.numrelocs
+    print "\tNumber of Line Numbers: %i" % sect.numlinenums
+    print "\tCharacteristics: %s" % hex(sect.characteristics)
+imports = p.get_imports()
+print "Imports: (%i)" % len(imports)
+for imp in imports:
+    print "[+] Symbol: %s (%s %s)" % (imp.sym, imp.name, hex(imp.addr))
+exports = p.get_exports()
+print "Exports: (%i)" % len(exports)
+for exp in exports:
+    print "[+] Module: %s (%s %s)" % (exp.mod, exp.func, hex(exp.addr))
