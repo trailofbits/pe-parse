@@ -29,8 +29,8 @@ The **parsed** object has a number of methods:
 * get_entry_point: Return the entry point address
 * get_bytes: Return the first N bytes at a given address
 * get_sections: Return a list of section objects
-* get_imports: Return a list of import objects.
-* get_exports: Return a list of export objects.
+* get_imports: Return a list of import objects
+* get_exports: Return a list of export objects
 * get_relocations: Return a list of relocation objects
 
 The **parsed** object has a number of attributes:
@@ -80,10 +80,9 @@ print "Entry point: 0x%x" % ep
 ```
 
 The *get_sections*, *get_imports*, *get_exports* and *get_relocations* methods
-each return a list of objects. The type of object depends upon the method called.
-*get_sections* returns a list of **section** objects, *get_imports* returns a
-list of **import** objects, etc.
-
+each return a list of objects. The type of object depends upon the method
+called.  *get_sections* returns a list of **section** objects, *get_imports*
+returns a list of **import** objects, etc.
 
 Section Object
 --------------
