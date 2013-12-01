@@ -80,6 +80,12 @@ typedef struct {
 	PyObject *addr;
 } pepy_export;
 
+typedef struct {
+	PyObject_HEAD
+	PyObject *type;
+	PyObject *addr;
+} pepy_relocation;
+
 /* None of the attributes in these objects are writable. */
 static int pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure) {
 	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
@@ -232,6 +238,77 @@ static PyTypeObject pepy_export_type = {
 	(initproc) pepy_export_init,      /* tp_init */
 	0,                                /* tp_alloc */
 	pepy_export_new                   /* tp_new */
+};
+
+static PyObject *pepy_relocation_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+	pepy_relocation *self;
+
+	self = (pepy_relocation *) type->tp_alloc(type, 0);
+
+	return (PyObject *) self;
+}
+
+static int pepy_relocation_init(pepy_relocation *self, PyObject *args, PyObject *kwds) {
+	if (!PyArg_ParseTuple(args, "OO:pepy_relocation_init", &self->type, &self->addr))
+		return -1;
+	return 0;
+}
+
+static void pepy_relocation_dealloc(pepy_relocation *self) {
+	Py_XDECREF(self->type);
+	Py_XDECREF(self->addr);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
+PEPY_OBJECT_GET(relocation, type)
+PEPY_OBJECT_GET(relocation, addr)
+
+static PyGetSetDef pepy_relocation_getseters[] = {
+	OBJECTGETTER(relocation, type, "Type"),
+	OBJECTGETTER(relocation, addr, "Address"),
+	{ NULL }
+};
+
+static PyTypeObject pepy_relocation_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,                                    /* ob_size */
+	"pepy.relocation",                    /* tp_name */
+	sizeof(pepy_relocation),              /* tp_basicsize */
+	0,                                    /* tp_itemsize */
+	(destructor) pepy_relocation_dealloc, /* tp_dealloc */
+	0,                                    /* tp_print */
+	0,                                    /* tp_getattr */
+	0,                                    /* tp_setattr */
+	0,                                    /* tp_compare */
+	0,                                    /* tp_repr */
+	0,                                    /* tp_as_number */
+	0,                                    /* tp_as_sequence */
+	0,                                    /* tp_as_mapping */
+	0,                                    /* tp_hash */
+	0,                                    /* tp_call */
+	0,                                    /* tp_str */
+	0,                                    /* tp_getattro */
+	0,                                    /* tp_setattro */
+	0,                                    /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,                   /* tp_flags */
+	"pepy relocation object",             /* tp_doc */
+	0,                                    /* tp_traverse */
+	0,                                    /* tp_clear */
+	0,                                    /* tp_richcompare */
+	0,                                    /* tp_weaklistoffset */
+	0,                                    /* tp_iter */
+	0,                                    /* tp_iternext */
+	0,                                    /* tp_methods */
+	0,                                    /* tp_members */
+	pepy_relocation_getseters,            /* tp_getset */
+	0,                                    /* tp_base */
+	0,                                    /* tp_dict */
+	0,                                    /* tp_descr_get */
+	0,                                    /* tp_descr_set */
+	0,                                    /* tp_dictoffset */
+	(initproc) pepy_relocation_init,      /* tp_init */
+	0,                                    /* tp_alloc */
+	pepy_relocation_new                   /* tp_new */
 };
 
 static PyObject *pepy_section_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -542,6 +619,51 @@ static PyObject *pepy_parsed_get_exports(PyObject *self, PyObject *args) {
 	return ret;
 }
 
+int reloc_callback(void *cbd, VA addr, reloc_type type) {
+	PyObject *reloc;
+	PyObject *tuple;
+	PyObject *list = (PyObject *) cbd;
+
+	/*
+	 * The tuple item order is important here. It is passed into the
+	 * relocation type initialization and parsed there.
+	 */
+	tuple = Py_BuildValue("II", type, addr);
+	if (!tuple)
+		return 1;
+
+	reloc = pepy_relocation_new(&pepy_relocation_type, NULL, NULL);
+	if (!reloc) {
+		Py_DECREF(tuple);
+		return 1;
+	}
+
+	if (pepy_relocation_init((pepy_relocation *) reloc, tuple, NULL) == -1) {
+		PyErr_SetString(pepy_error, "Unable to init new section");
+		return 1;
+	}
+
+	if (PyList_Append(list, reloc) == -1) {
+		Py_DECREF(tuple);
+		Py_DECREF(reloc);
+		return 1;
+	}
+
+	return 0;
+}
+
+static PyObject *pepy_parsed_get_relocations(PyObject *self, PyObject *args) {
+	PyObject *ret = PyList_New(0);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to create new list.");
+		return NULL;
+	}
+
+	IterRelocs(((pepy_parsed *) self)->pe, reloc_callback, ret);
+
+	return ret;
+}
+
 #define PEPY_PARSED_GET(ATTR, VAL) \
 static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
 	PyObject *ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.VAL); \
@@ -630,6 +752,8 @@ static PyMethodDef pepy_parsed_methods[] = {
 	  "Return a list of import objects." },
 	{ "get_exports", pepy_parsed_get_exports, METH_NOARGS,
 	  "Return a list of export objects." },
+	{ "get_relocations", pepy_parsed_get_relocations, METH_NOARGS,
+	  "Return a list of relocation objects." },
 	{ NULL }
 };
 
@@ -708,7 +832,8 @@ PyMODINIT_FUNC initpepy(void) {
 	if (PyType_Ready(&pepy_parsed_type) < 0 ||
 	    PyType_Ready(&pepy_section_type) < 0 ||
 	    PyType_Ready(&pepy_import_type) < 0 ||
-	    PyType_Ready(&pepy_export_type) < 0)
+	    PyType_Ready(&pepy_export_type) < 0 ||
+	    PyType_Ready(&pepy_relocation_type) < 0)
 		return;
 
 	m = Py_InitModule3("pepy", pepy_methods, "Python interface to pe-parse.");
@@ -730,6 +855,9 @@ PyMODINIT_FUNC initpepy(void) {
 
 	Py_INCREF(&pepy_export_type);
 	PyModule_AddObject(m, "pepy_export", (PyObject *) &pepy_export_type);
+
+	Py_INCREF(&pepy_relocation_type);
+	PyModule_AddObject(m, "pepy_relocation", (PyObject *) &pepy_relocation_type);
 
 	PyModule_AddStringMacro(m, PEPY_VERSION);
 

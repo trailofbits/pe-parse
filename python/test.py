@@ -59,3 +59,7 @@ exports = p.get_exports()
 print "Exports: (%i)" % len(exports)
 for exp in exports:
     print "[+] Module: %s (%s %s)" % (exp.mod, exp.func, hex(exp.addr))
+relocations = p.get_relocations()
+print "Relocations: (%i)" % len(relocations)
+for reloc in relocations:
+    print "[+] Type: %s (%s)" % (reloc.type, hex(reloc.addr))
