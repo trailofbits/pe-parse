@@ -450,29 +450,37 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 	uint64_t start, idx;
 	uint8_t b;
 	Py_ssize_t len;
-	PyObject *byte, *ret;
+	PyObject *byte, *tmp, *ret;
 
 	if (!PyArg_ParseTuple(args, "KK:pepy_parsed_get_bytes", &start, &len))
 		return NULL;
 
 	/*
-	 * XXX: I want this to be using PyByteArray_FromStringAndSize(),
-	 * but, I'm not sure how to get what I need out of the parsed PE
-	 * to make it work.
+	 * XXX: I don't think this is the best way to do this. I want a
+	 * ByteArray object to be returned so first put each byte in a
+	 * list and then call PyByteArray_FromObject to get the byte array.
 	 */
-	ret = PyList_New(len);
-	if (!ret) {
+	tmp = PyList_New(len);
+	if (!tmp) {
 		PyErr_SetString(pepy_error, "Unable to create new list.");
 		return NULL;
 	}
 
 	for (idx = 0; idx < len; idx++) {
 		if (!ReadByteAtVA(((pepy_parsed *) self)->pe, start + idx, b))
-			return ret;
+			break;
 
 		byte = PyInt_FromLong(b);
-		PyList_SET_ITEM(ret, idx, byte);
+		PyList_SET_ITEM(tmp, idx, byte);
+		Py_DECREF(byte);
 	}
+
+	ret = PyByteArray_FromObject(tmp);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to create new list.");
+		return NULL;
+	}
+    Py_DECREF(tmp);
 
 	return ret;
 }
