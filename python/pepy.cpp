@@ -480,7 +480,7 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 		PyErr_SetString(pepy_error, "Unable to create new list.");
 		return NULL;
 	}
-    Py_DECREF(tmp);
+	Py_DECREF(tmp);
 
 	return ret;
 }
