@@ -95,6 +95,7 @@ The **section** object has the following attributes:
 * numrelocs
 * numlinenums
 * characteristics
+* data
 
 Import Object
 -------------
