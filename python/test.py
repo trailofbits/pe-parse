@@ -3,6 +3,9 @@
 import sys
 import time
 import pepy
+import binascii
+
+from hashlib import md5
 
 p = pepy.parse(sys.argv[1])
 print "Magic: %s" % hex(p.magic)
@@ -51,6 +54,9 @@ for sect in sections:
     print "\tNumber of Relocations: %i" % sect.numrelocs
     print "\tNumber of Line Numbers: %i" % sect.numlinenums
     print "\tCharacteristics: %s" % hex(sect.characteristics)
+    if sect.length:
+        print "\tFirst 10 bytes: 0x%s" % binascii.hexlify(sect.data[:10])
+    print "\tMD5: %s" % md5(sect.data).hexdigest()
 imports = p.get_imports()
 print "Imports: (%i)" % len(imports)
 for imp in imports:

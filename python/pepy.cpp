@@ -64,6 +64,7 @@ typedef struct {
 	PyObject *numrelocs;
 	PyObject *numlinenums;
 	PyObject *characteristics;
+	PyObject *data;
 } pepy_section;
 
 typedef struct {
@@ -320,7 +321,7 @@ static PyObject *pepy_section_new(PyTypeObject *type, PyObject *args, PyObject *
 }
 
 static int pepy_section_init(pepy_section *self, PyObject *args, PyObject *kwds) {
-	if (!PyArg_ParseTuple(args, "OOOOOOOO:pepy_section_init", &self->name, &self->base, &self->length, &self->virtaddr, &self->virtsize, &self->numrelocs, &self->numlinenums, &self->characteristics))
+	if (!PyArg_ParseTuple(args, "OOOOOOOOO:pepy_section_init", &self->name, &self->base, &self->length, &self->virtaddr, &self->virtsize, &self->numrelocs, &self->numlinenums, &self->characteristics, &self->data))
 		return -1;
 	return 0;
 }
@@ -345,6 +346,7 @@ PEPY_OBJECT_GET(section, virtsize)
 PEPY_OBJECT_GET(section, numrelocs)
 PEPY_OBJECT_GET(section, numlinenums)
 PEPY_OBJECT_GET(section, characteristics)
+PEPY_OBJECT_GET(section, data)
 
 static PyGetSetDef pepy_section_getseters[] = {
 	OBJECTGETTER(section, name, "Name"),
@@ -355,6 +357,7 @@ static PyGetSetDef pepy_section_getseters[] = {
 	OBJECTGETTER(section, numrelocs, "Number of relocations"),
 	OBJECTGETTER(section, numlinenums, "Number of line numbers"),
 	OBJECTGETTER(section, characteristics, "Characteristics"),
+	OBJECTGETTER(section, data, "Section data"),
 	{ NULL }
 };
 
@@ -450,7 +453,7 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 	uint64_t start, idx;
 	uint8_t b;
 	Py_ssize_t len;
-	PyObject *byte, *tmp, *ret;
+	PyObject *byte, *tmp, *ret, *newlist;
 
 	if (!PyArg_ParseTuple(args, "KK:pepy_parsed_get_bytes", &start, &len))
 		return NULL;
@@ -462,7 +465,7 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 	 */
 	tmp = PyList_New(len);
 	if (!tmp) {
-		PyErr_SetString(pepy_error, "Unable to create new list.");
+		PyErr_SetString(pepy_error, "Unable to create initial list.");
 		return NULL;
 	}
 
@@ -475,12 +478,35 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 		Py_DECREF(byte);
 	}
 
+	/* Didn't get all of it for some reason, so give back what we have. */
+	if (idx < len) {
+		newlist = PyList_GetSlice(tmp, 0, idx);
+		if (!newlist) {
+			PyErr_SetString(pepy_error, "Unable to create new list.");
+			return NULL;
+		}
+		Py_DECREF(tmp);
+		tmp = newlist;
+	}
+
 	ret = PyByteArray_FromObject(tmp);
 	if (!ret) {
 		PyErr_SetString(pepy_error, "Unable to create new list.");
 		return NULL;
 	}
 	Py_DECREF(tmp);
+
+	return ret;
+}
+
+static PyObject *pepy_section_data_converter(bounded_buffer *data) {
+	PyObject* ret;
+
+	ret = PyByteArray_FromStringAndSize((const char *) data->buf, data->bufLen);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to convert data to byte array.");
+		return NULL;
+	}
 
 	return ret;
 }
@@ -494,10 +520,11 @@ int section_callback(void *cbd, VA base, std::string &name, image_section_header
 	 * The tuple item order is important here. It is passed into the
 	 * section type initialization and parsed there.
 	 */
-	tuple = Py_BuildValue("sKKIIHHI", name.c_str(), base, data->bufLen,
+	tuple = Py_BuildValue("sKKIIHHIO&", name.c_str(), base, data->bufLen,
 	                      s.VirtualAddress, s.Misc.VirtualSize,
 	                      s.NumberOfRelocations, s.NumberOfLinenumbers,
-	                      s.Characteristics);
+	                      s.Characteristics, pepy_section_data_converter,
+	                      data);
 	if (!tuple)
 		return 1;
 
