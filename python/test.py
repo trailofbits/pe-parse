@@ -42,7 +42,7 @@ print "Loader flags: %s" % hex(p.loaderflags)
 print "Number of RVA and sizes: %s" % hex(p.rvasandsize)
 ep = p.get_entry_point()
 byts = p.get_bytes(ep, 8)
-print "Bytes at %s: %s" % (hex(ep), ' '.join([hex(b) for b in byts]))
+print "Bytes at %s: %s" % (hex(ep), ' '.join(['0x' + binascii.hexlify(b) for b in str(byts)]))
 sections = p.get_sections()
 print "Sections: (%i)" % len(sections)
 for sect in sections:
