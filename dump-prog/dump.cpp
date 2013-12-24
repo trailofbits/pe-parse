@@ -89,6 +89,25 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
   return 0 ;
 }
 
+int printRsrc(void     *N,
+              resource r)
+{
+  if (r.type_str.length())
+    cout << "Type (string): " << r.type_str << endl;
+  else
+    cout << "Type: " << to_string<uint32_t>(r.type, hex) << endl;
+  if (r.name_str.length())
+    cout << "Name (string): " << r.name_str << endl;
+  else
+  cout << "Name: " << to_string<uint32_t>(r.name, hex) << endl;
+  if (r.lang_str.length())
+    cout << "Lang (string): " << r.lang_str << endl;
+  else
+    cout << "Lang: " << to_string<uint32_t>(r.lang, hex) << endl;
+  cout << "Codepage: " << to_string<uint32_t>(r.codepage, hex) << endl;
+  return 0;
+}
+
 int printSecs(void                  *N, 
               VA                    secBase, 
               string                &secName, 
@@ -177,6 +196,7 @@ int main(int argc, char *argv[]) {
         cout << endl;
       }
 
+      IterRsrc(p, printRsrc, NULL);
       DestructParsedPE(p);
     }
   }

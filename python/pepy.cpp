@@ -69,6 +69,18 @@ typedef struct {
 
 typedef struct {
 	PyObject_HEAD
+	PyObject *type_str;
+	PyObject *name_str;
+	PyObject *lang_str;
+	PyObject *type;
+	PyObject *name;
+	PyObject *lang;
+	PyObject *codepage;
+	PyObject *data;
+} pepy_resource;
+
+typedef struct {
+	PyObject_HEAD
 	PyObject *name;
 	PyObject *sym;
 	PyObject *addr;
@@ -335,6 +347,7 @@ static void pepy_section_dealloc(pepy_section *self) {
 	Py_XDECREF(self->numrelocs);
 	Py_XDECREF(self->numlinenums);
 	Py_XDECREF(self->characteristics);
+	Py_XDECREF(self->data);
 	self->ob_type->tp_free((PyObject *) self);
 }
 
@@ -401,6 +414,192 @@ static PyTypeObject pepy_section_type = {
 	(initproc) pepy_section_init,      /* tp_init */
 	0,                                 /* tp_alloc */
 	pepy_section_new                   /* tp_new */
+};
+
+static PyObject *pepy_resource_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+	pepy_resource *self;
+
+	self = (pepy_resource *) type->tp_alloc(type, 0);
+
+	return (PyObject *) self;
+}
+
+static int pepy_resource_init(pepy_resource *self, PyObject *args, PyObject *kwds) {
+	if (!PyArg_ParseTuple(args, "OOOOOOOO:pepy_resource_init", &self->type_str, &self->name_str, &self->lang_str, &self->type, &self->name, &self->lang, &self->codepage, &self->data))
+		return -1;
+
+	return 0;
+}
+
+static void pepy_resource_dealloc(pepy_resource *self) {
+	Py_XDECREF(self->type_str);
+	Py_XDECREF(self->name_str);
+	Py_XDECREF(self->lang_str);
+	Py_XDECREF(self->type);
+	Py_XDECREF(self->name);
+	Py_XDECREF(self->lang);
+	Py_XDECREF(self->codepage);
+	Py_XDECREF(self->data);
+	self->ob_type->tp_free((PyObject *) self);
+}
+
+PEPY_OBJECT_GET(resource, type_str)
+PEPY_OBJECT_GET(resource, name_str)
+PEPY_OBJECT_GET(resource, lang_str)
+PEPY_OBJECT_GET(resource, type)
+PEPY_OBJECT_GET(resource, name)
+PEPY_OBJECT_GET(resource, lang)
+PEPY_OBJECT_GET(resource, codepage)
+PEPY_OBJECT_GET(resource, data)
+
+static PyObject *pepy_resource_type_as_str(PyObject *self, PyObject *args) {
+	PyObject *ret;
+    char *str;
+	long type;
+
+	type = PyInt_AsLong(((pepy_resource *) self)->type);
+	if (type == -1) {
+		if (PyErr_Occurred()) {
+			PyErr_PrintEx(0);
+			return NULL;
+		}
+	}
+	switch ((resource_type) type) {
+		case(RT_CURSOR):
+			str = (char *) "CURSOR";
+			break;
+		case(RT_BITMAP):
+			str = (char *) "BITMAP";
+			break;
+		case(RT_ICON):
+			str = (char *) "ICON";
+			break;
+		case(RT_MENU):
+			str = (char *) "MENU";
+			break;
+		case(RT_DIALOG):
+			str = (char *) "DIALOG";
+			break;
+		case(RT_STRING):
+			str = (char *) "STRING";
+			break;
+		case(RT_FONTDIR):
+			str = (char *) "FONTDIR";
+			break;
+		case(RT_FONT):
+			str = (char *) "FONT";
+			break;
+		case(RT_ACCELERATOR):
+			str = (char *) "ACCELERATOR";
+			break;
+		case(RT_RCDATA):
+			str = (char *) "RCDATA";
+			break;
+		case(RT_MESSAGETABLE):
+			str = (char *) "MESSAGETABLE";
+			break;
+		case(RT_GROUP_CURSOR):
+			str = (char *) "GROUP_CURSOR";
+			break;
+		case(RT_GROUP_ICON):
+			str = (char *) "GROUP_ICON";
+			break;
+		case(RT_VERSION):
+			str = (char *) "VERSION";
+			break;
+		case(RT_DLGINCLUDE):
+			str = (char *) "DLGINCLUDE";
+			break;
+		case(RT_PLUGPLAY):
+			str = (char *) "PLUGPLAY";
+			break;
+		case(RT_VXD):
+			str = (char *) "VXD";
+			break;
+		case(RT_ANICURSOR):
+			str = (char *) "ANICURSOR";
+			break;
+		case(RT_ANIICON):
+			str = (char *) "ANIICON";
+			break;
+		case(RT_HTML):
+			str = (char *) "HTML";
+			break;
+		case(RT_MANIFEST):
+			str = (char *) "MANIFEST";
+			break;
+		default:
+			str = (char *) "UNKNOWN";
+			break;
+	}
+
+	ret = PyString_FromString(str);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to create return string.");
+		return NULL;
+	}
+
+	return ret;
+}
+
+static PyMethodDef pepy_resource_methods[] = {
+	{ "type_as_str", pepy_resource_type_as_str, METH_NOARGS,
+	  "Return the resource type as a string." },
+	{ NULL }
+};
+
+static PyGetSetDef pepy_resource_getseters[] = {
+	OBJECTGETTER(resource, type_str, "Type string"),
+	OBJECTGETTER(resource, name_str, "Name string"),
+	OBJECTGETTER(resource, lang_str, "Lang string"),
+	OBJECTGETTER(resource, type, "Type"),
+	OBJECTGETTER(resource, name, "Name"),
+	OBJECTGETTER(resource, lang, "Language"),
+	OBJECTGETTER(resource, codepage, "Codepage"),
+	OBJECTGETTER(resource, data, "Resource data"),
+	{ NULL }
+};
+
+static PyTypeObject pepy_resource_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,                                  /* ob_size */
+	"pepy.resource",                    /* tp_name */
+	sizeof(pepy_resource),              /* tp_basicsize */
+	0,                                  /* tp_itemsize */
+	(destructor) pepy_resource_dealloc, /* tp_dealloc */
+	0,                                  /* tp_print */
+	0,                                  /* tp_getattr */
+	0,                                  /* tp_setattr */
+	0,                                  /* tp_compare */
+	0,                                  /* tp_repr */
+	0,                                  /* tp_as_number */
+	0,                                  /* tp_as_sequence */
+	0,                                  /* tp_as_mapping */
+	0,                                  /* tp_hash */
+	0,                                  /* tp_call */
+	0,                                  /* tp_str */
+	0,                                  /* tp_getattro */
+	0,                                  /* tp_setattro */
+	0,                                  /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+	"pepy resource object",             /* tp_doc */
+	0,                                  /* tp_traverse */
+	0,                                  /* tp_clear */
+	0,                                  /* tp_richcompare */
+	0,                                  /* tp_weaklistoffset */
+	0,                                  /* tp_iter */
+	0,                                  /* tp_iternext */
+	pepy_resource_methods,              /* tp_methods */
+	0,                                  /* tp_members */
+	pepy_resource_getseters,            /* tp_getset */
+	0,                                  /* tp_base */
+	0,                                  /* tp_dict */
+	0,                                  /* tp_descr_get */
+	0,                                  /* tp_descr_set */
+	0,                                  /* tp_dictoffset */
+	(initproc) pepy_resource_init,      /* tp_init */
+	0,                                  /* tp_alloc */
+	pepy_resource_new                   /* tp_new */
 };
 
 static PyObject *pepy_parsed_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -499,7 +698,8 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 	return ret;
 }
 
-static PyObject *pepy_section_data_converter(bounded_buffer *data) {
+/* This is used to convert bounded buffers into python byte array objects. */
+static PyObject *pepy_data_converter(bounded_buffer *data) {
 	PyObject* ret;
 
 	ret = PyByteArray_FromStringAndSize((const char *) data->buf, data->bufLen);
@@ -523,8 +723,7 @@ int section_callback(void *cbd, VA base, std::string &name, image_section_header
 	tuple = Py_BuildValue("sKKIIHHIO&", name.c_str(), base, data->bufLen,
 	                      s.VirtualAddress, s.Misc.VirtualSize,
 	                      s.NumberOfRelocations, s.NumberOfLinenumbers,
-	                      s.Characteristics, pepy_section_data_converter,
-	                      data);
+	                      s.Characteristics, pepy_data_converter, data);
 	if (!tuple)
 		return 1;
 
@@ -556,6 +755,51 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
 	}
 
 	IterSec(((pepy_parsed *) self)->pe, section_callback, ret);
+
+	return ret;
+}
+
+int resource_callback(void *cbd, resource r) {
+	PyObject *rsrc;
+	PyObject *tuple;
+	PyObject *list = (PyObject *) cbd;
+
+	/*
+	 * The tuple item order is important here. It is passed into the
+	 * section type initialization and parsed there.
+	 */
+	tuple = Py_BuildValue("s#s#s#IIIIO&", r.type_str.c_str(), r.type_str.length(), r.name_str.c_str(), r.name_str.length(), r.lang_str.c_str(), r.lang_str.length(), r.type, r.name, r.lang, r.codepage, pepy_data_converter, r.buf);
+	if (!tuple)
+		return 1;
+
+	rsrc = pepy_resource_new(&pepy_resource_type, NULL, NULL);
+	if (!rsrc) {
+		Py_DECREF(tuple);
+		return 1;
+	}
+
+	if (pepy_resource_init((pepy_resource *) rsrc, tuple, NULL) == -1) {
+		PyErr_SetString(pepy_error, "Unable to init new resource");
+		return 1;
+	}
+
+	if (PyList_Append(list, rsrc) == -1) {
+		Py_DECREF(tuple);
+		Py_DECREF(rsrc);
+		return 1;
+	}
+
+	return 0;
+}
+
+static PyObject *pepy_parsed_get_resources(PyObject *self, PyObject *args) {
+	PyObject *ret = PyList_New(0);
+	if (!ret) {
+		PyErr_SetString(pepy_error, "Unable to create new list.");
+		return NULL;
+	}
+
+	IterRsrc(((pepy_parsed *) self)->pe, resource_callback, ret);
 
 	return ret;
 }
@@ -789,6 +1033,8 @@ static PyMethodDef pepy_parsed_methods[] = {
 	  "Return a list of export objects." },
 	{ "get_relocations", pepy_parsed_get_relocations, METH_NOARGS,
 	  "Return a list of relocation objects." },
+	{ "get_resources", pepy_parsed_get_resources, METH_NOARGS,
+	  "Return a list of resource objects." },
 	{ NULL }
 };
 
@@ -868,7 +1114,8 @@ PyMODINIT_FUNC initpepy(void) {
 	    PyType_Ready(&pepy_section_type) < 0 ||
 	    PyType_Ready(&pepy_import_type) < 0 ||
 	    PyType_Ready(&pepy_export_type) < 0 ||
-	    PyType_Ready(&pepy_relocation_type) < 0)
+	    PyType_Ready(&pepy_relocation_type) < 0 ||
+	    PyType_Ready(&pepy_resource_type) < 0)
 		return;
 
 	m = Py_InitModule3("pepy", pepy_methods, "Python interface to pe-parse.");
@@ -893,6 +1140,9 @@ PyMODINIT_FUNC initpepy(void) {
 
 	Py_INCREF(&pepy_relocation_type);
 	PyModule_AddObject(m, "pepy_relocation", (PyObject *) &pepy_relocation_type);
+
+	Py_INCREF(&pepy_resource_type);
+	PyModule_AddObject(m, "pepy_resource", (PyObject *) &pepy_resource_type);
 
 	PyModule_AddStringMacro(m, PEPY_VERSION);
 

@@ -8,6 +8,7 @@ pe-parse supports these use cases via a minimal API that provides methods for
  * Iterating over the relocations
  * Iterating over the exported functions
  * Iterating over sections
+ * Iterating over resources
  * Reading bytes from specified virtual addresses
  * Retrieving the program entry point
 
