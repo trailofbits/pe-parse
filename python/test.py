@@ -74,15 +74,15 @@ print "Resources: (%i)" % len(resources)
 for resource in resources:
     print "[+] MD5: (%i) %s" % (len(resource.data), md5(resource.data).hexdigest())
     if resource.type_str:
-        print "\tType string (%i): %s" % (len(resource.type_str), resource.type_str)
+        print "\tType string: %s" % resource.type_str
     else:
         print "\tType: %s (%s)" % (hex(resource.type), resource.type_as_str())
     if resource.name_str:
-        print "\tName string (%i): %s" % (len(resource.name_str), resource.name_str)
+        print "\tName string: %s" % resource.name_str
     else:
         print "\tName: %s" % hex(resource.name)
     if resource.lang_str:
-        print "\tLang string (%i): %s" % (len(resource.name_str), resource.lang_str)
+        print "\tLang string: %s" % resource.lang_str
     else:
         print "\tLang: %s" % hex(resource.lang)
     print "\tCodepage: %s" % hex(resource.codepage)
