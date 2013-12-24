@@ -673,6 +673,11 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 			break;
 
 		byte = PyInt_FromLong(b);
+		if (!byte) {
+			Py_DECREF(tmp);
+			PyErr_SetString(pepy_error, "Unable to create integer object.");
+			return NULL;
+		}
 		PyList_SET_ITEM(tmp, idx, byte);
 		Py_DECREF(byte);
 	}
