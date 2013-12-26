@@ -42,7 +42,6 @@ typedef struct _bounded_buffer {
 } bounded_buffer;
 
 struct resource {
-  boost::uint32_t depth;
   std::string    type_str;
   std::string    name_str;
   std::string    lang_str;

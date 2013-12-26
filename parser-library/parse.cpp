@@ -101,22 +101,18 @@ bool parse_resource_id(bounded_buffer *data, ::uint32_t id, string &result) {
   ::uint8_t c;
   ::uint16_t len;
 
-  if (id & 0x80000000) {
-    ::uint32_t start = id & 0x0FFFFFFF;
-    if (readWord(data, start, len) == false)
+  if (readWord(data, id, len) == false)
+    return false;
+  id += 2;
+  for (::uint32_t i = 0; i < len * 2; i++) {
+    if(readByte(data, id + i, c) == false)
       return false;
-    start += 2;
-    for (::uint32_t i = 0; i < len * 2; i++) {
-      if(readByte(data, start + i, c) == false) {
-        return false;
-      }
-      result.push_back((char) c);
-    }
+    result.push_back((char) c);
   }
   return true;
 }
 
-bool parse_resource(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t virtaddr, resource *res, list<resource> &rsrcs) {
+bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t virtaddr, ::uint32_t depth, resource_dir_entry *dirent, list<resource> &rsrcs) {
   ::uint32_t i = 0;
   resource_dir_table rdt;
 
@@ -147,11 +143,17 @@ bool parse_resource(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t virtad
     return true; // This is not a hard error. It does happen.
 
   for (i = 0; i < rdt.NameEntries + rdt.IDEntries; i++) {
-    resource_dir_entry rde;
-    resource *rsrc;
+    resource_dir_entry *rde;
+    if (!dirent) {
+      rde = new resource_dir_entry();
+      if (!rde)
+        return false;
+    } else {
+      rde = dirent;
+    }
 
 #define READ_DWORD(x) \
-    if(readDword(sectionData, o+_offset(resource_dir_entry, x), rde.x) == false) { \
+    if(readDword(sectionData, o+_offset(resource_dir_entry_sz, x), rde->x) == false) { \
       return false; \
     }
 
@@ -159,44 +161,40 @@ bool parse_resource(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t virtad
     READ_DWORD(RVA);
 #undef READ_DWORD
 
-    o += sizeof(resource_dir_entry);
+    o += sizeof(resource_dir_entry_sz);
 
-    if (!res) {
-      rsrc = new resource();
-      if (!rsrc)
-        return false;
-    } else {
-      rsrc = res;
+    if (depth == 0) {
+      rde->type = rde->ID;
+      if (i < rdt.NameEntries) {
+        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->type_str) == false)
+          return false;
+      }
+    } else if (depth == 1) {
+      rde->name = rde->ID;
+      if (i < rdt.NameEntries) {
+        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->name_str) == false)
+          return false;
+      }
+    } else if (depth == 2) {
+      rde->lang = rde->ID;
+      if (i < rdt.NameEntries) {
+        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->lang_str) == false)
+          return false;
+      }
     }
-
-    if (rsrc->depth == 0) {
-      rsrc->type = rde.ID;
-      if (parse_resource_id(sectionData, rde.ID, rsrc->type_str) == false)
-        return false;
-    } else if (rsrc->depth == 1) {
-      rsrc->name = rde.ID;
-      if (parse_resource_id(sectionData, rde.ID, rsrc->name_str) == false)
-        return false;
-    } else if (rsrc->depth == 2) {
-      rsrc->lang = rde.ID;
-      if (parse_resource_id(sectionData, rde.ID, rsrc->lang_str) == false)
-        return false;
-    }
-
-    rsrc->depth++;
 
     // High bit 0 = RVA to RDT.
     // High bit 1 = RVA to RDE.
-    if (rde.RVA & 0x80000000) {
-      if (parse_resource(sectionData, rde.RVA & 0x0FFFFFFF, virtaddr, rsrc, rsrcs) == false)
+    if (rde->RVA & 0x80000000) {
+      if (parse_resource_table(sectionData, rde->RVA & 0x0FFFFFFF, virtaddr, depth + 1, rde, rsrcs) == false)
         return false;
     } else {
       resource_dat_entry rdat;
 
-      o = rde.RVA;
+/* This one is usind rde->RVA as an offset. */
 
 #define READ_DWORD(x) \
-      if(readDword(sectionData, o+_offset(resource_dat_entry, x), rdat.x) == false) { \
+      if(readDword(sectionData, rde->RVA+_offset(resource_dat_entry, x), rdat.x) == false) { \
         return false; \
       }
 
@@ -206,15 +204,24 @@ bool parse_resource(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t virtad
       READ_DWORD(reserved);
 #undef READ_DWORD
 
-      rsrc->codepage = rdat.codepage;
+      resource rsrc;
+
+      rsrc.type_str = rde->type_str;
+      rsrc.name_str = rde->name_str;
+      rsrc.lang_str = rde->lang_str;
+      rsrc.type = rde->type;
+      rsrc.name = rde->name;
+      rsrc.lang = rde->lang;
+      rsrc.codepage = rdat.codepage;
+
       // The start address is (RVA - section virtual address).
       uint32_t start = rdat.RVA - virtaddr;
       if (start > rdat.RVA)
         return false;
-      rsrc->buf = splitBuffer(sectionData, start, start + rdat.size);
-      if (!rsrc->buf)
+      rsrc.buf = splitBuffer(sectionData, start, start + rdat.size);
+      if (!rsrc.buf)
         return false;
-      rsrcs.push_back(*rsrc);
+      rsrcs.push_back(rsrc);
     }
   }
 
@@ -231,7 +238,7 @@ bool getResources(bounded_buffer *b, bounded_buffer *fileBegin, list<section> se
     if (s.sectionName != ".rsrc")
       continue;
 
-    if (parse_resource(s.sectionData, 0, s.sec.VirtualAddress, NULL, rsrcs) == false)
+    if (parse_resource_table(s.sectionData, 0, s.sec.VirtualAddress, 0, NULL, rsrcs) == false)
       return false;
 
     break; // Because there should only be one .rsrc
