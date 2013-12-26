@@ -191,8 +191,14 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
     } else {
       resource_dat_entry rdat;
 
-/* This one is usind rde->RVA as an offset. */
-
+/*
+ * This one is using rde->RVA as an offset.
+ *
+ * This is because we don't want to set o because we have to keep the
+ * original value when we are done parsing this resource data entry.
+ * We could store the original o value and reset it when we are done,
+ * but meh.
+ */
 #define READ_DWORD(x) \
       if(readDword(sectionData, rde->RVA+_offset(resource_dat_entry, x), rdat.x) == false) { \
         return false; \
