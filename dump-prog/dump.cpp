@@ -105,6 +105,8 @@ int printRsrc(void     *N,
   else
     cout << "Lang: " << to_string<uint32_t>(r.lang, hex) << endl;
   cout << "Codepage: " << to_string<uint32_t>(r.codepage, hex) << endl;
+  cout << "RVA: " << to_string<uint32_t>(r.RVA, dec) << endl;
+  cout << "Size: " << to_string<uint32_t>(r.size, dec) << endl;
   return 0;
 }
 

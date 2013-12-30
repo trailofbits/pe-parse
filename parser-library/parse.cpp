@@ -219,14 +219,29 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
       rsrc.name = rde->name;
       rsrc.lang = rde->lang;
       rsrc.codepage = rdat.codepage;
+      rsrc.RVA = rdat.RVA;
+      rsrc.size = rdat.size;
 
       // The start address is (RVA - section virtual address).
       uint32_t start = rdat.RVA - virtaddr;
+      /*
+       * Some binaries (particularly packed) will have invalid addresses here.
+       * If those happen, return a zero length buffer.
+       * If the start is valid, try to get the data and if that fails return
+       * a zero length buffer.
+       */
       if (start > rdat.RVA)
-        return false;
-      rsrc.buf = splitBuffer(sectionData, start, start + rdat.size);
+        rsrc.buf = splitBuffer(sectionData, 0, 0);
+      else {
+        rsrc.buf = splitBuffer(sectionData, start, start + rdat.size);
+        if (!rsrc.buf)
+          rsrc.buf = splitBuffer(sectionData, 0, 0);
+      }
+
+      /* If we can't get even a zero length buffer, something is very wrong. */
       if (!rsrc.buf)
         return false;
+
       rsrcs.push_back(rsrc);
     }
   }

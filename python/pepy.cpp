@@ -76,6 +76,8 @@ typedef struct {
 	PyObject *name;
 	PyObject *lang;
 	PyObject *codepage;
+	PyObject *RVA;
+	PyObject *size;
 	PyObject *data;
 } pepy_resource;
 
@@ -425,7 +427,7 @@ static PyObject *pepy_resource_new(PyTypeObject *type, PyObject *args, PyObject 
 }
 
 static int pepy_resource_init(pepy_resource *self, PyObject *args, PyObject *kwds) {
-	if (!PyArg_ParseTuple(args, "OOOOOOOO:pepy_resource_init", &self->type_str, &self->name_str, &self->lang_str, &self->type, &self->name, &self->lang, &self->codepage, &self->data))
+	if (!PyArg_ParseTuple(args, "OOOOOOOOOO:pepy_resource_init", &self->type_str, &self->name_str, &self->lang_str, &self->type, &self->name, &self->lang, &self->codepage, &self->RVA, &self->size, &self->data))
 		return -1;
 
 	return 0;
@@ -439,6 +441,8 @@ static void pepy_resource_dealloc(pepy_resource *self) {
 	Py_XDECREF(self->name);
 	Py_XDECREF(self->lang);
 	Py_XDECREF(self->codepage);
+	Py_XDECREF(self->RVA);
+	Py_XDECREF(self->size);
 	Py_XDECREF(self->data);
 	self->ob_type->tp_free((PyObject *) self);
 }
@@ -450,6 +454,8 @@ PEPY_OBJECT_GET(resource, type)
 PEPY_OBJECT_GET(resource, name)
 PEPY_OBJECT_GET(resource, lang)
 PEPY_OBJECT_GET(resource, codepage)
+PEPY_OBJECT_GET(resource, RVA)
+PEPY_OBJECT_GET(resource, size)
 PEPY_OBJECT_GET(resource, data)
 
 static PyObject *pepy_resource_type_as_str(PyObject *self, PyObject *args) {
@@ -556,6 +562,8 @@ static PyGetSetDef pepy_resource_getseters[] = {
 	OBJECTGETTER(resource, name, "Name"),
 	OBJECTGETTER(resource, lang, "Language"),
 	OBJECTGETTER(resource, codepage, "Codepage"),
+	OBJECTGETTER(resource, RVA, "RVA"),
+	OBJECTGETTER(resource, size, "Size (specified in RDAT)"),
 	OBJECTGETTER(resource, data, "Resource data"),
 	{ NULL }
 };
@@ -703,11 +711,25 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 	return ret;
 }
 
-/* This is used to convert bounded buffers into python byte array objects. */
+/*
+ * This is used to convert bounded buffers into python byte array objects.
+ * In case the buffer is NULL, return an empty bytearray.
+ */
 static PyObject *pepy_data_converter(bounded_buffer *data) {
 	PyObject* ret;
+	const char *str;
+	Py_ssize_t len;
 
-	ret = PyByteArray_FromStringAndSize((const char *) data->buf, data->bufLen);
+	if (!data || !data->buf) {
+		str = "";
+		len = 0;
+	}
+	else {
+		str = (const char *) data->buf;
+		len = data->bufLen;
+	}
+
+	ret = PyByteArray_FromStringAndSize(str, len);
 	if (!ret) {
 		PyErr_SetString(pepy_error, "Unable to convert data to byte array.");
 		return NULL;
@@ -773,7 +795,7 @@ int resource_callback(void *cbd, resource r) {
 	 * The tuple item order is important here. It is passed into the
 	 * section type initialization and parsed there.
 	 */
-	tuple = Py_BuildValue("s#s#s#IIIIO&", r.type_str.c_str(), r.type_str.length(), r.name_str.c_str(), r.name_str.length(), r.lang_str.c_str(), r.lang_str.length(), r.type, r.name, r.lang, r.codepage, pepy_data_converter, r.buf);
+	tuple = Py_BuildValue("s#s#s#IIIIIIO&", r.type_str.c_str(), r.type_str.length(), r.name_str.c_str(), r.name_str.length(), r.lang_str.c_str(), r.lang_str.length(), r.type, r.name, r.lang, r.codepage, r.RVA, r.size, pepy_data_converter, r.buf);
 	if (!tuple)
 		return 1;
 

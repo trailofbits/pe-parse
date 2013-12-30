@@ -49,6 +49,8 @@ struct resource {
   boost::uint32_t name;
   boost::uint32_t lang;
   boost::uint32_t codepage;
+  boost::uint32_t RVA;
+  boost::uint32_t size;
   bounded_buffer  *buf;
 };
 

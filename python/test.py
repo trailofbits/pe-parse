@@ -86,3 +86,5 @@ for resource in resources:
     else:
         print "\tLang: %s" % hex(resource.lang)
     print "\tCodepage: %s" % hex(resource.codepage)
+    print "\tRVA: %s" % hex(resource.RVA)
+    print "\tSize: %s" % hex(resource.size)
