@@ -132,6 +132,8 @@ The **resource** object has the following attributes:
 * name
 * lang
 * codepage
+* RVA
+* size
 * data
 
 The **resource** object has the following methods:
@@ -171,7 +173,14 @@ for resource in resources:
     else:
         print "\tLang: %s" % hex(resource.lang)
     print "\tCodepage: %s" % hex(resource.codepage)
+    print "\tRVA: %s" % hex(resource.RVA)
+    print "\tSize: %s" % hex(resource.size)
 ```
+
+Note that some binaries (particularly packed) may have corrupt resource entries.
+In these cases you may find that len(resource.data) is 0 but resource.size is
+greater than 0. The *size* attribute is the size of the data as declared by the
+resource data entry.
 
 Authors
 =======
