@@ -42,7 +42,7 @@ print "Loader flags: %s" % hex(p.loaderflags)
 print "Number of RVA and sizes: %s" % hex(p.rvasandsize)
 ep = p.get_entry_point()
 byts = p.get_bytes(ep, 8)
-print "Bytes at %s: %s" % (hex(ep), ' '.join([hex(b) for b in byts]))
+print "Bytes at %s: %s" % (hex(ep), ' '.join(['0x' + binascii.hexlify(b) for b in str(byts)]))
 sections = p.get_sections()
 print "Sections: (%i)" % len(sections)
 for sect in sections:
@@ -69,3 +69,22 @@ relocations = p.get_relocations()
 print "Relocations: (%i)" % len(relocations)
 for reloc in relocations:
     print "[+] Type: %s (%s)" % (reloc.type, hex(reloc.addr))
+resources = p.get_resources()
+print "Resources: (%i)" % len(resources)
+for resource in resources:
+    print "[+] MD5: (%i) %s" % (len(resource.data), md5(resource.data).hexdigest())
+    if resource.type_str:
+        print "\tType string: %s" % resource.type_str
+    else:
+        print "\tType: %s (%s)" % (hex(resource.type), resource.type_as_str())
+    if resource.name_str:
+        print "\tName string: %s" % resource.name_str
+    else:
+        print "\tName: %s" % hex(resource.name)
+    if resource.lang_str:
+        print "\tLang string: %s" % resource.lang_str
+    else:
+        print "\tLang: %s" % hex(resource.lang)
+    print "\tCodepage: %s" % hex(resource.codepage)
+    print "\tRVA: %s" % hex(resource.RVA)
+    print "\tSize: %s" % hex(resource.size)

@@ -168,6 +168,44 @@ struct nt_header_32 {
   optional_header_32  OptionalHeader;
 };
 
+/*
+ * This structure is only used to know how far to move the offset
+ * when parsing resources. The data is stored in a resource_dir_entry
+ * struct but that also has extra information used in the parsing which
+ * causes the size to be inaccurate.
+ */
+struct resource_dir_entry_sz {
+  boost::uint32_t ID;
+  boost::uint32_t RVA;
+};
+
+struct resource_dir_entry {
+  boost::uint32_t ID;
+  boost::uint32_t RVA;
+  boost::uint32_t type;
+  boost::uint32_t name;
+  boost::uint32_t lang;
+  std::string     type_str;
+  std::string     name_str;
+  std::string     lang_str;
+};
+
+struct resource_dir_table {
+  boost::uint32_t Characteristics;
+  boost::uint32_t TimeDateStamp;
+  boost::uint16_t MajorVersion;
+  boost::uint16_t MinorVersion;
+  boost::uint16_t NameEntries;
+  boost::uint16_t IDEntries;
+};
+
+struct resource_dat_entry {
+  boost::uint32_t RVA;
+  boost::uint32_t size;
+  boost::uint32_t codepage;
+  boost::uint32_t reserved;
+};
+
 struct image_section_header {
     boost::uint8_t    Name[NT_SHORT_NAME_LEN];
     union {

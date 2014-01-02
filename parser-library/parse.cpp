@@ -56,6 +56,7 @@ struct reloc {
 
 struct parsed_pe_internal {
   list<section>   secs;
+  list<resource>  rsrcs;
   list<importent> imports;
   list<reloc>     relocs;
   list<exportent> exports;
@@ -78,6 +79,193 @@ bool getSecForVA(list<section> &secs, VA v, section &sec) {
   }
 
   return false;
+}
+
+void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
+  parsed_pe_internal *pint = pe->internal;
+
+  for(list<resource>::iterator rit = pint->rsrcs.begin(), e = pint->rsrcs.end();
+      rit != e;
+      ++rit)
+  {
+    resource r = *rit;
+    if(cb(cbd, r) != 0) {
+      break;
+    }
+  }
+
+  return;
+}
+
+bool parse_resource_id(bounded_buffer *data, ::uint32_t id, string &result) {
+  ::uint8_t c;
+  ::uint16_t len;
+
+  if (readWord(data, id, len) == false)
+    return false;
+  id += 2;
+  for (::uint32_t i = 0; i < len * 2; i++) {
+    if(readByte(data, id + i, c) == false)
+      return false;
+    result.push_back((char) c);
+  }
+  return true;
+}
+
+bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t virtaddr, ::uint32_t depth, resource_dir_entry *dirent, list<resource> &rsrcs) {
+  ::uint32_t i = 0;
+  resource_dir_table rdt;
+
+  if (!sectionData)
+    return false;
+
+#define READ_WORD(x) \
+  if(readWord(sectionData, o+_offset(resource_dir_table, x), rdt.x) == false) { \
+    return false; \
+  }
+#define READ_DWORD(x) \
+  if(readDword(sectionData, o+_offset(resource_dir_table, x), rdt.x) == false) { \
+    return false; \
+  }
+
+  READ_DWORD(Characteristics);
+  READ_DWORD(TimeDateStamp);
+  READ_WORD(MajorVersion);
+  READ_WORD(MinorVersion);
+  READ_WORD(NameEntries);
+  READ_WORD(IDEntries);
+#undef READ_WORD
+#undef READ_DWORD
+
+  o += sizeof(resource_dir_table);
+
+  if (!rdt.NameEntries && !rdt.IDEntries)
+    return true; // This is not a hard error. It does happen.
+
+  for (i = 0; i < rdt.NameEntries + rdt.IDEntries; i++) {
+    resource_dir_entry *rde;
+    if (!dirent) {
+      rde = new resource_dir_entry();
+      if (!rde)
+        return false;
+    } else {
+      rde = dirent;
+    }
+
+#define READ_DWORD(x) \
+    if(readDword(sectionData, o+_offset(resource_dir_entry_sz, x), rde->x) == false) { \
+      return false; \
+    }
+
+    READ_DWORD(ID);
+    READ_DWORD(RVA);
+#undef READ_DWORD
+
+    o += sizeof(resource_dir_entry_sz);
+
+    if (depth == 0) {
+      rde->type = rde->ID;
+      if (i < rdt.NameEntries) {
+        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->type_str) == false)
+          return false;
+      }
+    } else if (depth == 1) {
+      rde->name = rde->ID;
+      if (i < rdt.NameEntries) {
+        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->name_str) == false)
+          return false;
+      }
+    } else if (depth == 2) {
+      rde->lang = rde->ID;
+      if (i < rdt.NameEntries) {
+        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->lang_str) == false)
+          return false;
+      }
+    }
+
+    // High bit 0 = RVA to RDT.
+    // High bit 1 = RVA to RDE.
+    if (rde->RVA & 0x80000000) {
+      if (parse_resource_table(sectionData, rde->RVA & 0x0FFFFFFF, virtaddr, depth + 1, rde, rsrcs) == false)
+        return false;
+    } else {
+      resource_dat_entry rdat;
+
+/*
+ * This one is using rde->RVA as an offset.
+ *
+ * This is because we don't want to set o because we have to keep the
+ * original value when we are done parsing this resource data entry.
+ * We could store the original o value and reset it when we are done,
+ * but meh.
+ */
+#define READ_DWORD(x) \
+      if(readDword(sectionData, rde->RVA+_offset(resource_dat_entry, x), rdat.x) == false) { \
+        return false; \
+      }
+
+      READ_DWORD(RVA);
+      READ_DWORD(size);
+      READ_DWORD(codepage);
+      READ_DWORD(reserved);
+#undef READ_DWORD
+
+      resource rsrc;
+
+      rsrc.type_str = rde->type_str;
+      rsrc.name_str = rde->name_str;
+      rsrc.lang_str = rde->lang_str;
+      rsrc.type = rde->type;
+      rsrc.name = rde->name;
+      rsrc.lang = rde->lang;
+      rsrc.codepage = rdat.codepage;
+      rsrc.RVA = rdat.RVA;
+      rsrc.size = rdat.size;
+
+      // The start address is (RVA - section virtual address).
+      uint32_t start = rdat.RVA - virtaddr;
+      /*
+       * Some binaries (particularly packed) will have invalid addresses here.
+       * If those happen, return a zero length buffer.
+       * If the start is valid, try to get the data and if that fails return
+       * a zero length buffer.
+       */
+      if (start > rdat.RVA)
+        rsrc.buf = splitBuffer(sectionData, 0, 0);
+      else {
+        rsrc.buf = splitBuffer(sectionData, start, start + rdat.size);
+        if (!rsrc.buf)
+          rsrc.buf = splitBuffer(sectionData, 0, 0);
+      }
+
+      /* If we can't get even a zero length buffer, something is very wrong. */
+      if (!rsrc.buf)
+        return false;
+
+      rsrcs.push_back(rsrc);
+    }
+  }
+
+  return true;
+}
+
+bool getResources(bounded_buffer *b, bounded_buffer *fileBegin, list<section> secs, list<resource> &rsrcs) {
+
+  if (!b)
+    return false;
+
+  for (list<section>::iterator sit = secs.begin(), e = secs.end(); sit != e; ++sit) {
+    section s = *sit;
+    if (s.sectionName != ".rsrc")
+      continue;
+
+    if (parse_resource_table(s.sectionData, 0, s.sec.VirtualAddress, 0, NULL, rsrcs) == false)
+      return false;
+
+    break; // Because there should only be one .rsrc
+  }
+
+  return true;
 }
 
 bool getSections( bounded_buffer  *b, 
@@ -352,6 +540,13 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
   bounded_buffer  *file = p->fileBuffer;
   if(getSections(remaining, file, p->peHeader.nt, p->internal->secs) == false) {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    return NULL;
+  }
+
+  if(getResources(remaining, file, p->internal->secs, p->internal->rsrcs) == false) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;

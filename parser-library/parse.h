@@ -41,6 +41,44 @@ typedef struct _bounded_buffer {
   buffer_detail   *detail;
 } bounded_buffer;
 
+struct resource {
+  std::string    type_str;
+  std::string    name_str;
+  std::string    lang_str;
+  boost::uint32_t type;
+  boost::uint32_t name;
+  boost::uint32_t lang;
+  boost::uint32_t codepage;
+  boost::uint32_t RVA;
+  boost::uint32_t size;
+  bounded_buffer  *buf;
+};
+
+// http://msdn.microsoft.com/en-us/library/ms648009(v=vs.85).aspx
+enum resource_type {
+  RT_CURSOR       = 1,
+  RT_BITMAP       = 2,
+  RT_ICON         = 3,
+  RT_MENU         = 4,
+  RT_DIALOG       = 5,
+  RT_STRING       = 6,
+  RT_FONTDIR      = 7,
+  RT_FONT         = 8,
+  RT_ACCELERATOR  = 9,
+  RT_RCDATA       = 10,
+  RT_MESSAGETABLE = 11,
+  RT_GROUP_CURSOR = 12, // MAKEINTRESOURCE((ULONG_PTR)(RT_CURSOR) + 11)
+  RT_GROUP_ICON   = 14, // MAKEINTRESOURCE((ULONG_PTR)(RT_ICON) + 11)
+  RT_VERSION      = 16,
+  RT_DLGINCLUDE   = 17,
+  RT_PLUGPLAY     = 19,
+  RT_VXD          = 20,
+  RT_ANICURSOR    = 21,
+  RT_ANIICON      = 22,
+  RT_HTML         = 23,
+  RT_MANIFEST     = 24
+};
+
 bool readByte(bounded_buffer *b, boost::uint32_t offset, boost::uint8_t &out);
 bool readWord(bounded_buffer *b, boost::uint32_t offset, boost::uint16_t &out);
 bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
@@ -67,6 +105,10 @@ parsed_pe *ParsePEFromFile(const char *filePath);
 
 //destruct a PE context
 void DestructParsedPE(parsed_pe *pe);
+
+//iterate over the resources
+typedef int (*iterRsrc)(void *, resource);
+void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd);
 
 //iterate over the imports by RVA and string 
 typedef int (*iterVAStr)(void *, VA, std::string &, std::string &);
