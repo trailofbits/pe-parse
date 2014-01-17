@@ -29,6 +29,32 @@ THE SOFTWARE.
 
 #include "nt-headers.h"
 
+#define READ_WORD(b, o, inst, member) \
+if(readWord(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  return false; \
+}
+
+#define READ_DWORD(b, o, inst, member) \
+if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  return false; \
+}
+
+#define READ_DWORD_PTR(b, o, inst, member) \
+if(readDword(b, o+_offset(__typeof__(*inst), member), inst->member) == false) { \
+  return false; \
+}
+
+#define READ_BYTE(b, o, inst, member) \
+if(readByte(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  return false; \
+}
+
+/* This variant returns NULL instead of false. */
+#define READ_DWORD_NULL(b, o, inst, member) \
+if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  return NULL; \
+}
+
 typedef boost::uint32_t RVA;
 typedef boost::uint64_t VA;
 
