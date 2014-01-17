@@ -29,7 +29,7 @@ pe-parse is built using [cmake] and depends on [boost].
 
 Authors
 =======
-pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com)
+pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com), with significant contributions from Wesley Shields
 
 [cmake]: http://www.cmake.org/
 [boost]: http://www.boost.org/
