@@ -119,23 +119,12 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
   if (!sectionData)
     return false;
 
-#define READ_WORD(x) \
-  if(readWord(sectionData, o+_offset(resource_dir_table, x), rdt.x) == false) { \
-    return false; \
-  }
-#define READ_DWORD(x) \
-  if(readDword(sectionData, o+_offset(resource_dir_table, x), rdt.x) == false) { \
-    return false; \
-  }
-
-  READ_DWORD(Characteristics);
-  READ_DWORD(TimeDateStamp);
-  READ_WORD(MajorVersion);
-  READ_WORD(MinorVersion);
-  READ_WORD(NameEntries);
-  READ_WORD(IDEntries);
-#undef READ_WORD
-#undef READ_DWORD
+  READ_DWORD(sectionData, o, rdt, Characteristics);
+  READ_DWORD(sectionData, o, rdt, TimeDateStamp);
+  READ_WORD(sectionData, o, rdt, MajorVersion);
+  READ_WORD(sectionData, o, rdt, MinorVersion);
+  READ_WORD(sectionData, o, rdt, NameEntries);
+  READ_WORD(sectionData, o, rdt, IDEntries);
 
   o += sizeof(resource_dir_table);
 
@@ -152,14 +141,8 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
       rde = dirent;
     }
 
-#define READ_DWORD(x) \
-    if(readDword(sectionData, o+_offset(resource_dir_entry_sz, x), rde->x) == false) { \
-      return false; \
-    }
-
-    READ_DWORD(ID);
-    READ_DWORD(RVA);
-#undef READ_DWORD
+    READ_DWORD_PTR(sectionData, o, rde, ID);
+    READ_DWORD_PTR(sectionData, o, rde, RVA);
 
     o += sizeof(resource_dir_entry_sz);
 
@@ -191,24 +174,18 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
     } else {
       resource_dat_entry rdat;
 
-/*
- * This one is using rde->RVA as an offset.
- *
- * This is because we don't want to set o because we have to keep the
- * original value when we are done parsing this resource data entry.
- * We could store the original o value and reset it when we are done,
- * but meh.
- */
-#define READ_DWORD(x) \
-      if(readDword(sectionData, rde->RVA+_offset(resource_dat_entry, x), rdat.x) == false) { \
-        return false; \
-      }
-
-      READ_DWORD(RVA);
-      READ_DWORD(size);
-      READ_DWORD(codepage);
-      READ_DWORD(reserved);
-#undef READ_DWORD
+     /*
+      * This one is using rde->RVA as an offset.
+      *
+      * This is because we don't want to set o because we have to keep the
+      * original value when we are done parsing this resource data entry.
+      * We could store the original o value and reset it when we are done,
+      * but meh.
+      */
+      READ_DWORD(sectionData, rde->RVA, rdat, RVA);
+      READ_DWORD(sectionData, rde->RVA, rdat, size);
+      READ_DWORD(sectionData, rde->RVA, rdat, codepage);
+      READ_DWORD(sectionData, rde->RVA, rdat, reserved);
 
       resource rsrc;
 
@@ -286,26 +263,16 @@ bool getSections( bounded_buffer  *b,
         return false;
       }
     }
-#define READ_WORD(x) \
-  if(readWord(b, o+_offset(image_section_header, x), curSec.x) == false) { \
-    return false; \
-  } 
-#define READ_DWORD(x) \
-  if(readDword(b, o+_offset(image_section_header, x), curSec.x) == false) { \
-    return false; \
-  } 
- 
-    READ_DWORD(Misc.VirtualSize);
-    READ_DWORD(VirtualAddress);
-    READ_DWORD(SizeOfRawData);
-    READ_DWORD(PointerToRawData);
-    READ_DWORD(PointerToRelocations);
-    READ_DWORD(PointerToLinenumbers);
-    READ_WORD(NumberOfRelocations);
-    READ_WORD(NumberOfLinenumbers);
-    READ_DWORD(Characteristics);
-#undef READ_WORD
-#undef READ_DWORD
+
+    READ_DWORD(b, o, curSec, Misc.VirtualSize);
+    READ_DWORD(b, o, curSec, VirtualAddress);
+    READ_DWORD(b, o, curSec, SizeOfRawData);
+    READ_DWORD(b, o, curSec, PointerToRawData);
+    READ_DWORD(b, o, curSec, PointerToRelocations);
+    READ_DWORD(b, o, curSec, PointerToLinenumbers);
+    READ_WORD(b, o, curSec, NumberOfRelocations);
+    READ_WORD(b, o, curSec, NumberOfLinenumbers);
+    READ_DWORD(b, o, curSec, Characteristics);
 
     //now we have the section header information, so fill in a section 
     //object appropriately
@@ -332,58 +299,41 @@ bool getSections( bounded_buffer  *b,
 }
 
 bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
-#define READ_WORD(x) \
-  if(readWord(b, _offset(optional_header_32, x), header.x) == false) { \
-    return false; \
-  } 
-#define READ_DWORD(x) \
-  if(readDword(b, _offset(optional_header_32, x), header.x) == false) { \
-    return false; \
-  } 
-#define READ_BYTE(x) \
-  if(readByte(b, _offset(optional_header_32, x), header.x) == false) { \
-    return false; \
-  }
-
-  READ_WORD(Magic);
+  READ_WORD(b, 0, header, Magic);
 
   if(header.Magic != NT_OPTIONAL_32_MAGIC) {
     return false;
   }
 
-  READ_BYTE(MajorLinkerVersion);
-  READ_BYTE(MinorLinkerVersion);
-  READ_DWORD(SizeOfCode);
-  READ_DWORD(SizeOfInitializedData);
-  READ_DWORD(SizeOfUninitializedData);
-  READ_DWORD(AddressOfEntryPoint);
-  READ_DWORD(BaseOfCode);
-  READ_DWORD(BaseOfData);
-  READ_DWORD(ImageBase);
-  READ_DWORD(SectionAlignment);
-  READ_DWORD(FileAlignment);
-  READ_WORD(MajorOperatingSystemVersion);
-  READ_WORD(MinorOperatingSystemVersion);
-  READ_WORD(MajorImageVersion);
-  READ_WORD(MinorImageVersion);
-  READ_WORD(MajorSubsystemVersion);
-  READ_WORD(MinorSubsystemVersion);
-  READ_DWORD(Win32VersionValue);
-  READ_DWORD(SizeOfImage);
-  READ_DWORD(SizeOfHeaders);
-  READ_DWORD(CheckSum);
-  READ_WORD(Subsystem);
-  READ_WORD(DllCharacteristics);
-  READ_DWORD(SizeOfStackReserve);
-  READ_DWORD(SizeOfStackCommit);
-  READ_DWORD(SizeOfHeapReserve);
-  READ_DWORD(SizeOfHeapCommit);
-  READ_DWORD(LoaderFlags);
-  READ_DWORD(NumberOfRvaAndSizes);
-
-#undef READ_WORD
-#undef READ_DWORD
-#undef READ_BYTE
+  READ_BYTE(b, 0, header, MajorLinkerVersion);
+  READ_BYTE(b, 0, header, MinorLinkerVersion);
+  READ_DWORD(b, 0, header, SizeOfCode);
+  READ_DWORD(b, 0, header, SizeOfInitializedData);
+  READ_DWORD(b, 0, header, SizeOfUninitializedData);
+  READ_DWORD(b, 0, header, AddressOfEntryPoint);
+  READ_DWORD(b, 0, header, BaseOfCode);
+  READ_DWORD(b, 0, header, BaseOfData);
+  READ_DWORD(b, 0, header, ImageBase);
+  READ_DWORD(b, 0, header, SectionAlignment);
+  READ_DWORD(b, 0, header, FileAlignment);
+  READ_WORD(b, 0, header, MajorOperatingSystemVersion);
+  READ_WORD(b, 0, header, MinorOperatingSystemVersion);
+  READ_WORD(b, 0, header, MajorImageVersion);
+  READ_WORD(b, 0, header, MinorImageVersion);
+  READ_WORD(b, 0, header, MajorSubsystemVersion);
+  READ_WORD(b, 0, header, MinorSubsystemVersion);
+  READ_DWORD(b, 0, header, Win32VersionValue);
+  READ_DWORD(b, 0, header, SizeOfImage);
+  READ_DWORD(b, 0, header, SizeOfHeaders);
+  READ_DWORD(b, 0, header, CheckSum);
+  READ_WORD(b, 0, header, Subsystem);
+  READ_WORD(b, 0, header, DllCharacteristics);
+  READ_DWORD(b, 0, header, SizeOfStackReserve);
+  READ_DWORD(b, 0, header, SizeOfStackCommit);
+  READ_DWORD(b, 0, header, SizeOfHeapReserve);
+  READ_DWORD(b, 0, header, SizeOfHeapCommit);
+  READ_DWORD(b, 0, header, LoaderFlags);
+  READ_DWORD(b, 0, header, NumberOfRvaAndSizes);
 
   for(::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
     ::uint32_t  c = (i*sizeof(data_directory));
@@ -405,25 +355,14 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
 }
 
 bool readFileHeader(bounded_buffer *b, file_header &header) {
-#define READ_WORD(x) \
-  if(readWord(b, _offset(file_header, x), header.x) == false) { \
-    return false; \
-  } 
-#define READ_DWORD(x) \
-  if(readDword(b, _offset(file_header, x), header.x) == false) { \
-    return false; \
-  } 
+  READ_WORD(b, 0, header, Machine);
+  READ_WORD(b, 0, header, NumberOfSections);
+  READ_DWORD(b, 0, header, TimeDateStamp);
+  READ_DWORD(b, 0, header, PointerToSymbolTable);
+  READ_DWORD(b, 0, header, NumberOfSymbols);
+  READ_WORD(b, 0, header, SizeOfOptionalHeader);
+  READ_WORD(b, 0, header, Characteristics);
 
-  READ_WORD(Machine);
-  READ_WORD(NumberOfSections);
-  READ_DWORD(TimeDateStamp);
-  READ_DWORD(PointerToSymbolTable);
-  READ_DWORD(NumberOfSymbols);
-  READ_WORD(SizeOfOptionalHeader);
-  READ_WORD(Characteristics);
-
-#undef READ_DWORD
-#undef READ_WORD
   return true;
 }
 
@@ -829,18 +768,14 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     //get import directory from this section
     ::uint32_t  offt = addr - c.sectionBase;
     do {
-#define READ_DWORD(x) \
-    if(readDword(c.sectionData, offt+_offset(import_dir_entry, x), curEnt.x) == false) { \
-      return NULL; \
-    }
       //read each directory entry out
       import_dir_entry  curEnt;
 
-      READ_DWORD(LookupTableRVA);
-      READ_DWORD(TimeStamp);
-      READ_DWORD(ForwarderChain);
-      READ_DWORD(NameRVA);
-      READ_DWORD(AddressRVA);
+      READ_DWORD_NULL(c.sectionData, offt, curEnt, LookupTableRVA);
+      READ_DWORD_NULL(c.sectionData, offt, curEnt, TimeStamp);
+      READ_DWORD_NULL(c.sectionData, offt, curEnt, ForwarderChain);
+      READ_DWORD_NULL(c.sectionData, offt, curEnt, NameRVA);
+      READ_DWORD_NULL(c.sectionData, offt, curEnt, AddressRVA);
 
       //are all the fields in curEnt null? then we break
       if( curEnt.LookupTableRVA == 0 && 
@@ -965,7 +900,6 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
   deleteBuffer(remaining);
 
-#undef READ_DWORD
   return p;
 }
 
