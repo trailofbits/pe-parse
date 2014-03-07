@@ -7,7 +7,12 @@ import binascii
 
 from hashlib import md5
 
-p = pepy.parse(sys.argv[1])
+try:
+    p = pepy.parse(sys.argv[1])
+except pepy.error as e:
+    print e
+    sys.exit(1)
+
 print "Magic: %s" % hex(p.magic)
 print "Signature: %s" % hex(p.signature)
 print "Machine: %s" % hex(p.machine)
@@ -22,7 +27,11 @@ print "Size of initialized data: %s" % hex(p.initdatasize)
 print "Size of uninitialized data: %s" % hex(p.uninitdatasize)
 print "Address of entry point: %s" % hex(p.entrypointaddr)
 print "Base address of code: %s" % hex(p.baseofcode)
-print "Base address of data: %s" % hex(p.baseofdata)
+try:
+    print "Base address of data: %s" % hex(p.baseofdata)
+except:
+    # Not available on PE32+, ignore it.
+    pass
 print "Image base address: %s" % hex(p.imagebase)
 print "Section alignment: %s" % hex(p.sectionalignement)
 print "File alignment: %s" % hex(p.filealingment)

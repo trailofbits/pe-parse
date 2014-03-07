@@ -29,7 +29,7 @@
 #include <structmember.h>
 #include "parse.h"
 
-#define PEPY_VERSION "0.1"
+#define PEPY_VERSION "0.2"
 
 /* These are used to across multiple objects. */
 #define PEPY_OBJECT_GET(OBJ, ATTR) \
@@ -40,6 +40,12 @@ static PyObject *pepy_##OBJ##_get_##ATTR(PyObject *self, void *closure) { \
 
 #define OBJECTGETTER(OBJ, ATTR, DOC) \
 	{ (char *) #ATTR, (getter) pepy_##OBJ##_get_##ATTR, \
+	  (setter) pepy_attr_not_writable, \
+	  (char *) #DOC, NULL }
+
+/* 'OPTIONAL' references the fact that these are from the Optional Header */
+#define OBJECTGETTER_OPTIONAL(ATTR, DOC) \
+	{ (char *) #ATTR, (getter) pepy_parsed_get_optional_##ATTR, \
 	  (setter) pepy_attr_not_writable, \
 	  (char *) #DOC, NULL }
 
@@ -103,7 +109,7 @@ typedef struct {
 
 /* None of the attributes in these objects are writable. */
 static int pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure) {
-	PyErr_SetString(PyExc_TypeError, "Attribute not writable");
+	PyErr_SetString(PyExc_TypeError, "Attribute not writable.");
 	return -1;
 }
 
@@ -761,7 +767,7 @@ int section_callback(void *cbd, VA base, std::string &name, image_section_header
 	}
 
 	if (pepy_section_init((pepy_section *) sect, tuple, NULL) == -1) {
-		PyErr_SetString(pepy_error, "Unable to init new section");
+		PyErr_SetString(pepy_error, "Unable to init new section.");
 		return 1;
 	}
 
@@ -806,7 +812,7 @@ int resource_callback(void *cbd, resource r) {
 	}
 
 	if (pepy_resource_init((pepy_resource *) rsrc, tuple, NULL) == -1) {
-		PyErr_SetString(pepy_error, "Unable to init new resource");
+		PyErr_SetString(pepy_error, "Unable to init new resource.");
 		return 1;
 	}
 
@@ -851,7 +857,7 @@ int import_callback(void *cbd, VA addr, std::string &name, std::string &sym) {
 	}
 
 	if (pepy_import_init((pepy_import *) imp, tuple, NULL) == -1) {
-		PyErr_SetString(pepy_error, "Unable to init new section");
+		PyErr_SetString(pepy_error, "Unable to init new section.");
 		return 1;
 	}
 
@@ -896,7 +902,7 @@ int export_callback(void *cbd, VA addr, std::string &mod, std::string &func) {
 	}
 
 	if (pepy_export_init((pepy_export *) exp, tuple, NULL) == -1) {
-		PyErr_SetString(pepy_error, "Unable to init new section");
+		PyErr_SetString(pepy_error, "Unable to init new section.");
 		return 1;
 	}
 
@@ -945,7 +951,7 @@ int reloc_callback(void *cbd, VA addr, reloc_type type) {
 	}
 
 	if (pepy_relocation_init((pepy_relocation *) reloc, tuple, NULL) == -1) {
-		PyErr_SetString(pepy_error, "Unable to init new section");
+		PyErr_SetString(pepy_error, "Unable to init new section.");
 		return 1;
 	}
 
@@ -972,44 +978,86 @@ static PyObject *pepy_parsed_get_relocations(PyObject *self, PyObject *args) {
 
 #define PEPY_PARSED_GET(ATTR, VAL) \
 static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
-	PyObject *ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.VAL); \
+	PyObject *ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.nt.VAL); \
 	if (!ret) \
-		PyErr_SetString(PyExc_AttributeError, "Error getting attribute"); \
+		PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
 	return ret; \
 }
 
-PEPY_PARSED_GET(signature, nt.Signature)
-PEPY_PARSED_GET(machine, nt.FileHeader.Machine)
-PEPY_PARSED_GET(numberofsections, nt.FileHeader.NumberOfSections)
-PEPY_PARSED_GET(timedatestamp, nt.FileHeader.TimeDateStamp)
-PEPY_PARSED_GET(numberofsymbols, nt.FileHeader.NumberOfSymbols)
-PEPY_PARSED_GET(characteristics, nt.FileHeader.Characteristics)
-PEPY_PARSED_GET(magic, nt.OptionalHeader.Magic)
-PEPY_PARSED_GET(majorlinkerver, nt.OptionalHeader.MajorLinkerVersion)
-PEPY_PARSED_GET(minorlinkerver, nt.OptionalHeader.MinorLinkerVersion)
-PEPY_PARSED_GET(codesize, nt.OptionalHeader.SizeOfCode);
-PEPY_PARSED_GET(initdatasize, nt.OptionalHeader.SizeOfInitializedData);
-PEPY_PARSED_GET(uninitdatasize, nt.OptionalHeader.SizeOfUninitializedData);
-PEPY_PARSED_GET(entrypointaddr, nt.OptionalHeader.AddressOfEntryPoint);
-PEPY_PARSED_GET(baseofcode, nt.OptionalHeader.BaseOfCode);
-PEPY_PARSED_GET(baseofdata, nt.OptionalHeader.BaseOfData);
-PEPY_PARSED_GET(imagebase, nt.OptionalHeader.ImageBase);
-PEPY_PARSED_GET(sectionalignement, nt.OptionalHeader.SectionAlignment);
-PEPY_PARSED_GET(filealingment, nt.OptionalHeader.FileAlignment);
-PEPY_PARSED_GET(majorosver, nt.OptionalHeader.MajorOperatingSystemVersion);
-PEPY_PARSED_GET(minorosver, nt.OptionalHeader.MinorOperatingSystemVersion);
-PEPY_PARSED_GET(win32ver, nt.OptionalHeader.Win32VersionValue);
-PEPY_PARSED_GET(imagesize, nt.OptionalHeader.SizeOfImage);
-PEPY_PARSED_GET(headersize, nt.OptionalHeader.SizeOfHeaders);
-PEPY_PARSED_GET(checksum, nt.OptionalHeader.CheckSum);
-PEPY_PARSED_GET(subsystem, nt.OptionalHeader.Subsystem);
-PEPY_PARSED_GET(dllcharacteristics, nt.OptionalHeader.DllCharacteristics);
-PEPY_PARSED_GET(stackreservesize, nt.OptionalHeader.SizeOfStackReserve);
-PEPY_PARSED_GET(stackcommitsize, nt.OptionalHeader.SizeOfStackCommit);
-PEPY_PARSED_GET(heapreservesize, nt.OptionalHeader.SizeOfHeapReserve);
-PEPY_PARSED_GET(heapcommitsize, nt.OptionalHeader.SizeOfHeapCommit);
-PEPY_PARSED_GET(loaderflags, nt.OptionalHeader.LoaderFlags);
-PEPY_PARSED_GET(rvasandsize, nt.OptionalHeader.NumberOfRvaAndSizes);
+PEPY_PARSED_GET(signature, Signature)
+PEPY_PARSED_GET(machine, FileHeader.Machine)
+PEPY_PARSED_GET(numberofsections, FileHeader.NumberOfSections)
+PEPY_PARSED_GET(timedatestamp, FileHeader.TimeDateStamp)
+PEPY_PARSED_GET(numberofsymbols, FileHeader.NumberOfSymbols)
+PEPY_PARSED_GET(characteristics, FileHeader.Characteristics)
+PEPY_PARSED_GET(magic, OptionalMagic)
+
+/*
+ * This is used to get things from the optional header, which can be either
+ * the PE32 or PE32+ version, depending upon the magic value. Technically
+ * the magic is stored in the OptionalHeader, but to make life easier pe-parse
+ * stores the value in nt_header_32 along with the appropriate optional header.
+ * This is why "magic" is handled above, and not here.
+ */
+#define PEPY_PARSED_GET_OPTIONAL(ATTR, VAL) \
+static PyObject *pepy_parsed_get_optional_##ATTR(PyObject *self, void *closure) { \
+	PyObject *ret = NULL; \
+	if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) { \
+		ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader.VAL); \
+		if (!ret) \
+			PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
+	} else if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) { \
+		ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader64.VAL); \
+		if (!ret) \
+			PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
+	} else { \
+		PyErr_SetString(pepy_error, "Bad magic value."); \
+	} \
+	return ret; \
+}
+
+PEPY_PARSED_GET_OPTIONAL(majorlinkerver, MajorLinkerVersion)
+PEPY_PARSED_GET_OPTIONAL(minorlinkerver, MinorLinkerVersion)
+PEPY_PARSED_GET_OPTIONAL(codesize, SizeOfCode);
+PEPY_PARSED_GET_OPTIONAL(initdatasize, SizeOfInitializedData);
+PEPY_PARSED_GET_OPTIONAL(uninitdatasize, SizeOfUninitializedData);
+PEPY_PARSED_GET_OPTIONAL(entrypointaddr, AddressOfEntryPoint);
+PEPY_PARSED_GET_OPTIONAL(baseofcode, BaseOfCode);
+PEPY_PARSED_GET_OPTIONAL(imagebase, ImageBase);
+PEPY_PARSED_GET_OPTIONAL(sectionalignement, SectionAlignment);
+PEPY_PARSED_GET_OPTIONAL(filealingment, FileAlignment);
+PEPY_PARSED_GET_OPTIONAL(majorosver, MajorOperatingSystemVersion);
+PEPY_PARSED_GET_OPTIONAL(minorosver, MinorOperatingSystemVersion);
+PEPY_PARSED_GET_OPTIONAL(win32ver, Win32VersionValue);
+PEPY_PARSED_GET_OPTIONAL(imagesize, SizeOfImage);
+PEPY_PARSED_GET_OPTIONAL(headersize, SizeOfHeaders);
+PEPY_PARSED_GET_OPTIONAL(checksum, CheckSum);
+PEPY_PARSED_GET_OPTIONAL(subsystem, Subsystem);
+PEPY_PARSED_GET_OPTIONAL(dllcharacteristics, DllCharacteristics);
+PEPY_PARSED_GET_OPTIONAL(stackreservesize, SizeOfStackReserve);
+PEPY_PARSED_GET_OPTIONAL(stackcommitsize, SizeOfStackCommit);
+PEPY_PARSED_GET_OPTIONAL(heapreservesize, SizeOfHeapReserve);
+PEPY_PARSED_GET_OPTIONAL(heapcommitsize, SizeOfHeapCommit);
+PEPY_PARSED_GET_OPTIONAL(loaderflags, LoaderFlags);
+PEPY_PARSED_GET_OPTIONAL(rvasandsize, NumberOfRvaAndSizes);
+
+/*
+ * BaseOfData is only in PE32, not PE32+. Thus, it uses a non-standard
+ * getter function compared to the other shared fields.
+ */
+static PyObject *pepy_parsed_get_optional_baseofdata(PyObject *self, void *closure) {
+	PyObject *ret = NULL;
+	if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+		ret = PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader.BaseOfData);
+		if (!ret)
+			PyErr_SetString(PyExc_AttributeError, "Error getting attribute.");
+	} else if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+		PyErr_SetString(PyExc_AttributeError, "Not available on PE32+.");
+	} else {
+		PyErr_SetString(pepy_error, "Bad magic value.");
+	}
+	return ret;
+}
 
 static PyGetSetDef pepy_parsed_getseters[] = {
 	OBJECTGETTER(parsed, signature, "PE Signature"),
@@ -1019,31 +1067,34 @@ static PyGetSetDef pepy_parsed_getseters[] = {
 	OBJECTGETTER(parsed, numberofsymbols, "Number of symbols"),
 	OBJECTGETTER(parsed, characteristics, "Characteristics"),
 	OBJECTGETTER(parsed, magic, "Magic"),
-	OBJECTGETTER(parsed, majorlinkerver, "Major linker version"),
-	OBJECTGETTER(parsed, minorlinkerver, "Minor linker version"),
-	OBJECTGETTER(parsed, codesize, "Size of code"),
-	OBJECTGETTER(parsed, initdatasize, "Size of initialized data"),
-	OBJECTGETTER(parsed, uninitdatasize, "Size of uninitialized data"),
-	OBJECTGETTER(parsed, entrypointaddr, "Address of entry point"),
-	OBJECTGETTER(parsed, baseofcode, "Base address of code"),
-	OBJECTGETTER(parsed, baseofdata, "Base address of data"),
-	OBJECTGETTER(parsed, imagebase, "Image base address"),
-	OBJECTGETTER(parsed, sectionalignement, "Section alignment"),
-	OBJECTGETTER(parsed, filealingment, "File alignment"),
-	OBJECTGETTER(parsed, majorosver, "Major OS version"),
-	OBJECTGETTER(parsed, minorosver, "Minor OS version"),
-	OBJECTGETTER(parsed, win32ver, "Win32 version"),
-	OBJECTGETTER(parsed, imagesize, "Size of image"),
-	OBJECTGETTER(parsed, headersize, "Size of headers"),
-	OBJECTGETTER(parsed, checksum, "Checksum"),
-	OBJECTGETTER(parsed, subsystem, "Subsystem"),
-	OBJECTGETTER(parsed, dllcharacteristics, "DLL characteristics"),
-	OBJECTGETTER(parsed, stackreservesize, "Size of stack reserve"),
-	OBJECTGETTER(parsed, stackcommitsize, "Size of stack commit"),
-	OBJECTGETTER(parsed, heapreservesize, "Size of heap reserve"),
-	OBJECTGETTER(parsed, heapcommitsize, "Size of heap commit"),
-	OBJECTGETTER(parsed, loaderflags, "Loader flags"),
-	OBJECTGETTER(parsed, rvasandsize, "Number of RVA and sizes"),
+	OBJECTGETTER_OPTIONAL(majorlinkerver, "Major linker version"),
+	OBJECTGETTER_OPTIONAL(minorlinkerver, "Minor linker version"),
+	OBJECTGETTER_OPTIONAL(codesize, "Size of code"),
+	OBJECTGETTER_OPTIONAL(initdatasize, "Size of initialized data"),
+	OBJECTGETTER_OPTIONAL(uninitdatasize, "Size of uninitialized data"),
+	OBJECTGETTER_OPTIONAL(entrypointaddr, "Address of entry point"),
+	OBJECTGETTER_OPTIONAL(baseofcode, "Base address of code"),
+	OBJECTGETTER_OPTIONAL(imagebase, "Image base address"),
+	OBJECTGETTER_OPTIONAL(sectionalignement, "Section alignment"),
+	OBJECTGETTER_OPTIONAL(filealingment, "File alignment"),
+	OBJECTGETTER_OPTIONAL(majorosver, "Major OS version"),
+	OBJECTGETTER_OPTIONAL(minorosver, "Minor OS version"),
+	OBJECTGETTER_OPTIONAL(win32ver, "Win32 version"),
+	OBJECTGETTER_OPTIONAL(imagesize, "Size of image"),
+	OBJECTGETTER_OPTIONAL(headersize, "Size of headers"),
+	OBJECTGETTER_OPTIONAL(checksum, "Checksum"),
+	OBJECTGETTER_OPTIONAL(subsystem, "Subsystem"),
+	OBJECTGETTER_OPTIONAL(dllcharacteristics, "DLL characteristics"),
+	OBJECTGETTER_OPTIONAL(stackreservesize, "Size of stack reserve"),
+	OBJECTGETTER_OPTIONAL(stackcommitsize, "Size of stack commit"),
+	OBJECTGETTER_OPTIONAL(heapreservesize, "Size of heap reserve"),
+	OBJECTGETTER_OPTIONAL(heapcommitsize, "Size of heap commit"),
+	OBJECTGETTER_OPTIONAL(loaderflags, "Loader flags"),
+	OBJECTGETTER_OPTIONAL(rvasandsize, "Number of RVA and sizes"),
+	/* Base of data is only available in PE32, not PE32+. */
+	{ (char *) "baseofdata", (getter) pepy_parsed_get_optional_baseofdata,
+	  (setter) pepy_attr_not_writable,
+	  (char *) "Base address of data", NULL },
 	{ NULL }
 };
 
@@ -1110,6 +1161,7 @@ static PyTypeObject pepy_parsed_type = {
 static PyObject *pepy_parse(PyObject *self, PyObject *args) {
 	PyObject *parsed;
 	int ret;
+	char *err_str = NULL;
 
 	parsed = pepy_parsed_new(&pepy_parsed_type, NULL, NULL);
 	if (!parsed) {
@@ -1119,8 +1171,15 @@ static PyObject *pepy_parse(PyObject *self, PyObject *args) {
 
 	ret = pepy_parsed_init((pepy_parsed *) parsed, args, NULL);
 	if (ret < 0) {
-		if (ret == -2)
-			PyErr_SetString(pepy_error, "Unable to parse PE file.");
+		if (ret == -2) {
+			// error (loc)
+			size_t len = GetPEErrString().length() + GetPEErrLoc().length() + 4;
+			err_str = (char *) malloc(len);
+			if (!err_str)
+				return PyErr_NoMemory();
+			snprintf(err_str, len, "%s (%s)", GetPEErrString().c_str(), GetPEErrLoc().c_str());
+			PyErr_SetString(pepy_error, err_str);
+		}
 		else
 			PyErr_SetString(pepy_error, "Unable to init new parsed object.");
 		return NULL;

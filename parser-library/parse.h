@@ -28,30 +28,47 @@ THE SOFTWARE.
 #include <boost/cstdint.hpp>
 
 #include "nt-headers.h"
+#include "to_string.h"
+
+#define PE_ERR(x) \
+  err = (pe_err) x; \
+  err_loc.assign(__func__); \
+  err_loc += ":" + to_string<std::uint32_t>(__LINE__, dec);
 
 #define READ_WORD(b, o, inst, member) \
 if(readWord(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_DWORD(b, o, inst, member) \
 if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  PE_ERR(PEERR_READ); \
+  return false; \
+}
+
+#define READ_QWORD(b, o, inst, member) \
+if(readQword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_DWORD_PTR(b, o, inst, member) \
 if(readDword(b, o+_offset(__typeof__(*inst), member), inst->member) == false) { \
+  PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_BYTE(b, o, inst, member) \
 if(readByte(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  PE_ERR(PEERR_READ); \
   return false; \
 }
 
 /* This variant returns NULL instead of false. */
 #define READ_DWORD_NULL(b, o, inst, member) \
 if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+  PE_ERR(PEERR_READ); \
   return NULL; \
 }
 
@@ -105,9 +122,23 @@ enum resource_type {
   RT_MANIFEST     = 24
 };
 
+enum pe_err {
+  PEERR_NONE   = 0,
+  PEERR_MEM    = 1,
+  PEERR_HDR    = 2,
+  PEERR_SECT   = 3,
+  PEERR_RESC   = 4,
+  PEERR_SECTVA = 5,
+  PEERR_READ   = 6,
+  PEERR_OPEN   = 7,
+  PEERR_STAT   = 8,
+  PEERR_MAGIC  = 9
+};
+
 bool readByte(bounded_buffer *b, boost::uint32_t offset, boost::uint8_t &out);
 bool readWord(bounded_buffer *b, boost::uint32_t offset, boost::uint16_t &out);
 bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
+bool readQword(bounded_buffer *b, boost::uint32_t offset, boost::uint64_t &out);
 
 bounded_buffer *readFileToFileBuffer(const char *filePath);
 bounded_buffer *splitBuffer(bounded_buffer *b, boost::uint32_t from, boost::uint32_t to);
@@ -125,6 +156,15 @@ typedef struct _parsed_pe {
   parsed_pe_internal  *internal;
   pe_header           peHeader;
 } parsed_pe;
+
+// get parser error status as integer
+int GetPEErr();
+
+// get parser error status as string
+std::string GetPEErrString();
+
+// get parser error location as string
+std::string GetPEErrLoc();
 
 //get a PE parse context from a file 
 parsed_pe *ParsePEFromFile(const char *filePath);
