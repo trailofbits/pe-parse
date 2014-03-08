@@ -35,6 +35,7 @@ const boost::uint16_t MZ_MAGIC = 0x5A4D;
 const boost::uint32_t NT_MAGIC = 0x00004550;
 const boost::uint16_t NUM_DIR_ENTRIES = 16;
 const boost::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
+const boost::uint16_t NT_OPTIONAL_64_MAGIC = 0x20B;
 const boost::uint16_t NT_SHORT_NAME_LEN = 8;
 const boost::uint16_t DIR_EXPORT = 0;
 const boost::uint16_t DIR_IMPORT = 1;
@@ -162,10 +163,49 @@ struct optional_header_32 {
   data_directory    DataDirectory[NUM_DIR_ENTRIES];
 };
 
+/*
+ * This is used for PE32+ binaries. It is similar to optional_header_32
+ * except some fields don't exist here (BaseOfData), and others are bigger.
+ */
+struct optional_header_64 {
+  boost::uint16_t   Magic;
+  boost::uint8_t    MajorLinkerVersion;
+  boost::uint8_t    MinorLinkerVersion;
+  boost::uint32_t   SizeOfCode;
+  boost::uint32_t   SizeOfInitializedData;
+  boost::uint32_t   SizeOfUninitializedData;
+  boost::uint32_t   AddressOfEntryPoint;
+  boost::uint32_t   BaseOfCode;
+  boost::uint64_t   ImageBase;
+  boost::uint32_t   SectionAlignment;
+  boost::uint32_t   FileAlignment;
+  boost::uint16_t   MajorOperatingSystemVersion;
+  boost::uint16_t   MinorOperatingSystemVersion;
+  boost::uint16_t   MajorImageVersion;
+  boost::uint16_t   MinorImageVersion;
+  boost::uint16_t   MajorSubsystemVersion;
+  boost::uint16_t   MinorSubsystemVersion;
+  boost::uint32_t   Win32VersionValue;
+  boost::uint32_t   SizeOfImage;
+  boost::uint32_t   SizeOfHeaders;
+  boost::uint32_t   CheckSum;
+  boost::uint16_t   Subsystem;
+  boost::uint16_t   DllCharacteristics;
+  boost::uint64_t   SizeOfStackReserve;
+  boost::uint64_t   SizeOfStackCommit;
+  boost::uint64_t   SizeOfHeapReserve;
+  boost::uint64_t   SizeOfHeapCommit;
+  boost::uint32_t   LoaderFlags;
+  boost::uint32_t   NumberOfRvaAndSizes;
+  data_directory    DataDirectory[NUM_DIR_ENTRIES];
+};
+
 struct nt_header_32 {
   boost::uint32_t     Signature;
   file_header         FileHeader;
   optional_header_32  OptionalHeader;
+  optional_header_64  OptionalHeader64;
+  boost::uint16_t     OptionalMagic;
 };
 
 /*

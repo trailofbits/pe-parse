@@ -38,6 +38,9 @@ THE SOFTWARE.
 using namespace boost;
 using namespace std;
 
+extern ::uint32_t err;
+extern ::string err_loc;
+
 struct buffer_detail {
 #ifdef WIN32
   HANDLE  file;
@@ -94,6 +97,21 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
   return true;
 }
 
+//TODO: perform endian swap as needed
+bool readQword(bounded_buffer *b, ::uint32_t offset, ::uint64_t &out) {
+  if(b == NULL) {
+    return false;
+  }
+
+  if(offset >= b->bufLen) {
+    return false;
+  }
+
+  ::uint64_t  *tmp = (::uint64_t *)(b->buf+offset);
+  out = *tmp;
+
+  return true;
+}
 
 bounded_buffer *readFileToFileBuffer(const char *filePath) {
 #ifdef WIN32
@@ -120,6 +138,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   int fd = open(filePath, O_RDONLY);
 
   if(fd == -1) {
+    PE_ERR(PEERR_OPEN);
     return NULL;
   }
 #endif
@@ -128,6 +147,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   bounded_buffer  *p = new bounded_buffer();
 
   if(p == NULL) {
+    PE_ERR(PEERR_MEM);
     return NULL;
   }
 
@@ -136,6 +156,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   if(d == NULL) {
     delete p;
+    PE_ERR(PEERR_MEM);
     return NULL;
   }
   memset(d, 0, sizeof(buffer_detail));
@@ -149,6 +170,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   if(hMap == NULL) {
     CloseHandle(h);
+    PE_ERR(PEERR_MEM);
     return NULL;
   }
 
@@ -157,6 +179,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   LPVOID  ptr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 
   if(ptr == NULL) {
+    PE_ERR(PEERR_MEM);
     return NULL;
   }
 
@@ -172,6 +195,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     close(fd);
     delete d;
     delete p;
+    PE_ERR(PEERR_STAT);
     return NULL;
   }
 
@@ -181,6 +205,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     close(fd);
     delete d;
     delete p;
+    PE_ERR(PEERR_MEM);
     return NULL;
   }
 

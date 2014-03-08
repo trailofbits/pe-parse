@@ -29,20 +29,12 @@ THE SOFTWARE.
 using namespace std;
 using namespace boost;
 
-template <class T>
-static
-string to_string(T t, ios_base & (*f)(ios_base&)) {
-    ostringstream oss;
-    oss << f << t;
-    return oss.str();
-}
-
 int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
   cout << "EXP: ";
   cout << mod;
   cout << "!";
   cout << func;
-  cout << ":";
+  cout << ": 0x";
   cout << to_string<uint32_t>(funcAddr, hex);
   cout << endl;
   return 0;
@@ -95,16 +87,16 @@ int printRsrc(void     *N,
   if (r.type_str.length())
     cout << "Type (string): " << r.type_str << endl;
   else
-    cout << "Type: " << to_string<uint32_t>(r.type, hex) << endl;
+    cout << "Type: 0x" << to_string<uint32_t>(r.type, hex) << endl;
   if (r.name_str.length())
     cout << "Name (string): " << r.name_str << endl;
   else
-  cout << "Name: " << to_string<uint32_t>(r.name, hex) << endl;
+    cout << "Name: 0x" << to_string<uint32_t>(r.name, hex) << endl;
   if (r.lang_str.length())
     cout << "Lang (string): " << r.lang_str << endl;
   else
-    cout << "Lang: " << to_string<uint32_t>(r.lang, hex) << endl;
-  cout << "Codepage: " << to_string<uint32_t>(r.codepage, hex) << endl;
+    cout << "Lang: 0x" << to_string<uint32_t>(r.lang, hex) << endl;
+  cout << "Codepage: 0x" << to_string<uint32_t>(r.codepage, hex) << endl;
   cout << "RVA: " << to_string<uint32_t>(r.RVA, dec) << endl;
   cout << "Size: " << to_string<uint32_t>(r.size, dec) << endl;
   return 0;
@@ -117,7 +109,7 @@ int printSecs(void                  *N,
               bounded_buffer        *data) 
 {
   cout << "Sec Name: " << secName << endl;
-  cout << "Sec Base: " << to_string<uint64_t>(secBase, hex) << endl;
+  cout << "Sec Base: 0x" << to_string<uint64_t>(secBase, hex) << endl;
   cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
   return 0;
 }
@@ -130,45 +122,73 @@ int main(int argc, char *argv[]) {
       //print out some things
 #define DUMP_FIELD(x) \
       cout << "" #x << ": 0x"; \
-      cout << to_string<uint32_t>(p->peHeader.x, hex) << endl;
+      cout << to_string<uint32_t>(p->peHeader.nt.x, hex) << endl;
 #define DUMP_DEC_FIELD(x) \
       cout << "" #x << ": "; \
-      cout << to_string<uint32_t>(p->peHeader.x, dec) << endl;
+      cout << to_string<uint32_t>(p->peHeader.nt.x, dec) << endl;
 
-      DUMP_FIELD(nt.Signature);
-      DUMP_FIELD(nt.FileHeader.Machine);
-      DUMP_FIELD(nt.FileHeader.NumberOfSections);
-      DUMP_DEC_FIELD(nt.FileHeader.TimeDateStamp);
-      DUMP_FIELD(nt.FileHeader.PointerToSymbolTable);
-      DUMP_DEC_FIELD(nt.FileHeader.NumberOfSymbols);
-      DUMP_FIELD(nt.FileHeader.SizeOfOptionalHeader);
-      DUMP_FIELD(nt.FileHeader.Characteristics);
-      DUMP_FIELD(nt.OptionalHeader.Magic);
-      DUMP_DEC_FIELD(nt.OptionalHeader.MajorLinkerVersion);
-      DUMP_DEC_FIELD(nt.OptionalHeader.MinorLinkerVersion);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfCode);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfInitializedData);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfUninitializedData);
-      DUMP_FIELD(nt.OptionalHeader.AddressOfEntryPoint);
-      DUMP_FIELD(nt.OptionalHeader.BaseOfCode);
-      DUMP_FIELD(nt.OptionalHeader.BaseOfData);
-      DUMP_FIELD(nt.OptionalHeader.ImageBase);
-      DUMP_FIELD(nt.OptionalHeader.SectionAlignment);
-      DUMP_FIELD(nt.OptionalHeader.FileAlignment);
-      DUMP_DEC_FIELD(nt.OptionalHeader.MajorOperatingSystemVersion);
-      DUMP_DEC_FIELD(nt.OptionalHeader.MinorOperatingSystemVersion);
-      DUMP_DEC_FIELD(nt.OptionalHeader.Win32VersionValue);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfImage);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfHeaders);
-      DUMP_FIELD(nt.OptionalHeader.CheckSum);
-      DUMP_FIELD(nt.OptionalHeader.Subsystem);
-      DUMP_FIELD(nt.OptionalHeader.DllCharacteristics);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfStackReserve);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfStackCommit);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfHeapReserve);
-      DUMP_FIELD(nt.OptionalHeader.SizeOfHeapCommit);
-      DUMP_FIELD(nt.OptionalHeader.LoaderFlags);
-      DUMP_DEC_FIELD(nt.OptionalHeader.NumberOfRvaAndSizes);
+      DUMP_FIELD(Signature);
+      DUMP_FIELD(FileHeader.Machine);
+      DUMP_FIELD(FileHeader.NumberOfSections);
+      DUMP_DEC_FIELD(FileHeader.TimeDateStamp);
+      DUMP_FIELD(FileHeader.PointerToSymbolTable);
+      DUMP_DEC_FIELD(FileHeader.NumberOfSymbols);
+      DUMP_FIELD(FileHeader.SizeOfOptionalHeader);
+      DUMP_FIELD(FileHeader.Characteristics);
+      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+        DUMP_FIELD(OptionalHeader.Magic);
+        DUMP_DEC_FIELD(OptionalHeader.MajorLinkerVersion);
+        DUMP_DEC_FIELD(OptionalHeader.MinorLinkerVersion);
+        DUMP_FIELD(OptionalHeader.SizeOfCode);
+        DUMP_FIELD(OptionalHeader.SizeOfInitializedData);
+        DUMP_FIELD(OptionalHeader.SizeOfUninitializedData);
+        DUMP_FIELD(OptionalHeader.AddressOfEntryPoint);
+        DUMP_FIELD(OptionalHeader.BaseOfCode);
+        DUMP_FIELD(OptionalHeader.BaseOfData);
+        DUMP_FIELD(OptionalHeader.ImageBase);
+        DUMP_FIELD(OptionalHeader.SectionAlignment);
+        DUMP_FIELD(OptionalHeader.FileAlignment);
+        DUMP_DEC_FIELD(OptionalHeader.MajorOperatingSystemVersion);
+        DUMP_DEC_FIELD(OptionalHeader.MinorOperatingSystemVersion);
+        DUMP_DEC_FIELD(OptionalHeader.Win32VersionValue);
+        DUMP_FIELD(OptionalHeader.SizeOfImage);
+        DUMP_FIELD(OptionalHeader.SizeOfHeaders);
+        DUMP_FIELD(OptionalHeader.CheckSum);
+        DUMP_FIELD(OptionalHeader.Subsystem);
+        DUMP_FIELD(OptionalHeader.DllCharacteristics);
+        DUMP_FIELD(OptionalHeader.SizeOfStackReserve);
+        DUMP_FIELD(OptionalHeader.SizeOfStackCommit);
+        DUMP_FIELD(OptionalHeader.SizeOfHeapReserve);
+        DUMP_FIELD(OptionalHeader.SizeOfHeapCommit);
+        DUMP_FIELD(OptionalHeader.LoaderFlags);
+        DUMP_DEC_FIELD(OptionalHeader.NumberOfRvaAndSizes);
+      } else {
+        DUMP_FIELD(OptionalHeader64.Magic);
+        DUMP_DEC_FIELD(OptionalHeader64.MajorLinkerVersion);
+        DUMP_DEC_FIELD(OptionalHeader64.MinorLinkerVersion);
+        DUMP_FIELD(OptionalHeader64.SizeOfCode);
+        DUMP_FIELD(OptionalHeader64.SizeOfInitializedData);
+        DUMP_FIELD(OptionalHeader64.SizeOfUninitializedData);
+        DUMP_FIELD(OptionalHeader64.AddressOfEntryPoint);
+        DUMP_FIELD(OptionalHeader64.BaseOfCode);
+        DUMP_FIELD(OptionalHeader64.ImageBase);
+        DUMP_FIELD(OptionalHeader64.SectionAlignment);
+        DUMP_FIELD(OptionalHeader64.FileAlignment);
+        DUMP_DEC_FIELD(OptionalHeader64.MajorOperatingSystemVersion);
+        DUMP_DEC_FIELD(OptionalHeader64.MinorOperatingSystemVersion);
+        DUMP_DEC_FIELD(OptionalHeader64.Win32VersionValue);
+        DUMP_FIELD(OptionalHeader64.SizeOfImage);
+        DUMP_FIELD(OptionalHeader64.SizeOfHeaders);
+        DUMP_FIELD(OptionalHeader64.CheckSum);
+        DUMP_FIELD(OptionalHeader64.Subsystem);
+        DUMP_FIELD(OptionalHeader64.DllCharacteristics);
+        DUMP_FIELD(OptionalHeader64.SizeOfStackReserve);
+        DUMP_FIELD(OptionalHeader64.SizeOfStackCommit);
+        DUMP_FIELD(OptionalHeader64.SizeOfHeapReserve);
+        DUMP_FIELD(OptionalHeader64.SizeOfHeapCommit);
+        DUMP_FIELD(OptionalHeader64.LoaderFlags);
+        DUMP_DEC_FIELD(OptionalHeader64.NumberOfRvaAndSizes);
+      }
 
 #undef DUMP_FIELD
 #undef DUMP_DEC_FIELD
@@ -198,8 +218,13 @@ int main(int argc, char *argv[]) {
         cout << endl;
       }
 
+      cout << "Resources: " << endl;
       IterRsrc(p, printRsrc, NULL);
       DestructParsedPE(p);
+    }
+    else {
+      cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")" << endl;
+      cout << "Location: " << GetPEErrLoc() << endl;
     }
   }
   return 0;
