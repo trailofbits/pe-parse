@@ -33,7 +33,7 @@ THE SOFTWARE.
 #define PE_ERR(x) \
   err = (pe_err) x; \
   err_loc.assign(__func__); \
-  err_loc += ":" + to_string<std::uint32_t>(__LINE__, dec);
+  err_loc += ":" + to_string<boost::uint32_t>(__LINE__, dec);
 
 #define READ_WORD(b, o, inst, member) \
 if(readWord(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
