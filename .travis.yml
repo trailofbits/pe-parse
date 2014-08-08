@@ -1,7 +1,7 @@
 language: cpp
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install boost-dev
+  - sudo apt-get install -qq boost-dev
 script: cmake . && make
 compiler:
   - clang
