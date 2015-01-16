@@ -249,6 +249,13 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
 
       rsrcs.push_back(rsrc);
     }
+
+    if (depth == 0)
+      rde->type_str.clear();
+    else if (depth == 1)
+      rde->name_str.clear();
+    else if (depth == 2)
+      rde->lang_str.clear();
   }
 
   return true;
