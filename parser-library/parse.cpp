@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include <string.h>
 #include <list>
 #include "parse.h"
 #include "nt-headers.h"
@@ -165,6 +166,7 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
       rde = new resource_dir_entry();
       if (!rde)
         return false;
+      memset(rde, 0, sizeof(*rde));
     } else {
       rde = dirent;
     }
@@ -215,7 +217,7 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
       READ_DWORD(sectionData, rde->RVA, rdat, codepage);
       READ_DWORD(sectionData, rde->RVA, rdat, reserved);
 
-      resource rsrc;
+      resource rsrc = {0};
 
       rsrc.type_str = rde->type_str;
       rsrc.name_str = rde->name_str;
