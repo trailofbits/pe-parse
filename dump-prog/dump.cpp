@@ -110,7 +110,10 @@ int printSecs(void                  *N,
 {
   cout << "Sec Name: " << secName << endl;
   cout << "Sec Base: 0x" << to_string<uint64_t>(secBase, hex) << endl;
-  cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
+  if (data)
+    cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
+  else
+    cout << "Sec Size: 0" << endl;
   return 0;
 }
 

@@ -745,15 +745,31 @@ static PyObject *pepy_data_converter(bounded_buffer *data) {
 }
 
 int section_callback(void *cbd, VA base, std::string &name, image_section_header s, bounded_buffer *data) {
+	uint32_t buflen;
 	PyObject *sect;
 	PyObject *tuple;
 	PyObject *list = (PyObject *) cbd;
 
 	/*
+	 * I've seen some interesting binaries with a section where the
+	 * PointerToRawData and SizeOfRawData are invalid. The parser library
+	 * handles this by setting sectionData to NULL as returned by splitBuffer().
+	 * The sectionData (passed in to us as *data) is converted using
+	 * pepy_data_converter() which will return an empty string object.
+	 * However, we need to address the fact that we pass an invalid length
+	 * via data->bufLen.
+	 */
+	if (!data) {
+		buflen = 0;
+	} else {
+		buflen = data->bufLen;
+	}
+
+	/*
 	 * The tuple item order is important here. It is passed into the
 	 * section type initialization and parsed there.
 	 */
-	tuple = Py_BuildValue("sKKIIHHIO&", name.c_str(), base, data->bufLen,
+	tuple = Py_BuildValue("sKKIIHHIO&", name.c_str(), base, buflen,
 	                      s.VirtualAddress, s.Misc.VirtualSize,
 	                      s.NumberOfRelocations, s.NumberOfLinenumbers,
 	                      s.Characteristics, pepy_data_converter, data);
