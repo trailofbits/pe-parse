@@ -217,7 +217,7 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
       READ_DWORD(sectionData, rde->RVA, rdat, codepage);
       READ_DWORD(sectionData, rde->RVA, rdat, reserved);
 
-      resource rsrc = {0};
+      resource rsrc = {};
 
       rsrc.type_str = rde->type_str;
       rsrc.name_str = rde->name_str;
