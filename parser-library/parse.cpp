@@ -1236,6 +1236,7 @@ void DestructParsedPE(parsed_pe *p) {
     return;
   }
 
+  deleteBuffer(p->fileBuffer);
   delete p->internal;
   delete p;
   return;
