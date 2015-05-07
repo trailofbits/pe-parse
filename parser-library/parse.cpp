@@ -1236,6 +1236,7 @@ void DestructParsedPE(parsed_pe *p) {
     return;
   }
 
+  deleteBuffer(p->fileBuffer);
   delete p->internal;
   delete p;
   return;
@@ -1279,7 +1280,7 @@ void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
     if(cb(cbd, i.addr, i.moduleName, i.symbolName)) {
       break;
     }
-  }
+  }ד
 
   return;
 }
