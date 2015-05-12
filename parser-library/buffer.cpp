@@ -117,7 +117,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 #ifdef WIN32
   HANDLE  h = CreateFileA(filePath, 
                           GENERIC_READ, 
-                          0, 
+                          FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, 
                           NULL, 
                           OPEN_EXISTING, 
                           FILE_ATTRIBUTE_NORMAL, 
