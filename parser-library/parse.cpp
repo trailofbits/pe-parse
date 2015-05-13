@@ -502,6 +502,9 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
    */
   if (readWord(ohb, 0, header.OptionalMagic) == false) {
     PE_ERR(PEERR_READ);
+    if(ohb != NULL)
+        deleteBuffer(ohb);
+    deleteBuffer(fhb);
     return false;
   }
   if (header.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
@@ -518,6 +521,8 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
     }
   } else {
     PE_ERR(PEERR_MAGIC);
+    deleteBuffer(ohb);
+    deleteBuffer(fhb);
     return false;
   }
 
@@ -554,8 +559,11 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
 
   //now, we can read out the fields of the NT headers
   bounded_buffer  *ntBuf = splitBuffer(file, curOffset, file->bufLen);
+
   if(readNtHeader(ntBuf, p.nt) == false) {
     // err is set by readNtHeader
+    if(ntBuf != NULL)
+      deleteBuffer(ntBuf);
     return false;
   }
 
@@ -572,6 +580,7 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
     rem_size = sizeof(::uint32_t) + sizeof(file_header) + sizeof(optional_header_64);
   } else {
     PE_ERR(PEERR_MAGIC);
+    deleteBuffer(ntBuf);
     return false;
   }
 
@@ -642,6 +651,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
     exportDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_EXPORT];
   } else {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
     PE_ERR(PEERR_MAGIC);
     return NULL;
   }
@@ -654,11 +666,17 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
       addr = exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
     } else {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_MAGIC);
       return NULL;
     }
 
     if(getSecForVA(p->internal->secs, addr, s) == false) {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_SECTVA);
       return NULL;
     }
@@ -671,6 +689,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                   rvaofft+_offset(export_dir_table, NameRVA),
                   nameRva) == false) 
     {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_READ);
       return NULL;
     }
@@ -681,12 +702,18 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
       nameVA = nameRva + p->peHeader.nt.OptionalHeader64.ImageBase;
     } else {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_MAGIC);
       return NULL;
     }
 
     section nameSec;
     if(getSecForVA(p->internal->secs, nameVA, nameSec) == false) {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_SECTVA);
       return NULL;
     }
@@ -696,6 +723,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     ::uint8_t   c;
     do {
       if(readByte(nameSec.sectionData, nameOff, c) == false) {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_READ);
         return NULL;
       }
@@ -714,6 +744,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                   rvaofft+_offset(export_dir_table, NumberOfNamePointers),
                   numNames) == false)
     {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_READ);
       return NULL;
     }
@@ -725,6 +758,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                     rvaofft+_offset(export_dir_table, NamePointerRVA),
                     namesRVA) == false) 
       {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_READ);
         return NULL;
       }
@@ -735,12 +771,18 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
         namesVA = namesRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_MAGIC);
         return NULL;
       }
 
       section     namesSec;
       if(getSecForVA(p->internal->secs, namesVA, namesSec) == false) {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_SECTVA);
         return NULL;
       }
@@ -753,6 +795,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                     rvaofft+_offset(export_dir_table, ExportAddressTableRVA),
                     eatRVA) == false)
       {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_READ);
         return NULL;
       }
@@ -763,12 +808,18 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
         eatVA = eatRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_MAGIC);
         return NULL;
       }
 
       section     eatSec;
       if(getSecForVA(p->internal->secs, eatVA, eatSec) == false) {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_SECTVA);
         return NULL;
       }
@@ -781,6 +832,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                     rvaofft+_offset(export_dir_table, OrdinalBase),
                     ordinalBase) == false)
       {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_READ);
         return NULL;
       }
@@ -792,6 +846,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                     ordinalTableRVA) == false)
 
       {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_READ);
         return NULL;
       }
@@ -802,12 +859,18 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
         ordinalTableVA = ordinalTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_MAGIC);
         return NULL;
       }
 
       section     ordinalTableSec;
       if(getSecForVA(p->internal->secs, ordinalTableVA, ordinalTableSec) == false) {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_SECTVA);
         return NULL;
       }
@@ -820,6 +883,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                       namesOff+(i*sizeof(::uint32_t)),
                       curNameRVA) == false)
         {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_READ);
           return NULL;
         }
@@ -830,6 +896,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
           curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
         } else {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_MAGIC);
           return NULL;
         }
@@ -837,6 +906,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         section     curNameSec;
 
         if(getSecForVA(p->internal->secs, curNameVA, curNameSec) == false) {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_SECTVA);
           return NULL;
         }
@@ -847,6 +919,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
         do {
           if(readByte(curNameSec.sectionData, curNameOff, d) == false) {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_READ);
             return NULL;
           }
@@ -865,6 +940,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                     ordinalOff+(i*sizeof(uint16_t)), 
                     ordinal) == false) 
         {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_READ);
           return NULL;
         }
@@ -874,6 +952,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
         ::uint32_t  symRVA;
         if(readDword(eatSec.sectionData, eatOff+eatIdx, symRVA) == false) {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_READ);
           return NULL;
         }
@@ -889,6 +970,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
             symVA = symRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
           } else {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_MAGIC);
             return NULL;
           }
@@ -911,6 +995,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
     relocDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_BASERELOC];
   } else {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
     PE_ERR(PEERR_MAGIC);
     return NULL;
   }
@@ -923,6 +1010,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
       vaAddr = relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
     } else {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_MAGIC);
       return NULL;
     }
@@ -943,6 +1033,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                   rvaofft+_offset(reloc_block, PageRVA), 
                   pageRva) == false)
     {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_READ);
       return NULL;
     }
@@ -951,6 +1044,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
                   rvaofft+_offset(reloc_block, BlockSize), 
                   blockSize) == false)
     {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_READ);
       return NULL;
     }
@@ -966,6 +1062,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       ::uint16_t  offset;
 
       if(readWord(d.sectionData, rvaofft, block) == false) {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_READ);
         return NULL;
       }
@@ -982,6 +1081,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
         relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_MAGIC);
         return NULL;
       }
@@ -1005,6 +1107,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
     importDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_IMPORT];
   } else {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
     PE_ERR(PEERR_MAGIC);
     return NULL;
   }
@@ -1018,6 +1123,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
       addr = importDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
     } else {
+      deleteBuffer(remaining);
+      deleteBuffer(p->fileBuffer);
+      delete p;
       PE_ERR(PEERR_MAGIC);
       return NULL;
     }
@@ -1056,6 +1164,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
         name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_MAGIC);
         return NULL;
       }
@@ -1063,6 +1174,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       section nameSec;
       if(getSecForVA(p->internal->secs, name, nameSec) == false) {
         PE_ERR(PEERR_SECTVA);
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         return NULL;
       }
 
@@ -1071,6 +1185,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       ::uint8_t   c;
       do {
         if(readByte(nameSec.sectionData, nameOff, c) == false) {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_READ);
           return NULL;
         }
@@ -1091,6 +1208,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
           lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
         } else {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_MAGIC);
           return NULL;
         }
@@ -1100,6 +1220,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
           lookupVA = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
         } else {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_MAGIC);
           return NULL;
         }
@@ -1107,6 +1230,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
       section lookupSec;
       if(getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
+        deleteBuffer(remaining);
+        deleteBuffer(p->fileBuffer);
+        delete p;
         PE_ERR(PEERR_SECTVA);
         return NULL;
       }
@@ -1121,6 +1247,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         ::uint64_t  val64 = 0;
         if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
           if(readDword(lookupSec.sectionData, lookupOff, val32) == false) {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_READ);
             return NULL;
           }
@@ -1132,6 +1261,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           valVA = val32 + p->peHeader.nt.OptionalHeader.ImageBase;
         } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
           if(readQword(lookupSec.sectionData, lookupOff, val64) == false) {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_READ);
             return NULL;
           }
@@ -1142,6 +1274,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           oval = (val64 & ~0xFFFF0000);
           valVA = val64 + p->peHeader.nt.OptionalHeader64.ImageBase;
         } else {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_MAGIC);
           return NULL;
         }
@@ -1152,6 +1287,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           section symNameSec;
 
           if(getSecForVA(p->internal->secs, valVA, symNameSec) == false) {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_SECTVA);
             return NULL;
           }
@@ -1162,6 +1300,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
             ::uint8_t d;
 
             if(readByte(symNameSec.sectionData, nameOff, d) == false) {
+              deleteBuffer(remaining);
+              deleteBuffer(p->fileBuffer);
+              delete p;
               PE_ERR(PEERR_READ);
               return NULL;
             }
@@ -1182,6 +1323,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
             ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
           } else {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_MAGIC);
             return NULL;
           }
@@ -1200,6 +1344,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
             ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
           } else {
+            deleteBuffer(remaining);
+            deleteBuffer(p->fileBuffer);
+            delete p;
             PE_ERR(PEERR_MAGIC);
             return NULL;
           }
@@ -1217,6 +1364,9 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           lookupOff += sizeof(::uint64_t);
           offInTable += sizeof(::uint64_t);
         } else {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
           PE_ERR(PEERR_MAGIC);
           return NULL;
         }

@@ -25,7 +25,7 @@ Building
 pe-parse is built using [cmake] and depends on [boost].
 
 1. Install dependencies:
-  * Debian/Ubuntu: `sudo apt-get install boost-dev cmake`
+  * Debian/Ubuntu: `sudo apt-get install libboost-all-dev cmake`
   * RedHat/Fedora: `sudo yum install boost-devel cmake`
   * OSX: `brew install boost cmake`
 2. `cmake .`
