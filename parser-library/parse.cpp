@@ -375,10 +375,14 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
   READ_DWORD(b, 0, header, LoaderFlags);
   READ_DWORD(b, 0, header, NumberOfRvaAndSizes);
 
+  if (header.NumberOfRvaAndSizes > NUM_DIR_ENTRIES) {
+    header.NumberOfRvaAndSizes = NUM_DIR_ENTRIES;
+  }
+
   for(::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
     ::uint32_t  c = (i*sizeof(data_directory));
     c+= _offset(optional_header_32, DataDirectory[0]);
-    ::uint32_t  o; 
+    ::uint32_t  o;
 
     o = c + _offset(data_directory, VirtualAddress);
     if(readDword(b, o, header.DataDirectory[i].VirtualAddress) == false) {
@@ -425,6 +429,10 @@ bool readOptionalHeader64(bounded_buffer *b, optional_header_64 &header) {
   READ_QWORD(b, 0, header, SizeOfHeapCommit);
   READ_DWORD(b, 0, header, LoaderFlags);
   READ_DWORD(b, 0, header, NumberOfRvaAndSizes);
+
+  if (header.NumberOfRvaAndSizes > NUM_DIR_ENTRIES) {
+    header.NumberOfRvaAndSizes = NUM_DIR_ENTRIES;
+  }
 
   for(::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
     ::uint32_t  c = (i*sizeof(data_directory));
