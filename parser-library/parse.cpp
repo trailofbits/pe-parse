@@ -166,7 +166,11 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
       rde = new resource_dir_entry();
       if (!rde)
         return false;
-      memset(rde, 0, sizeof(*rde));
+      rde->ID = 0;
+      rde->RVA = 0;
+      rde->type = 0;
+      rde->name = 0;
+      rde->lang = 0;
     } else {
       rde = dirent;
     }
