@@ -24,6 +24,9 @@ THE SOFTWARE.
 
 #include <string.h>
 #include <list>
+#include <algorithm>
+#include <stdexcept>
+#include <boost/algorithm/string/case_conv.hpp>
 #include "parse.h"
 #include "nt-headers.h"
 #include "to_string.h"
@@ -89,6 +92,23 @@ string GetPEErrString() {
 
 string GetPEErrLoc() {
   return err_loc;
+}
+
+static bool readCString(const bounded_buffer &buffer, ::uint32_t off,
+    string &result)
+{
+  if (off < buffer.bufLen) {
+    ::uint8_t *p = buffer.buf;
+    ::uint32_t n = buffer.bufLen;
+    ::uint8_t *b = p + off;
+    ::uint8_t *x = std::find(b, p + n, 0);
+    if (x == p + n)
+      return false;
+    result.insert(result.end(), b, x);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool getSecForVA(list<section> &secs, VA v, section &sec) {
@@ -728,23 +748,13 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
     ::uint32_t  nameOff = nameVA - nameSec.sectionBase;
     string      modName;
-    ::uint8_t   c;
-    do {
-      if(readByte(nameSec.sectionData, nameOff, c) == false) {
+    if (readCString(*nameSec.sectionData, nameOff, modName) == false) {
         deleteBuffer(remaining);
         deleteBuffer(p->fileBuffer);
         delete p;
         PE_ERR(PEERR_READ);
         return NULL;
-      }
-      
-      if(c == 0) {
-        break;
-      }
-
-      modName.push_back(c);
-      nameOff++;
-    }while(true);
+    }
 
     //now, get all the named export symbols
     ::uint32_t  numNames;
@@ -1190,23 +1200,14 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 
       ::uint32_t  nameOff = name - nameSec.sectionBase;
       string      modName;
-      ::uint8_t   c;
-      do {
-        if(readByte(nameSec.sectionData, nameOff, c) == false) {
+      if (readCString(*nameSec.sectionData, nameOff, modName) == false ) {
           deleteBuffer(remaining);
           deleteBuffer(p->fileBuffer);
           delete p;
           PE_ERR(PEERR_READ);
           return NULL;
-        }
-        
-        if(c == 0) {
-          break;
-        }
-
-        modName.push_back(toupper(c));
-        nameOff++;
-      }while(true);
+      }
+      boost::to_upper(modName);
 
       //then, try and get all of the sub-symbols
       VA lookupVA;
