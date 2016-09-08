@@ -220,6 +220,13 @@ struct resource_dir_entry_sz {
 };
 
 struct resource_dir_entry {
+  inline resource_dir_entry(void)
+      : ID(0),
+        RVA(0),
+        type(0),
+        name(0),
+        lang(0) {}
+
   boost::uint32_t ID;
   boost::uint32_t RVA;
   boost::uint32_t type;

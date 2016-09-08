@@ -161,14 +161,9 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
     return true; // This is not a hard error. It does happen.
 
   for (i = 0; i < rdt.NameEntries + rdt.IDEntries; i++) {
-    resource_dir_entry *rde;
+    resource_dir_entry *rde = dirent;
     if (!dirent) {
-      rde = new resource_dir_entry();
-      if (!rde)
-        return false;
-      memset(rde, 0, sizeof(*rde));
-    } else {
-      rde = dirent;
+      rde = new resource_dir_entry;
     }
 
     READ_DWORD_PTR(sectionData, o, rde, ID);
