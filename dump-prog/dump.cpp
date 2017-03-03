@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 using namespace std;
 using namespace boost;
+using namespace peparse;
 
 int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
   cout << "EXP: ";

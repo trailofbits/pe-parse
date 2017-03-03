@@ -38,6 +38,8 @@ THE SOFTWARE.
 using namespace boost;
 using namespace std;
 
+namespace peparse {
+
 extern ::uint32_t err;
 extern ::string err_loc;
 
@@ -266,3 +268,4 @@ void deleteBuffer(bounded_buffer *b) {
 uint64_t bufLen(bounded_buffer *b) {
   return b->bufLen;
 }
+} // namespace peparse
