@@ -34,6 +34,8 @@ THE SOFTWARE.
 using namespace std;
 using namespace boost;
 
+namespace peparse {
+
 struct section {
   string                sectionName;
   ::uint64_t            sectionBase;
@@ -1489,3 +1491,4 @@ bool GetEntryPoint(parsed_pe *pe, VA &v) {
 
   return false;
 }
+} // namespace peparse
