@@ -29,6 +29,8 @@
 #include <structmember.h>
 #include "parse.h"
 
+using namespace peparse;
+
 #define PEPY_VERSION "0.2"
 
 /* These are used to across multiple objects. */

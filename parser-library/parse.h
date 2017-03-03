@@ -72,6 +72,8 @@ if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
   return NULL; \
 }
 
+namespace peparse {
+
 typedef boost::uint32_t RVA;
 typedef boost::uint64_t VA;
 
@@ -197,5 +199,6 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, boost::uint8_t &b);
 
 //get entry point into PE
 bool GetEntryPoint(parsed_pe *pe, VA &v);
+} // namespace peparse
 
 #endif

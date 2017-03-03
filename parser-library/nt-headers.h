@@ -31,6 +31,7 @@ THE SOFTWARE.
 //need to pack these structure definitions
 
 //some constant definitions
+namespace peparse {
 const boost::uint16_t MZ_MAGIC = 0x5A4D;
 const boost::uint32_t NT_MAGIC = 0x00004550;
 const boost::uint16_t NUM_DIR_ENTRIES = 16;
@@ -307,5 +308,6 @@ struct reloc_block {
   boost::uint32_t PageRVA;
   boost::uint32_t BlockSize;
 };
+} // namespace peparse
 
 #endif
