@@ -35,7 +35,6 @@ THE SOFTWARE.
 #include <fcntl.h>
 #endif
 
-using namespace boost;
 using namespace std;
 
 namespace peparse {
