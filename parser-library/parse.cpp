@@ -26,13 +26,11 @@ THE SOFTWARE.
 #include <list>
 #include <algorithm>
 #include <stdexcept>
-#include <boost/algorithm/string/case_conv.hpp>
 #include "parse.h"
 #include "nt-headers.h"
 #include "to_string.h"
 
 using namespace std;
-using namespace boost;
 
 namespace peparse {
 
@@ -1204,7 +1202,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           PE_ERR(PEERR_READ);
           return NULL;
       }
-      boost::to_upper(modName);
+	  std::transform(modName.begin(), modName.end(), modName.begin(), ::toupper);
 
       //then, try and get all of the sub-symbols
       VA lookupVA;
