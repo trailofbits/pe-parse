@@ -8,7 +8,7 @@ compiler:
 before_install:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update -qq ; fi
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
-script: cmake . && make
+script: CXXFLAGS='-std=c++0x' cmake . && make
 matrix:
   allow_failures:
   - os: osx
