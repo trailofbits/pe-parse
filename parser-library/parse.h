@@ -25,7 +25,7 @@ THE SOFTWARE.
 #ifndef _PARSE_H
 #define _PARSE_H
 #include <string>
-#include <boost/cstdint.hpp>
+#include <cstdint>
 
 #include "nt-headers.h"
 #include "to_string.h"
@@ -33,7 +33,7 @@ THE SOFTWARE.
 #define PE_ERR(x) \
   err = (pe_err) x; \
   err_loc.assign(__func__); \
-  err_loc += ":" + to_string<boost::uint32_t>(__LINE__, dec);
+  err_loc += ":" + to_string<uint32_t>(__LINE__, dec);
 
 #define READ_WORD(b, o, inst, member) \
 if(readWord(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
@@ -74,29 +74,29 @@ if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
 
 namespace peparse {
 
-typedef boost::uint32_t RVA;
-typedef boost::uint64_t VA;
+typedef uint32_t RVA;
+typedef uint64_t VA;
 
 struct buffer_detail;
 
 typedef struct _bounded_buffer {
-  boost::uint8_t  *buf;
-  boost::uint32_t bufLen;
-  bool            copy;
-  buffer_detail   *detail;
+  uint8_t       *buf;
+  uint32_t      bufLen;
+  bool          copy;
+  buffer_detail *detail;
 } bounded_buffer;
 
 struct resource {
   std::string    type_str;
   std::string    name_str;
   std::string    lang_str;
-  boost::uint32_t type;
-  boost::uint32_t name;
-  boost::uint32_t lang;
-  boost::uint32_t codepage;
-  boost::uint32_t RVA;
-  boost::uint32_t size;
-  bounded_buffer  *buf;
+  uint32_t       type;
+  uint32_t       name;
+  uint32_t       lang;
+  uint32_t       codepage;
+  uint32_t       RVA;
+  uint32_t       size;
+  bounded_buffer *buf;
 };
 
 // http://msdn.microsoft.com/en-us/library/ms648009(v=vs.85).aspx
@@ -137,13 +137,13 @@ enum pe_err {
   PEERR_MAGIC  = 9
 };
 
-bool readByte(bounded_buffer *b, boost::uint32_t offset, boost::uint8_t &out);
-bool readWord(bounded_buffer *b, boost::uint32_t offset, boost::uint16_t &out);
-bool readDword(bounded_buffer *b, boost::uint32_t offset, boost::uint32_t &out);
-bool readQword(bounded_buffer *b, boost::uint32_t offset, boost::uint64_t &out);
+bool readByte(bounded_buffer *b, uint32_t offset, uint8_t &out);
+bool readWord(bounded_buffer *b, uint32_t offset, uint16_t &out);
+bool readDword(bounded_buffer *b, uint32_t offset, uint32_t &out);
+bool readQword(bounded_buffer *b, uint32_t offset, uint64_t &out);
 
 bounded_buffer *readFileToFileBuffer(const char *filePath);
-bounded_buffer *splitBuffer(bounded_buffer *b, boost::uint32_t from, boost::uint32_t to);
+bounded_buffer *splitBuffer(bounded_buffer *b, uint32_t from, uint32_t to);
 void deleteBuffer(bounded_buffer *b);
 uint64_t bufLen(bounded_buffer *b);
 
@@ -195,7 +195,7 @@ typedef int (*iterSec)(void *, VA secBase, std::string &, image_section_header, 
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
 //get byte at VA in PE
-bool ReadByteAtVA(parsed_pe *pe, VA v, boost::uint8_t &b);
+bool ReadByteAtVA(parsed_pe *pe, VA v, uint8_t &b);
 
 //get entry point into PE
 bool GetEntryPoint(parsed_pe *pe, VA &v);
