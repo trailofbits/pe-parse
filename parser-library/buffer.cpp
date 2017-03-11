@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <fstream>
 #include <string.h>
+#include <unistd.h>
 #include "parse.h"
 
 #ifdef WIN32
@@ -35,7 +36,6 @@ THE SOFTWARE.
 #include <fcntl.h>
 #endif
 
-using namespace boost;
 using namespace std;
 
 namespace peparse {

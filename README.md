@@ -22,12 +22,12 @@ Internally, the parser-library uses a bounded buffer abstraction to access infor
 
 Building
 ========
-pe-parse is built using [cmake] and depends on [boost].
+pe-parse is built using [cmake].
 
 1. Install dependencies:
-  * Debian/Ubuntu: `sudo apt-get install libboost-all-dev cmake`
-  * RedHat/Fedora: `sudo yum install boost-devel cmake`
-  * OSX: `brew install boost cmake`
+  * Debian/Ubuntu: `sudo apt-get install cmake`
+  * RedHat/Fedora: `sudo yum install cmake`
+  * OSX: `brew install cmake`
 2. `cmake .`
 3. `make`
 
@@ -36,4 +36,3 @@ Authors
 pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com), with significant contributions from [Wesley Shields](https://github.com/wxsBSD).
 
 [cmake]: http://www.cmake.org/
-[boost]: http://www.boost.org/

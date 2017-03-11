@@ -26,13 +26,11 @@ THE SOFTWARE.
 #include <list>
 #include <algorithm>
 #include <stdexcept>
-#include <boost/algorithm/string/case_conv.hpp>
 #include "parse.h"
 #include "nt-headers.h"
 #include "to_string.h"
 
 using namespace std;
-using namespace boost;
 
 namespace peparse {
 
@@ -94,6 +92,15 @@ string GetPEErrString() {
 
 string GetPEErrLoc() {
   return err_loc;
+}
+
+template<typename T>
+void to_upper(T &input, const std::locale &loc = std::locale()) {
+  for (typename T::iterator it = input.begin(), e = input.end();
+       it != e;
+       ++it) {
+    *it = toupper(*it, loc);
+  }
 }
 
 static bool readCString(const bounded_buffer &buffer, ::uint32_t off,
@@ -1204,7 +1211,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
           PE_ERR(PEERR_READ);
           return NULL;
       }
-      boost::to_upper(modName);
+      to_upper(modName);
 
       //then, try and get all of the sub-symbols
       VA lookupVA;
