@@ -96,7 +96,9 @@ string GetPEErrLoc() {
 
 template<typename T>
 void to_upper(T &input, const std::locale &loc = std::locale()) {
-  for (typename T::iterator it = input.begin(); it != input.end(); it++) {
+  for (typename T::iterator it = input.begin(), e = input.end();
+       it != e;
+       ++it) {
     *it = toupper(*it, loc);
   }
 }
