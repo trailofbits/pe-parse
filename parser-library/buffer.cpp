@@ -35,6 +35,10 @@ THE SOFTWARE.
 #include <fcntl.h>
 #endif
 
+#ifdef __APPLE__
+#include <unistd.h>
+#endif
+
 using namespace std;
 
 namespace peparse {
