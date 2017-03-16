@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <fstream>
 #include <string.h>
+#include <unistd.h>
 #include "parse.h"
 
 #ifdef WIN32

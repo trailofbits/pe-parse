@@ -81,6 +81,122 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
   return 0 ;
 }
 
+int printSymbols(void *N, std::string &strName, uint32_t &value,
+                 int16_t &sectionNumber, uint16_t &type, uint8_t &storageClass,
+                 uint8_t &numberOfAuxSymbols) {
+  cout << "Symbol Name: " << strName << endl;
+  cout << "Symbol Value: 0x" << to_string<uint32_t>(value, hex) << endl;
+
+  cout << "Symbol Section Number: ";
+  switch (sectionNumber) {
+    case IMAGE_SYM_UNDEFINED:
+      cout << "UNDEFINED";
+      break;
+    case IMAGE_SYM_ABSOLUTE:
+      cout << "ABSOLUTE";
+      break;
+    case IMAGE_SYM_DEBUG:
+      cout << "DEBUG";
+      break;
+    default:
+      cout << sectionNumber;
+      break;
+  }
+  cout << endl;
+
+  cout << "Symbol Type: ";
+  switch (type) {
+    case IMAGE_SYM_TYPE_NULL:
+      cout << "NULL";
+      break;
+    case IMAGE_SYM_TYPE_VOID:
+      cout << "VOID";
+      break;
+    case IMAGE_SYM_TYPE_CHAR:
+      cout << "CHAR";
+      break;
+    case IMAGE_SYM_TYPE_SHORT:
+      cout << "SHORT";
+      break;
+    case IMAGE_SYM_TYPE_INT:
+      cout << "INT";
+      break;
+    case IMAGE_SYM_TYPE_LONG:
+      cout << "LONG";
+      break;
+    case IMAGE_SYM_TYPE_FLOAT:
+      cout << "FLOAT";
+      break;
+    case IMAGE_SYM_TYPE_DOUBLE:
+      cout << "DOUBLE";
+      break;
+    case IMAGE_SYM_TYPE_STRUCT:
+      cout << "STRUCT";
+      break;
+    case IMAGE_SYM_TYPE_UNION:
+      cout << "UNION";
+      break;
+    case IMAGE_SYM_TYPE_ENUM:
+      cout << "ENUM";
+      break;
+    case IMAGE_SYM_TYPE_MOE:
+      cout << "IMAGE_SYM_TYPE_MOE";
+      break;
+    case IMAGE_SYM_TYPE_BYTE:
+      cout << "BYTE";
+      break;
+    case IMAGE_SYM_TYPE_WORD:
+      cout << "WORD";
+      break;
+    case IMAGE_SYM_TYPE_UINT:
+      cout << "UINT";
+      break;
+    case IMAGE_SYM_TYPE_DWORD:
+      cout << "DWORD";
+      break;
+  }
+  cout << endl;
+
+  cout << "Symbol Storage Class: ";
+  switch (storageClass) {
+    case IMAGE_SYM_CLASS_END_OF_FUNCTION:
+      cout << "FUNCTION";
+      break;
+    case IMAGE_SYM_CLASS_NULL:
+      cout << "NULL";
+      break;
+    case IMAGE_SYM_CLASS_AUTOMATIC:
+      cout << "AUTOMATIC";
+      break;
+    case IMAGE_SYM_CLASS_EXTERNAL:
+      cout << "EXTERNAL";
+      break;
+    case IMAGE_SYM_CLASS_STATIC:
+      cout << "STATIC";
+      break;
+    case IMAGE_SYM_CLASS_REGISTER:
+      cout << "REGISTER";
+      break;
+    case IMAGE_SYM_CLASS_EXTERNAL_DEF:
+      cout << "EXTERNAL DEF";
+      break;
+    case IMAGE_SYM_CLASS_LABEL:
+      cout << "LABEL";
+      break;
+    case IMAGE_SYM_CLASS_UNDEFINED_LABEL:
+      cout << "UNDEFINED LABEL";
+      break;
+    case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
+      cout << "MEMBER OF STRUCT";
+      break;
+  }
+  cout << endl;
+
+  cout << "Symbol Number of Aux Symbols: " << (uint32_t) numberOfAuxSymbols << endl;
+
+  return 0 ;
+}
+
 int printRsrc(void     *N,
               resource r)
 {
@@ -200,6 +316,8 @@ int main(int argc, char *argv[]) {
       IterImpVAString(p, printImports, NULL);
       cout << "Relocations: " << endl;
       IterRelocs(p, printRelocs, NULL);
+      cout << "Symbols (symbol table): " << endl;
+      IterSymbols(p, printSymbols, NULL);
       cout << "Sections: " << endl;
       IterSec(p, printSecs, NULL);
       cout << "Exports: " << endl;

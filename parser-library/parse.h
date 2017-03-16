@@ -191,6 +191,10 @@ void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 typedef int (*iterReloc)(void *, VA, reloc_type);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
+// Iterate over symbols (symbol table) in the PE file
+typedef int (*iterSymbol)(void *, std::string &, uint32_t &, int16_t &, uint16_t &, uint8_t &, uint8_t &);
+void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd);
+
 //iterate over the exports
 typedef int (*iterExp)(void *, VA, std::string &, std::string &);
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
