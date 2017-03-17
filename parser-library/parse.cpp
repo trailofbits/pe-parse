@@ -1540,7 +1540,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 	  std::transform(modName.begin(), modName.end(), modName.begin(), ::toupper);
 
       //then, try and get all of the sub-symbols
-      VA lookupVA;
+      VA lookupVA = 0;
       if(curEnt.LookupTableRVA != 0) { 
         if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
           lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
@@ -1568,7 +1568,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       }
 
       section lookupSec;
-      if(getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
+      if(lookupVA == 0 || getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
         deleteBuffer(remaining);
         deleteBuffer(p->fileBuffer);
         delete p;
