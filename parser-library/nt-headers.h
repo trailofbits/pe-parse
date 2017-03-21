@@ -38,6 +38,7 @@ const std::uint16_t NUM_DIR_ENTRIES = 16;
 const std::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
 const std::uint16_t NT_OPTIONAL_64_MAGIC = 0x20B;
 const std::uint16_t NT_SHORT_NAME_LEN = 8;
+const std::uint16_t SYMTAB_RECORD_LEN = 18;
 const std::uint16_t DIR_EXPORT = 0;
 const std::uint16_t DIR_IMPORT = 1;
 const std::uint16_t DIR_RESOURCE = 2;
@@ -92,6 +93,62 @@ const std::uint32_t IMAGE_SCN_MEM_SHARED = 0x10000000;
 const std::uint32_t IMAGE_SCN_MEM_EXECUTE = 0x20000000;
 const std::uint32_t IMAGE_SCN_MEM_READ = 0x40000000;
 const std::uint32_t IMAGE_SCN_MEM_WRITE = 0x80000000;
+
+// Symbol section number values
+const std::int16_t IMAGE_SYM_UNDEFINED = 0;
+const std::int16_t IMAGE_SYM_ABSOLUTE = -1;
+const std::int16_t IMAGE_SYM_DEBUG = -2;
+
+// Symbol table types
+const std::uint16_t IMAGE_SYM_TYPE_NULL = 0;
+const std::uint16_t IMAGE_SYM_TYPE_VOID = 1;
+const std::uint16_t IMAGE_SYM_TYPE_CHAR = 2;
+const std::uint16_t IMAGE_SYM_TYPE_SHORT = 3;
+const std::uint16_t IMAGE_SYM_TYPE_INT = 4;
+const std::uint16_t IMAGE_SYM_TYPE_LONG = 5;
+const std::uint16_t IMAGE_SYM_TYPE_FLOAT = 6;
+const std::uint16_t IMAGE_SYM_TYPE_DOUBLE = 7;
+const std::uint16_t IMAGE_SYM_TYPE_STRUCT = 8;
+const std::uint16_t IMAGE_SYM_TYPE_UNION = 9;
+const std::uint16_t IMAGE_SYM_TYPE_ENUM = 10;
+const std::uint16_t IMAGE_SYM_TYPE_MOE = 11;
+const std::uint16_t IMAGE_SYM_TYPE_BYTE = 12;
+const std::uint16_t IMAGE_SYM_TYPE_WORD = 13;
+const std::uint16_t IMAGE_SYM_TYPE_UINT = 14;
+const std::uint16_t IMAGE_SYM_TYPE_DWORD = 15;
+const std::uint16_t IMAGE_SYM_DTYPE_NULL = 0;
+const std::uint16_t IMAGE_SYM_DTYPE_POINTER = 1;
+const std::uint16_t IMAGE_SYM_DTYPE_FUNCTION = 2;
+const std::uint16_t IMAGE_SYM_DTYPE_ARRAY = 3;
+
+// Symbol table storage classes
+const std::uint8_t IMAGE_SYM_CLASS_END_OF_FUNCTION = -1;
+const std::uint8_t IMAGE_SYM_CLASS_NULL = 0;
+const std::uint8_t IMAGE_SYM_CLASS_AUTOMATIC = 1;
+const std::uint8_t IMAGE_SYM_CLASS_EXTERNAL = 2;
+const std::uint8_t IMAGE_SYM_CLASS_STATIC = 3;
+const std::uint8_t IMAGE_SYM_CLASS_REGISTER = 4;
+const std::uint8_t IMAGE_SYM_CLASS_EXTERNAL_DEF = 5;
+const std::uint8_t IMAGE_SYM_CLASS_LABEL = 6;
+const std::uint8_t IMAGE_SYM_CLASS_UNDEFINED_LABEL = 7;
+const std::uint8_t IMAGE_SYM_CLASS_MEMBER_OF_STRUCT = 8;
+const std::uint8_t IMAGE_SYM_CLASS_ARGUMENT = 9;
+const std::uint8_t IMAGE_SYM_CLASS_STRUCT_TAG = 10;
+const std::uint8_t IMAGE_SYM_CLASS_MEMBER_OF_UNION = 11;
+const std::uint8_t IMAGE_SYM_CLASS_UNION_TAG = 12;
+const std::uint8_t IMAGE_SYM_CLASS_TYPE_DEFINITION = 13;
+const std::uint8_t IMAGE_SYM_CLASS_UNDEFINED_STATIC = 14;
+const std::uint8_t IMAGE_SYM_CLASS_ENUM_TAG = 15;
+const std::uint8_t IMAGE_SYM_CLASS_MEMBER_OF_ENUM = 16;
+const std::uint8_t IMAGE_SYM_CLASS_REGISTER_PARAM = 17;
+const std::uint8_t IMAGE_SYM_CLASS_BIT_FIELD = 18;
+const std::uint8_t IMAGE_SYM_CLASS_BLOCK = 100;
+const std::uint8_t IMAGE_SYM_CLASS_FUNCTION = 101;
+const std::uint8_t IMAGE_SYM_CLASS_END_OF_STRUCT = 102;
+const std::uint8_t IMAGE_SYM_CLASS_FILE = 103;
+const std::uint8_t IMAGE_SYM_CLASS_SECTION = 104;
+const std::uint8_t IMAGE_SYM_CLASS_WEAK_EXTERNAL = 105;
+const std::uint8_t IMAGE_SYM_CLASS_CLR_TOKEN = 107;
 
 struct dos_header {
     std::uint16_t   e_magic;           

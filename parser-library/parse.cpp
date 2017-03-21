@@ -58,12 +58,68 @@ struct reloc {
   reloc_type  type;
 };
 
+#define SYMBOL_NAME_OFFSET(sn) ((uint32_t) (sn.data >> 32))
+#define SYMBOL_TYPE_HI(x) (x.type >> 8)
+
+union symbol_name {
+  uint8_t  shortName[NT_SHORT_NAME_LEN];
+  uint32_t zeroes;
+  uint64_t data;
+};
+
+struct aux_symbol_f1 {
+  uint32_t tagIndex;
+  uint32_t totalSize;
+  uint32_t pointerToLineNumber;
+  uint32_t pointerToNextFunction;
+};
+
+struct aux_symbol_f2 {
+  uint16_t lineNumber;
+  uint32_t pointerToNextFunction;
+};
+
+struct aux_symbol_f3 {
+  uint32_t tagIndex;
+  uint32_t characteristics;
+};
+
+struct aux_symbol_f4 {
+  uint8_t filename[SYMTAB_RECORD_LEN];
+  string  strFilename;
+};
+
+struct aux_symbol_f5 {
+  uint32_t length;
+  uint16_t numberOfRelocations;
+  uint16_t numberOfLineNumbers;
+  uint32_t checkSum;
+  uint16_t number;
+  uint8_t  selection;
+};
+
+struct symbol {
+  string              strName;
+  symbol_name         name;
+  uint32_t            value;
+  int16_t             sectionNumber;
+  uint16_t            type;
+  uint8_t             storageClass;
+  uint8_t             numberOfAuxSymbols;
+  list<aux_symbol_f1> aux_symbols_f1;
+  list<aux_symbol_f2> aux_symbols_f2;
+  list<aux_symbol_f3> aux_symbols_f3;
+  list<aux_symbol_f4> aux_symbols_f4;
+  list<aux_symbol_f5> aux_symbols_f5;
+};
+
 struct parsed_pe_internal {
   list<section>   secs;
   list<resource>  rsrcs;
   list<importent> imports;
   list<reloc>     relocs;
   list<exportent> exports;
+  list<symbol>    symbols;
 };
 
 ::uint32_t err = 0;
@@ -610,6 +666,285 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   //update 'rem' to point to the space after the header
   rem = splitBuffer(ntBuf, rem_size, ntBuf->bufLen);
   deleteBuffer(ntBuf);
+
+  return true;
+}
+
+bool getSymbolTable(parsed_pe *p) {
+  if (p->peHeader.nt.FileHeader.PointerToSymbolTable == 0) {
+    return true;
+  }
+
+  uint32_t strTableOffset = p->peHeader.nt.FileHeader.PointerToSymbolTable
+      + (p->peHeader.nt.FileHeader.NumberOfSymbols * SYMTAB_RECORD_LEN);
+
+  uint32_t offset = p->peHeader.nt.FileHeader.PointerToSymbolTable;
+
+  for (uint32_t i = 0; i < p->peHeader.nt.FileHeader.NumberOfSymbols; i++) {
+    symbol sym;
+
+    // Read name
+    if (readQword(p->fileBuffer, offset, sym.name.data) == false) {
+      PE_ERR(PEERR_MAGIC);
+      return false;
+    }
+
+    if (sym.name.zeroes == 0) {
+      // The symbol name is greater than 8 bytes so it is stored in the string
+      // table. In this case instead of name, an offset of the string in the
+      // string table is provided.
+
+      uint32_t strOffset = strTableOffset + SYMBOL_NAME_OFFSET(sym.name);
+      uint8_t ch;
+      for (;;) {
+        if (readByte(p->fileBuffer, strOffset, ch) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+        if (!ch) {
+          break;
+        }
+        sym.strName.push_back((char) ch);
+        strOffset += sizeof(uint8_t);
+      }
+    } else {
+      for (uint8_t n = 0; n < NT_SHORT_NAME_LEN; n++) {
+        sym.strName.push_back((char) (sym.name.shortName[n]));
+      }
+    }
+
+    offset += sizeof(uint64_t);
+
+    // Read value
+    if (readDword(p->fileBuffer, offset, sym.value) == false) {
+      PE_ERR(PEERR_MAGIC);
+      return false;
+    }
+
+    offset += sizeof(uint32_t);
+
+    // Read section number
+    uint16_t secNum;
+    if (readWord(p->fileBuffer, offset, secNum) == false) {
+      PE_ERR(PEERR_MAGIC);
+      return false;
+    }
+    sym.sectionNumber = (int16_t) secNum;
+
+    offset += sizeof(uint16_t);
+
+    // Read type
+    if (readWord(p->fileBuffer, offset, sym.type) == false) {
+      PE_ERR(PEERR_MAGIC);
+      return false;
+    }
+
+    offset += sizeof(uint16_t);
+
+    // Read storage class
+    if (readByte(p->fileBuffer, offset, sym.storageClass) == false) {
+      PE_ERR(PEERR_MAGIC);
+      return false;
+    }
+
+    offset += sizeof(uint8_t);
+
+    // Read number of auxiliary symbols
+    if (readByte(p->fileBuffer, offset, sym.numberOfAuxSymbols) == false) {
+      PE_ERR(PEERR_MAGIC);
+      return false;
+    }
+
+    // Set offset to next symbol
+    offset += sizeof(uint8_t);
+
+    // Save the symbol
+    p->internal->symbols.push_back(sym);
+
+    if (sym.numberOfAuxSymbols == 0) {
+      continue;
+    }
+
+    // Read auxiliary symbol records
+
+    if (sym.storageClass == IMAGE_SYM_CLASS_EXTERNAL &&
+        SYMBOL_TYPE_HI(sym) == 0x20 &&
+        sym.sectionNumber > 0) {
+      // Auxiliary Format 1: Function Definitions
+
+      for (uint8_t n = 0; n < sym.numberOfAuxSymbols; n++) {
+        aux_symbol_f1 asym;
+
+        // Read tag index
+        if (readDword(p->fileBuffer, offset, asym.tagIndex) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint32_t);
+
+        // Read total size
+        if (readDword(p->fileBuffer, offset, asym.totalSize) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint32_t);
+
+        // Read pointer to line number
+        if (readDword(p->fileBuffer, offset, asym.pointerToLineNumber) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint32_t);
+
+        // Read pointer to next function
+        if (readDword(p->fileBuffer, offset, asym.pointerToNextFunction) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Skip the processed 4 bytes + unused 2 bytes
+        offset += sizeof(uint8_t) * 6;
+
+        // Save the record
+        sym.aux_symbols_f1.push_back(asym);
+      }
+    } else if (sym.storageClass == IMAGE_SYM_CLASS_FUNCTION) {
+      // Auxiliary Format 2: .bf and .ef Symbols
+
+      for (uint8_t n = 0; n < sym.numberOfAuxSymbols; n++) {
+        aux_symbol_f2 asym;
+        // Skip unused 4 bytes
+        offset += sizeof(uint32_t);
+
+        // Read line number
+        if (readWord(p->fileBuffer, offset, asym.lineNumber) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Skip unused 6 bytes
+        offset += sizeof(uint8_t) * 6;
+
+        // Read pointer to next function
+        if (readDword(p->fileBuffer, offset, asym.pointerToNextFunction) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Skip the processed 4 bytes + unused 2 bytes
+        offset += sizeof(uint8_t) * 6;
+
+        // Save the record
+        sym.aux_symbols_f2.push_back(asym);
+      }
+    } else if (sym.storageClass == IMAGE_SYM_CLASS_EXTERNAL &&
+               sym.sectionNumber == IMAGE_SYM_UNDEFINED &&
+               sym.value == 0) {
+      // Auxiliary Format 3: Weak Externals
+
+      for (uint8_t n = 0; n < sym.numberOfAuxSymbols; n++) {
+        aux_symbol_f3 asym;
+
+        // Read line number
+        if (readDword(p->fileBuffer, offset, asym.tagIndex) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Read characteristics
+        if (readDword(p->fileBuffer, offset, asym.characteristics) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Skip unused 10 bytes
+        offset += sizeof(uint8_t) * 10;
+
+        // Save the record
+        sym.aux_symbols_f3.push_back(asym);
+      }
+    } else if (sym.storageClass == IMAGE_SYM_CLASS_FILE) {
+      // Auxiliary Format 4: Files
+
+      for (uint8_t n = 0; n < sym.numberOfAuxSymbols; n++) {
+        aux_symbol_f4 asym;
+
+        // Read filename
+        for (uint16_t j = 0; j < SYMTAB_RECORD_LEN; j++) {
+          if (readByte(p->fileBuffer, offset, asym.filename[j]) == false) {
+            PE_ERR(PEERR_MAGIC);
+            return false;
+          }
+          asym.strFilename.push_back((char) asym.filename[j]);
+        }
+
+        // Save the record
+        sym.aux_symbols_f4.push_back(asym);
+      }
+    } else if (sym.storageClass == IMAGE_SYM_CLASS_STATIC) {
+      // Auxiliary Format 5: Section Definitions
+
+      for (uint8_t n = 0; n < sym.numberOfAuxSymbols; n++) {
+        aux_symbol_f5 asym;
+
+        // Read length
+        if (readDword(p->fileBuffer, offset, asym.length) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint32_t);
+
+        // Read number of relocations
+        if (readWord(p->fileBuffer, offset, asym.numberOfRelocations) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint16_t);
+
+        // Read number of line numbers
+        if (readWord(p->fileBuffer, offset, asym.numberOfLineNumbers) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint16_t);
+
+        // Read checksum
+        if (readDword(p->fileBuffer, offset, asym.checkSum) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        offset += sizeof(uint32_t);
+
+        // Read number
+        if (readWord(p->fileBuffer, offset, asym.number) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Read selection
+        if (readByte(p->fileBuffer, offset, asym.selection) == false) {
+          PE_ERR(PEERR_MAGIC);
+          return false;
+        }
+
+        // Skip unused 3 bytes
+        offset += sizeof(uint8_t) * 3;
+
+        // Save the record
+        sym.aux_symbols_f5.push_back(asym);
+      }
+    } else {
+      // Skip an unknown auxiliary record types
+      offset += sizeof(uint8_t) * SYMTAB_RECORD_LEN * sym.numberOfAuxSymbols;
+    }
+  }
 
   return true;
 }
@@ -1205,7 +1540,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 	  std::transform(modName.begin(), modName.end(), modName.begin(), ::toupper);
 
       //then, try and get all of the sub-symbols
-      VA lookupVA;
+      VA lookupVA = 0;
       if(curEnt.LookupTableRVA != 0) { 
         if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
           lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
@@ -1233,7 +1568,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
       }
 
       section lookupSec;
-      if(getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
+      if(lookupVA == 0 || getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
         deleteBuffer(remaining);
         deleteBuffer(p->fileBuffer);
         delete p;
@@ -1380,6 +1715,15 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     } while(true);
   }
 
+  // Get symbol table
+
+  if (getSymbolTable(p) == false) {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    return NULL;
+  }
+
   deleteBuffer(remaining);
 
   return p;
@@ -1417,6 +1761,21 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
   for(list<reloc>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
     reloc r = *it;
     if(cb(cbd, r.shiftedAddr, r.type) != 0) {
+      break;
+    }
+  }
+
+  return;
+}
+
+// Iterate over symbols (symbol table) in the PE file
+void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd) {
+  list<symbol> &l = pe->internal->symbols;
+
+  for (list<symbol>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
+    symbol s = *it;
+    if (cb(cbd, s.strName, s.value, s.sectionNumber, s.type, s.storageClass,
+           s.numberOfAuxSymbols) != 0) {
       break;
     }
   }
