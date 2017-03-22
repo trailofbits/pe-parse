@@ -24,7 +24,6 @@ THE SOFTWARE.
 
 #include <fstream>
 #include <string.h>
-#include <unistd.h>
 #include "parse.h"
 
 #ifdef WIN32
@@ -34,9 +33,6 @@ THE SOFTWARE.
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#endif
-
-#ifdef __APPLE__
 #include <unistd.h>
 #endif
 
