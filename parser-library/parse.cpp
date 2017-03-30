@@ -158,26 +158,21 @@ static bool readCString(const bounded_buffer &buffer, ::uint32_t off,
     ::uint32_t n = buffer.bufLen;
     ::uint8_t *b = p + off;
     ::uint8_t *x = std::find(b, p + n, 0);
-    if (x == p + n)
+    if (x == p + n) {
       return false;
+    }
     result.insert(result.end(), b, x);
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 bool getSecForVA(list<section> &secs, VA v, section &sec) {
-  for(list<section>::iterator it = secs.begin(), e = secs.end();
-      it != e;
-      ++it)
-  {
-    section s = *it;
-  
+  for (section s : secs) {
     ::uint64_t  low = s.sectionBase;
     ::uint64_t  high = low + s.sec.Misc.VirtualSize;
 
-    if(v >= low && v < high) {
+    if (v >= low && v < high) {
       sec = s;
       return true;
     }
@@ -189,12 +184,8 @@ bool getSecForVA(list<section> &secs, VA v, section &sec) {
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   parsed_pe_internal *pint = pe->internal;
 
-  for(list<resource>::iterator rit = pint->rsrcs.begin(), e = pint->rsrcs.end();
-      rit != e;
-      ++rit)
-  {
-    resource r = *rit;
-    if(cb(cbd, r) != 0) {
+  for (resource r : pint->rsrcs) {
+    if (cb(cbd, r) != 0) {
       break;
     }
   }
@@ -206,12 +197,14 @@ bool parse_resource_id(bounded_buffer *data, ::uint32_t id, string &result) {
   ::uint8_t c;
   ::uint16_t len;
 
-  if (readWord(data, id, len) == false)
+  if (!readWord(data, id, len)) {
     return false;
+  }
   id += 2;
   for (::uint32_t i = 0; i < len * 2; i++) {
-    if(readByte(data, id + i, c) == false)
+    if (!readByte(data, id + i, c)) {
       return false;
+    }
     result.push_back((char) c);
   }
   return true;
@@ -221,8 +214,9 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
   ::uint32_t i = 0;
   resource_dir_table rdt;
 
-  if (!sectionData)
+  if (sectionData == nullptr) {
     return false;
+  }
 
   READ_DWORD(sectionData, o, rdt, Characteristics);
   READ_DWORD(sectionData, o, rdt, TimeDateStamp);
@@ -233,12 +227,13 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
 
   o += sizeof(resource_dir_table);
 
-  if (!rdt.NameEntries && !rdt.IDEntries)
+  if (rdt.NameEntries == 0u && rdt.IDEntries == 0u) {
     return true; // This is not a hard error. It does happen.
+  }
 
   for (i = 0; i < rdt.NameEntries + rdt.IDEntries; i++) {
     resource_dir_entry *rde = dirent;
-    if (!dirent) {
+    if (dirent == nullptr) {
       rde = new resource_dir_entry;
     }
 
@@ -250,28 +245,32 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
     if (depth == 0) {
       rde->type = rde->ID;
       if (i < rdt.NameEntries) {
-        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->type_str) == false)
+        if (!parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->type_str)) {
           return false;
+        }
       }
     } else if (depth == 1) {
       rde->name = rde->ID;
       if (i < rdt.NameEntries) {
-        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->name_str) == false)
+        if (!parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->name_str)) {
           return false;
+        }
       }
     } else if (depth == 2) {
       rde->lang = rde->ID;
       if (i < rdt.NameEntries) {
-        if (parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->lang_str) == false)
+        if (!parse_resource_id(sectionData, rde->ID & 0x0FFFFFFF, rde->lang_str)) {
           return false;
+        }
       }
     }
 
     // High bit 0 = RVA to RDT.
     // High bit 1 = RVA to RDE.
     if (rde->RVA & 0x80000000) {
-      if (parse_resource_table(sectionData, rde->RVA & 0x0FFFFFFF, virtaddr, depth + 1, rde, rsrcs) == false)
+      if (!parse_resource_table(sectionData, rde->RVA & 0x0FFFFFFF, virtaddr, depth + 1, rde, rsrcs)) {
         return false;
+      }
     } else {
       resource_dat_entry rdat;
 
@@ -308,27 +307,30 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
        * If the start is valid, try to get the data and if that fails return
        * a zero length buffer.
        */
-      if (start > rdat.RVA)
+      if (start > rdat.RVA) {
         rsrc.buf = splitBuffer(sectionData, 0, 0);
-      else {
+      } else {
         rsrc.buf = splitBuffer(sectionData, start, start + rdat.size);
-        if (!rsrc.buf)
+        if (rsrc.buf == nullptr) {
           rsrc.buf = splitBuffer(sectionData, 0, 0);
+        }
       }
 
       /* If we can't get even a zero length buffer, something is very wrong. */
-      if (!rsrc.buf)
+      if (rsrc.buf == nullptr) {
         return false;
+      }
 
       rsrcs.push_back(rsrc);
     }
 
-    if (depth == 0)
+    if (depth == 0) {
       rde->type_str.clear();
-    else if (depth == 1)
+    } else if (depth == 1) {
       rde->name_str.clear();
-    else if (depth == 2)
+    } else if (depth == 2) {
       rde->lang_str.clear();
+    }
   }
 
   return true;
@@ -336,16 +338,17 @@ bool parse_resource_table(bounded_buffer *sectionData, ::uint32_t o, ::uint32_t 
 
 bool getResources(bounded_buffer *b, bounded_buffer *fileBegin, list<section> secs, list<resource> &rsrcs) {
 
-  if (!b)
+  if (b == nullptr)
     return false;
 
-  for (list<section>::iterator sit = secs.begin(), e = secs.end(); sit != e; ++sit) {
-    section s = *sit;
-    if (s.sectionName != ".rsrc")
+  for (section s : secs) {
+    if (s.sectionName != ".rsrc") {
       continue;
+    }
 
-    if (parse_resource_table(s.sectionData, 0, s.sec.VirtualAddress, 0, NULL, rsrcs) == false)
+    if (!parse_resource_table(s.sectionData, 0, s.sec.VirtualAddress, 0, nullptr, rsrcs)) {
       return false;
+    }
 
     break; // Because there should only be one .rsrc
   }
@@ -357,7 +360,7 @@ bool getSections( bounded_buffer  *b,
                   bounded_buffer  *fileBegin,
                   nt_header_32    &nthdr, 
                   list<section>   &secs) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return false;
   }
 
@@ -367,7 +370,7 @@ bool getSections( bounded_buffer  *b,
     
     ::uint32_t  o = i*sizeof(image_section_header);
     for(::uint32_t k = 0; k < NT_SHORT_NAME_LEN; k++) {
-      if(readByte(b, o+k, curSec.Name[k]) == false) {
+      if(!readByte(b, o+k, curSec.Name[k])) {
         return false;
       }
     }
@@ -456,12 +459,12 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
     ::uint32_t  o;
 
     o = c + _offset(data_directory, VirtualAddress);
-    if(readDword(b, o, header.DataDirectory[i].VirtualAddress) == false) {
+    if(!readDword(b, o, header.DataDirectory[i].VirtualAddress)) {
       return false;
     }
 
     o = c + _offset(data_directory, Size);
-    if(readDword(b, o, header.DataDirectory[i].Size) == false) {
+    if(!readDword(b, o, header.DataDirectory[i].Size)) {
       return false;
     }
   }
@@ -511,12 +514,12 @@ bool readOptionalHeader64(bounded_buffer *b, optional_header_64 &header) {
     ::uint32_t  o;
 
     o = c + _offset(data_directory, VirtualAddress);
-    if(readDword(b, o, header.DataDirectory[i].VirtualAddress) == false) {
+    if(!readDword(b, o, header.DataDirectory[i].VirtualAddress)) {
       return false;
     }
 
     o = c + _offset(data_directory, Size);
-    if(readDword(b, o, header.DataDirectory[i].Size) == false) {
+    if(!readDword(b, o, header.DataDirectory[i].Size)) {
       return false;
     }
   }
@@ -537,13 +540,13 @@ bool readFileHeader(bounded_buffer *b, file_header &header) {
 }
 
 bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return false;
   }
 
   ::uint32_t  pe_magic;
   ::uint32_t  curOffset =0;
-  if(readDword(b, curOffset, pe_magic) == false || pe_magic != NT_MAGIC) {
+  if(!readDword(b, curOffset, pe_magic) || pe_magic != NT_MAGIC) {
     PE_ERR(PEERR_READ);
     return false;
   }
@@ -552,12 +555,12 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   bounded_buffer  *fhb = 
     splitBuffer(b, _offset(nt_header_32, FileHeader), b->bufLen);
   
-  if(fhb == NULL) {
+  if(fhb == nullptr) {
     PE_ERR(PEERR_MEM);
     return false;
   }
 
-  if(readFileHeader(fhb, header.FileHeader) == false) {
+  if(!readFileHeader(fhb, header.FileHeader)) {
     deleteBuffer(fhb);
     return false;
   }
@@ -570,7 +573,7 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   bounded_buffer *ohb = 
     splitBuffer(b, _offset(nt_header_32, OptionalHeader), b->bufLen);
 
-  if(ohb == NULL) {
+  if(ohb == nullptr) {
     deleteBuffer(fhb);
     PE_ERR(PEERR_MEM);
     return false;
@@ -579,21 +582,22 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   /*
    * Read the Magic to determine if it is 32 or 64.
    */
-  if (readWord(ohb, 0, header.OptionalMagic) == false) {
+  if (!readWord(ohb, 0, header.OptionalMagic)) {
     PE_ERR(PEERR_READ);
-    if(ohb != NULL)
-        deleteBuffer(ohb);
+    if(ohb != nullptr) {
+      deleteBuffer(ohb);
+    }
     deleteBuffer(fhb);
     return false;
   }
   if (header.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-    if(readOptionalHeader(ohb, header.OptionalHeader) == false) {
+    if(!readOptionalHeader(ohb, header.OptionalHeader)) {
       deleteBuffer(ohb);
       deleteBuffer(fhb);
       return false;
     }
   } else if (header.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-    if(readOptionalHeader64(ohb, header.OptionalHeader64) == false) {
+    if(!readOptionalHeader64(ohb, header.OptionalHeader64)) {
       deleteBuffer(ohb);
       deleteBuffer(fhb);
       return false;
@@ -612,14 +616,14 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
 }
 
 bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
-  if(file == NULL) {
+  if(file == nullptr) {
     return false;
   }
 
   //start by reading MZ
   ::uint16_t  tmp = 0;
   ::uint32_t  curOffset = 0;
-  if(readWord(file, curOffset, tmp) == false) {
+  if(!readWord(file, curOffset, tmp)) {
     PE_ERR(PEERR_READ);
     return false;
   }
@@ -630,7 +634,7 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
 
   //read the offset to the NT headers
   ::uint32_t  offset;
-  if(readDword(file, _offset(dos_header, e_lfanew), offset) == false) {
+  if(!readDword(file, _offset(dos_header, e_lfanew), offset)) {
     PE_ERR(PEERR_READ);
     return false;
   }
@@ -639,10 +643,11 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   //now, we can read out the fields of the NT headers
   bounded_buffer  *ntBuf = splitBuffer(file, curOffset, file->bufLen);
 
-  if(readNtHeader(ntBuf, p.nt) == false) {
+  if(!readNtHeader(ntBuf, p.nt)) {
     // err is set by readNtHeader
-    if(ntBuf != NULL)
+    if(ntBuf != nullptr) {
       deleteBuffer(ntBuf);
+    }
     return false;
   }
 
@@ -670,6 +675,529 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   return true;
 }
 
+bool getExports(parsed_pe *p) {
+  data_directory exportDir;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    exportDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
+  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    exportDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_EXPORT];
+  } else {
+    return false;
+  }
+
+  if (exportDir.Size != 0) {
+    section s;
+    VA addr;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      addr = exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      addr = exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    if (!getSecForVA(p->internal->secs, addr, s)) {
+      return false;
+    }
+
+    ::uint32_t  rvaofft = addr - s.sectionBase;
+
+    //get the name of this module
+    ::uint32_t  nameRva;
+    if (!readDword(s.sectionData,
+                   rvaofft+_offset(export_dir_table, NameRVA),
+                   nameRva)) {
+      return false;
+    }
+
+    VA nameVA;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      nameVA = nameRva + p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      nameVA = nameRva + p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    section nameSec;
+    if (!getSecForVA(p->internal->secs, nameVA, nameSec)) {
+      return false;
+    }
+
+    ::uint32_t  nameOff = nameVA - nameSec.sectionBase;
+    string      modName;
+    if (!readCString(*nameSec.sectionData, nameOff, modName)) {
+      return false;
+    }
+
+    //now, get all the named export symbols
+    ::uint32_t  numNames;
+    if (!readDword(s.sectionData,
+                   rvaofft+_offset(export_dir_table, NumberOfNamePointers),
+                   numNames)) {
+      return false;
+    }
+
+    if (numNames > 0) {
+      //get the names section
+      ::uint32_t  namesRVA;
+      if(!readDword(s.sectionData,
+                    rvaofft+_offset(export_dir_table, NamePointerRVA),
+                    namesRVA)) {
+        return false;
+      }
+
+      VA namesVA;
+      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+        namesVA = namesRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+        namesVA = namesRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+      } else {
+        return false;
+      }
+
+      section     namesSec;
+      if(!getSecForVA(p->internal->secs, namesVA, namesSec)) {
+        return false;
+      }
+
+      ::uint32_t  namesOff = namesVA - namesSec.sectionBase;
+
+      //get the EAT section
+      ::uint32_t  eatRVA;
+      if (!readDword(s.sectionData,
+                     rvaofft+_offset(export_dir_table, ExportAddressTableRVA),
+                     eatRVA)) {
+        return false;
+      }
+
+      VA eatVA;
+      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+        eatVA = eatRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+        eatVA = eatRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+      } else {
+        return false;
+      }
+
+      section     eatSec;
+      if (!getSecForVA(p->internal->secs, eatVA, eatSec)) {
+        return false;
+      }
+
+      ::uint32_t  eatOff = eatVA - eatSec.sectionBase;
+
+      //get the ordinal base
+      ::uint32_t  ordinalBase;
+      if (!readDword(s.sectionData,
+                     rvaofft+_offset(export_dir_table, OrdinalBase),
+                     ordinalBase)) {
+        return false;
+      }
+
+      //get the ordinal table
+      ::uint32_t  ordinalTableRVA;
+      if (!readDword(s.sectionData,
+                     rvaofft+_offset(export_dir_table, OrdinalTableRVA),
+                     ordinalTableRVA)) {
+        return false;
+      }
+
+      VA ordinalTableVA;
+      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+        ordinalTableVA = ordinalTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+        ordinalTableVA = ordinalTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+      } else {
+        return false;
+      }
+
+      section     ordinalTableSec;
+      if (!getSecForVA(p->internal->secs, ordinalTableVA, ordinalTableSec)) {
+        return false;
+      }
+
+      ::uint32_t  ordinalOff = ordinalTableVA - ordinalTableSec.sectionBase;
+
+      for (::uint32_t  i = 0; i < numNames; i++) {
+        ::uint32_t  curNameRVA;
+        if (!readDword(namesSec.sectionData,
+                      namesOff+(i*sizeof(::uint32_t)),
+                      curNameRVA)) {
+          return false;
+        }
+
+        VA curNameVA;
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          return false;
+        }
+
+        section     curNameSec;
+
+        if (!getSecForVA(p->internal->secs, curNameVA, curNameSec)) {
+          return false;
+        }
+
+        ::uint32_t  curNameOff = curNameVA - curNameSec.sectionBase;
+        string      symName;
+        ::uint8_t   d;
+
+        do {
+          if (!readByte(curNameSec.sectionData, curNameOff, d)) {
+            return false;
+          }
+
+          if (d == 0) {
+            break;
+          }
+
+          symName.push_back(d);
+          curNameOff++;
+        } while (true);
+
+        //now, for this i, look it up in the ExportOrdinalTable
+        ::uint16_t  ordinal;
+        if (!readWord(ordinalTableSec.sectionData,
+                     ordinalOff+(i*sizeof(uint16_t)),
+                     ordinal)) {
+          return false;
+        }
+
+        //::uint32_t  eatIdx = ordinal - ordinalBase;
+        ::uint32_t  eatIdx = (ordinal*sizeof(uint32_t));
+
+        ::uint32_t  symRVA;
+        if (!readDword(eatSec.sectionData, eatOff+eatIdx, symRVA)) {
+          return false;
+        }
+
+        bool isForwarded =
+          ((symRVA >= exportDir.VirtualAddress) &&
+          (symRVA < exportDir.VirtualAddress+exportDir.Size));
+
+        if (!isForwarded) {
+          ::uint32_t symVA;
+          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+            symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+            symVA = symRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+          } else {
+            return false;
+          }
+
+          exportent a;
+
+          a.addr = symVA;
+          a.symbolName = symName;
+          a.moduleName = modName;
+          p->internal->exports.push_back(a);
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+bool getRelocations(parsed_pe *p) {
+  data_directory relocDir;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    relocDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_BASERELOC];
+  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    relocDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_BASERELOC];
+  } else {
+    return false;
+  }
+
+  if (relocDir.Size != 0) {
+    section d;
+    VA vaAddr;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      vaAddr = relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      vaAddr = relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    if (!getSecForVA(p->internal->secs, vaAddr, d)) {
+      return false;
+    }
+
+    ::uint32_t  rvaofft = vaAddr - d.sectionBase;
+
+    while (rvaofft < relocDir.Size) {
+      ::uint32_t  pageRva;
+      ::uint32_t  blockSize;
+
+      if (!readDword(d.sectionData,
+                     rvaofft+_offset(reloc_block, PageRVA),
+                     pageRva)) {
+        return false;
+      }
+
+      if (!readDword(d.sectionData,
+                     rvaofft+_offset(reloc_block, BlockSize),
+                     blockSize)) {
+        return false;
+      }
+
+      // BlockSize - The total number of bytes in the base relocation block,
+      // including the Page RVA and Block Size fields and the Type/Offset fields
+      // that follow. Therefore we should subtract 8 bytes from BlockSize to
+      // exclude the Page RVA and Block Size fields.
+      ::uint32_t entryCount = (blockSize - 8) / sizeof(::uint16_t);
+
+      // Skip the Page RVA and Block Size fields
+      rvaofft += sizeof(reloc_block);
+
+      // Iterate over all of the block Type/Offset entries
+      while (entryCount != 0) {
+        ::uint16_t  entry;
+        ::uint8_t   type;
+        ::uint16_t  offset;
+
+        if (!readWord(d.sectionData, rvaofft, entry)) {
+          return false;
+        }
+
+        // Mask out the type and assign
+        type = entry >> 12;
+        // Mask out the offset and assign
+        offset = entry & ~0xf000;
+
+        // Produce the VA of the relocation
+        ::uint32_t relocVA;
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          return false;
+        }
+
+        // Store in our list
+        reloc r;
+
+        r.shiftedAddr = relocVA;
+        r.type = (reloc_type)type;
+        p->internal->relocs.push_back(r);
+
+        entryCount--;
+        rvaofft += sizeof(::uint16_t);
+      }
+    }
+  }
+
+  return true;
+}
+
+bool getImports(parsed_pe *p) {
+  data_directory importDir;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    importDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_IMPORT];
+  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    importDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_IMPORT];
+  } else {
+    return false;
+  }
+
+  if (importDir.Size != 0) {
+    //get section for the RVA in importDir
+    section c;
+    VA addr;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      addr = importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      addr = importDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    if (!getSecForVA(p->internal->secs, addr, c)) {
+      return false;
+    }
+
+    //get import directory from this section
+    ::uint32_t  offt = addr - c.sectionBase;
+    do {
+      //read each directory entry out
+      import_dir_entry  curEnt;
+
+      READ_DWORD(c.sectionData, offt, curEnt, LookupTableRVA);
+      READ_DWORD(c.sectionData, offt, curEnt, TimeStamp);
+      READ_DWORD(c.sectionData, offt, curEnt, ForwarderChain);
+      READ_DWORD(c.sectionData, offt, curEnt, NameRVA);
+      READ_DWORD(c.sectionData, offt, curEnt, AddressRVA);
+
+      //are all the fields in curEnt null? then we break
+      if (curEnt.LookupTableRVA == 0 &&
+          curEnt.NameRVA == 0 &&
+          curEnt.AddressRVA == 0) {
+        break;
+      }
+
+      //then, try and get the name of this particular module...
+      VA name;
+      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+        name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+        name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+      } else {
+        return false;
+      }
+
+      section nameSec;
+      if (!getSecForVA(p->internal->secs, name, nameSec)) {
+        return false;
+      }
+
+      ::uint32_t  nameOff = name - nameSec.sectionBase;
+      string      modName;
+      if (!readCString(*nameSec.sectionData, nameOff, modName)) {
+        return false;
+      }
+      std::transform(modName.begin(), modName.end(), modName.begin(), ::toupper);
+
+      //then, try and get all of the sub-symbols
+      VA lookupVA = 0;
+      if (curEnt.LookupTableRVA != 0) {
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          return false;
+        }
+      } else if (curEnt.AddressRVA != 0 ) {
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          lookupVA = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          lookupVA = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          return false;
+        }
+      }
+
+      section lookupSec;
+      if (lookupVA == 0 || !getSecForVA(p->internal->secs, lookupVA, lookupSec)) {
+        return false;
+      }
+
+      ::uint64_t  lookupOff = lookupVA - lookupSec.sectionBase;
+      ::uint32_t  offInTable = 0;
+      do {
+        VA          valVA = 0;
+        ::uint8_t   ord = 0;
+        ::uint16_t  oval = 0;
+        ::uint32_t  val32 = 0;
+        ::uint64_t  val64 = 0;
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          if (!readDword(lookupSec.sectionData, lookupOff, val32)) {
+            return false;
+          }
+          if(val32 == 0) {
+            break;
+          }
+          ord = (val32 >> 31);
+          oval = (val32 & ~0xFFFF0000);
+          valVA = val32 + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          if (!readQword(lookupSec.sectionData, lookupOff, val64)) {
+            return false;
+          }
+          if (val64 == 0) {
+            break;
+          }
+          ord = (val64 >> 63);
+          oval = (val64 & ~0xFFFF0000);
+          valVA = val64 + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          return false;
+        }
+
+        if (ord == 0) {
+          //import by name
+          string  symName;
+          section symNameSec;
+
+          if (!getSecForVA(p->internal->secs, valVA, symNameSec)) {
+            return false;
+          }
+
+          ::uint32_t  nameOff = valVA - symNameSec.sectionBase;
+          nameOff += sizeof(::uint16_t);
+          do {
+            ::uint8_t d;
+
+            if (!readByte(symNameSec.sectionData, nameOff, d)) {
+              return false;
+            }
+
+            if (d == 0) {
+              break;
+            }
+
+            symName.push_back(d);
+            nameOff++;
+          } while(true);
+
+          //okay now we know the pair... add it
+          importent ent;
+
+          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+          } else {
+            return false;
+          }
+
+          ent.symbolName = symName;
+          ent.moduleName = modName;
+          p->internal->imports.push_back(ent);
+        } else {
+          string      symName =
+            "ORDINAL_" + modName + "_" + to_string<uint32_t>(oval, dec);
+
+          importent ent;
+
+          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+          } else {
+            return false;
+          }
+
+          ent.symbolName = symName;
+          ent.moduleName = modName;
+
+          p->internal->imports.push_back(ent);
+        }
+
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          lookupOff += sizeof(::uint32_t);
+          offInTable += sizeof(::uint32_t);
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          lookupOff += sizeof(::uint64_t);
+          offInTable += sizeof(::uint64_t);
+        } else {
+          return false;
+        }
+      } while(true);
+
+      offt += sizeof(import_dir_entry);
+    } while(true);
+  }
+
+  return true;
+}
+
 bool getSymbolTable(parsed_pe *p) {
   if (p->peHeader.nt.FileHeader.PointerToSymbolTable == 0) {
     return true;
@@ -684,7 +1212,7 @@ bool getSymbolTable(parsed_pe *p) {
     symbol sym;
 
     // Read name
-    if (readQword(p->fileBuffer, offset, sym.name.data) == false) {
+    if (!readQword(p->fileBuffer, offset, sym.name.data)) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
@@ -697,11 +1225,11 @@ bool getSymbolTable(parsed_pe *p) {
       uint32_t strOffset = strTableOffset + SYMBOL_NAME_OFFSET(sym.name);
       uint8_t ch;
       for (;;) {
-        if (readByte(p->fileBuffer, strOffset, ch) == false) {
+        if (!readByte(p->fileBuffer, strOffset, ch)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
-        if (!ch) {
+        if (ch == 0u) {
           break;
         }
         sym.strName.push_back((char) ch);
@@ -716,7 +1244,7 @@ bool getSymbolTable(parsed_pe *p) {
     offset += sizeof(uint64_t);
 
     // Read value
-    if (readDword(p->fileBuffer, offset, sym.value) == false) {
+    if (!readDword(p->fileBuffer, offset, sym.value)) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
@@ -725,7 +1253,7 @@ bool getSymbolTable(parsed_pe *p) {
 
     // Read section number
     uint16_t secNum;
-    if (readWord(p->fileBuffer, offset, secNum) == false) {
+    if (!readWord(p->fileBuffer, offset, secNum)) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
@@ -734,7 +1262,7 @@ bool getSymbolTable(parsed_pe *p) {
     offset += sizeof(uint16_t);
 
     // Read type
-    if (readWord(p->fileBuffer, offset, sym.type) == false) {
+    if (!readWord(p->fileBuffer, offset, sym.type)) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
@@ -742,7 +1270,7 @@ bool getSymbolTable(parsed_pe *p) {
     offset += sizeof(uint16_t);
 
     // Read storage class
-    if (readByte(p->fileBuffer, offset, sym.storageClass) == false) {
+    if (!readByte(p->fileBuffer, offset, sym.storageClass)) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
@@ -750,7 +1278,7 @@ bool getSymbolTable(parsed_pe *p) {
     offset += sizeof(uint8_t);
 
     // Read number of auxiliary symbols
-    if (readByte(p->fileBuffer, offset, sym.numberOfAuxSymbols) == false) {
+    if (!readByte(p->fileBuffer, offset, sym.numberOfAuxSymbols)) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
@@ -776,7 +1304,7 @@ bool getSymbolTable(parsed_pe *p) {
         aux_symbol_f1 asym;
 
         // Read tag index
-        if (readDword(p->fileBuffer, offset, asym.tagIndex) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.tagIndex)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -784,7 +1312,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint32_t);
 
         // Read total size
-        if (readDword(p->fileBuffer, offset, asym.totalSize) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.totalSize)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -792,7 +1320,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint32_t);
 
         // Read pointer to line number
-        if (readDword(p->fileBuffer, offset, asym.pointerToLineNumber) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.pointerToLineNumber)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -800,7 +1328,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint32_t);
 
         // Read pointer to next function
-        if (readDword(p->fileBuffer, offset, asym.pointerToNextFunction) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.pointerToNextFunction)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -820,7 +1348,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint32_t);
 
         // Read line number
-        if (readWord(p->fileBuffer, offset, asym.lineNumber) == false) {
+        if (!readWord(p->fileBuffer, offset, asym.lineNumber)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -829,7 +1357,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint8_t) * 6;
 
         // Read pointer to next function
-        if (readDword(p->fileBuffer, offset, asym.pointerToNextFunction) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.pointerToNextFunction)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -849,13 +1377,13 @@ bool getSymbolTable(parsed_pe *p) {
         aux_symbol_f3 asym;
 
         // Read line number
-        if (readDword(p->fileBuffer, offset, asym.tagIndex) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.tagIndex)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
 
         // Read characteristics
-        if (readDword(p->fileBuffer, offset, asym.characteristics) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.characteristics)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -874,7 +1402,7 @@ bool getSymbolTable(parsed_pe *p) {
 
         // Read filename
         for (uint16_t j = 0; j < SYMTAB_RECORD_LEN; j++) {
-          if (readByte(p->fileBuffer, offset, asym.filename[j]) == false) {
+          if (!readByte(p->fileBuffer, offset, asym.filename[j])) {
             PE_ERR(PEERR_MAGIC);
             return false;
           }
@@ -891,7 +1419,7 @@ bool getSymbolTable(parsed_pe *p) {
         aux_symbol_f5 asym;
 
         // Read length
-        if (readDword(p->fileBuffer, offset, asym.length) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.length)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -899,7 +1427,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint32_t);
 
         // Read number of relocations
-        if (readWord(p->fileBuffer, offset, asym.numberOfRelocations) == false) {
+        if (!readWord(p->fileBuffer, offset, asym.numberOfRelocations)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -907,7 +1435,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint16_t);
 
         // Read number of line numbers
-        if (readWord(p->fileBuffer, offset, asym.numberOfLineNumbers) == false) {
+        if (!readWord(p->fileBuffer, offset, asym.numberOfLineNumbers)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -915,7 +1443,7 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint16_t);
 
         // Read checksum
-        if (readDword(p->fileBuffer, offset, asym.checkSum) == false) {
+        if (!readDword(p->fileBuffer, offset, asym.checkSum)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -923,13 +1451,13 @@ bool getSymbolTable(parsed_pe *p) {
         offset += sizeof(uint32_t);
 
         // Read number
-        if (readWord(p->fileBuffer, offset, asym.number) == false) {
+        if (!readWord(p->fileBuffer, offset, asym.number)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
 
         // Read selection
-        if (readByte(p->fileBuffer, offset, asym.selection) == false) {
+        if (!readByte(p->fileBuffer, offset, asym.selection)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
@@ -950,784 +1478,92 @@ bool getSymbolTable(parsed_pe *p) {
 }
 
 parsed_pe *ParsePEFromFile(const char *filePath) {
-  //first, create a new parsed_pe structure
-  parsed_pe *p = new parsed_pe();
+  // First, create a new parsed_pe structure
+  // We pass std::nothrow parameter to new so in case of failure it returns
+  // nullptr instead of throwing exception std::bad_alloc.
+  parsed_pe *p = new(std::nothrow) parsed_pe();
 
-  if(p == NULL) {
+  if(p == nullptr) {
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
 
-  //make a new buffer object to hold just our file data 
+  // Make a new buffer object to hold just our file data
   p->fileBuffer = readFileToFileBuffer(filePath);
 
-  if(p->fileBuffer == NULL) {
+  if(p->fileBuffer == nullptr) {
     delete p;
     // err is set by readFileToFileBuffer
-    return NULL;
+    return nullptr;
   }
 
-  p->internal = new parsed_pe_internal();
+  p->internal = new(std::nothrow) parsed_pe_internal();
 
-  if(p->internal == NULL) {
+  if(p->internal == nullptr) {
     deleteBuffer(p->fileBuffer);
     delete p;
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
 
   //get header information
-  bounded_buffer  *remaining = NULL;
-  if(getHeader(p->fileBuffer, p->peHeader, remaining) == false) {
+  bounded_buffer  *remaining = nullptr;
+  if(!getHeader(p->fileBuffer, p->peHeader, remaining)) {
     deleteBuffer(p->fileBuffer);
     delete p;
     // err is set by getHeader
-    return NULL;
+    return nullptr;
   }
 
   bounded_buffer  *file = p->fileBuffer;
-  if(getSections(remaining, file, p->peHeader.nt, p->internal->secs) == false) {
+  if(!getSections(remaining, file, p->peHeader.nt, p->internal->secs)) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
     PE_ERR(PEERR_SECT);
-    return NULL;
+    return nullptr;
   }
 
-  if(getResources(remaining, file, p->internal->secs, p->internal->rsrcs) == false) {
+  if(!getResources(remaining, file, p->internal->secs, p->internal->rsrcs)) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
     PE_ERR(PEERR_RESC);
-    return NULL;
+    return nullptr;
   }
 
-  //get exports
-  data_directory exportDir;
-  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-    exportDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
-  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-    exportDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_EXPORT];
-  } else {
+  // Get exports
+  if (!getExports(p)) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
     PE_ERR(PEERR_MAGIC);
-    return NULL;
+    return nullptr;
   }
 
-  if(exportDir.Size != 0) {
-    section s;
-    VA addr;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      addr = exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      addr = exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_MAGIC);
-      return NULL;
-    }
-
-    if(getSecForVA(p->internal->secs, addr, s) == false) {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_SECTVA);
-      return NULL;
-    }
-
-    ::uint32_t  rvaofft = addr - s.sectionBase;
-
-    //get the name of this module
-    ::uint32_t  nameRva;
-    if(readDword( s.sectionData,
-                  rvaofft+_offset(export_dir_table, NameRVA),
-                  nameRva) == false) 
-    {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_READ);
-      return NULL;
-    }
-
-    VA nameVA;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      nameVA = nameRva + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      nameVA = nameRva + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_MAGIC);
-      return NULL;
-    }
-
-    section nameSec;
-    if(getSecForVA(p->internal->secs, nameVA, nameSec) == false) {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_SECTVA);
-      return NULL;
-    }
-
-    ::uint32_t  nameOff = nameVA - nameSec.sectionBase;
-    string      modName;
-    if (readCString(*nameSec.sectionData, nameOff, modName) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-    }
-
-    //now, get all the named export symbols
-    ::uint32_t  numNames;
-    if(readDword( s.sectionData,
-                  rvaofft+_offset(export_dir_table, NumberOfNamePointers),
-                  numNames) == false)
-    {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_READ);
-      return NULL;
-    }
-
-    if(numNames > 0) {
-      //get the names section
-      ::uint32_t  namesRVA;
-      if(readDword( s.sectionData,
-                    rvaofft+_offset(export_dir_table, NamePointerRVA),
-                    namesRVA) == false) 
-      {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-      }
-
-      VA namesVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        namesVA = namesRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        namesVA = namesRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_MAGIC);
-        return NULL;
-      }
-
-      section     namesSec;
-      if(getSecForVA(p->internal->secs, namesVA, namesSec) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_SECTVA);
-        return NULL;
-      }
-
-      ::uint32_t  namesOff = namesVA - namesSec.sectionBase;
-
-      //get the EAT section
-      ::uint32_t  eatRVA;
-      if(readDword( s.sectionData,
-                    rvaofft+_offset(export_dir_table, ExportAddressTableRVA),
-                    eatRVA) == false)
-      {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-      }
-
-      VA eatVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        eatVA = eatRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        eatVA = eatRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_MAGIC);
-        return NULL;
-      }
-
-      section     eatSec;
-      if(getSecForVA(p->internal->secs, eatVA, eatSec) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_SECTVA);
-        return NULL;
-      }
-
-      ::uint32_t  eatOff = eatVA - eatSec.sectionBase;
-
-      //get the ordinal base 
-      ::uint32_t  ordinalBase;
-      if(readDword( s.sectionData,
-                    rvaofft+_offset(export_dir_table, OrdinalBase),
-                    ordinalBase) == false)
-      {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-      }
-
-      //get the ordinal table
-      ::uint32_t  ordinalTableRVA;
-      if(readDword( s.sectionData,
-                    rvaofft+_offset(export_dir_table, OrdinalTableRVA),
-                    ordinalTableRVA) == false)
-
-      {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-      }
-
-      VA ordinalTableVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        ordinalTableVA = ordinalTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        ordinalTableVA = ordinalTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_MAGIC);
-        return NULL;
-      }
-
-      section     ordinalTableSec;
-      if(getSecForVA(p->internal->secs, ordinalTableVA, ordinalTableSec) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_SECTVA);
-        return NULL;
-      }
-
-      ::uint32_t  ordinalOff = ordinalTableVA - ordinalTableSec.sectionBase;
-
-      for(::uint32_t  i = 0; i < numNames; i++) {
-        ::uint32_t  curNameRVA;
-        if(readDword( namesSec.sectionData,
-                      namesOff+(i*sizeof(::uint32_t)),
-                      curNameRVA) == false)
-        {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_READ);
-          return NULL;
-        }
- 
-        VA curNameVA;
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_MAGIC);
-          return NULL;
-        }
-
-        section     curNameSec;
-
-        if(getSecForVA(p->internal->secs, curNameVA, curNameSec) == false) {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_SECTVA);
-          return NULL;
-        }
-
-        ::uint32_t  curNameOff = curNameVA - curNameSec.sectionBase;
-        string      symName;
-        ::uint8_t   d;
-
-        do {
-          if(readByte(curNameSec.sectionData, curNameOff, d) == false) {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_READ);
-            return NULL;
-          }
-
-          if(d == 0) {
-            break;
-          }
-
-          symName.push_back(d);
-          curNameOff++;
-        }while(true);
-
-        //now, for this i, look it up in the ExportOrdinalTable
-        ::uint16_t  ordinal;
-        if(readWord(ordinalTableSec.sectionData, 
-                    ordinalOff+(i*sizeof(uint16_t)), 
-                    ordinal) == false) 
-        {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_READ);
-          return NULL;
-        }
-
-        //::uint32_t  eatIdx = ordinal - ordinalBase;
-        ::uint32_t  eatIdx = (ordinal*sizeof(uint32_t));
-
-        ::uint32_t  symRVA;
-        if(readDword(eatSec.sectionData, eatOff+eatIdx, symRVA) == false) {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_READ);
-          return NULL;
-        }
-
-        bool  isForwarded = 
-          ((symRVA >= exportDir.VirtualAddress) && 
-          (symRVA < exportDir.VirtualAddress+exportDir.Size));
-        
-        if(isForwarded == false) {
-          ::uint32_t symVA;
-          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-            symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-            symVA = symRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-          } else {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_MAGIC);
-            return NULL;
-          }
-
-          exportent a;
-
-          a.addr = symVA;
-          a.symbolName = symName;
-          a.moduleName = modName;
-          p->internal->exports.push_back(a);
-        }
-      }
-    }
-  }
-
-  //get relocations, if exist
-  data_directory relocDir;
-  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-    relocDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_BASERELOC];
-  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-    relocDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_BASERELOC];
-  } else {
+  // Get relocations, if exist
+  if (!getRelocations(p)) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
     PE_ERR(PEERR_MAGIC);
-    return NULL;
+    return nullptr;
   }
 
-  if(relocDir.Size != 0) {
-    section d;
-    VA vaAddr;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      vaAddr = relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      vaAddr = relocDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_MAGIC);
-      return NULL;
-    }
-
-    if(getSecForVA(p->internal->secs, vaAddr, d) == false) {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_SECTVA);
-      return NULL;
-    }
-
-    ::uint32_t  rvaofft = vaAddr - d.sectionBase;
-
-    while (rvaofft < relocDir.Size) {
-      ::uint32_t  pageRva;
-      ::uint32_t  blockSize;
-
-      if (readDword(d.sectionData,
-                    rvaofft+_offset(reloc_block, PageRVA),
-                    pageRva) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-      }
-
-      if (readDword(d.sectionData,
-                    rvaofft+_offset(reloc_block, BlockSize),
-                    blockSize) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_READ);
-        return NULL;
-      }
-
-      // BlockSize - The total number of bytes in the base relocation block,
-      // including the Page RVA and Block Size fields and the Type/Offset fields
-      // that follow. Therefore we should subtract 8 bytes from BlockSize to
-      // exclude the Page RVA and Block Size fields.
-      ::uint32_t entryCount = (blockSize - 8) / sizeof(::uint16_t);
-
-      // Skip the Page RVA and Block Size fields
-      rvaofft += sizeof(reloc_block);
-
-      // Iterate over all of the block Type/Offset entries
-      while (entryCount != 0) {
-        ::uint16_t  entry;
-        ::uint8_t   type;
-        ::uint16_t  offset;
-
-        if (readWord(d.sectionData, rvaofft, entry) == false) {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_READ);
-          return NULL;
-        }
-
-        // Mask out the type and assign
-        type = entry >> 12;
-        // Mask out the offset and assign
-        offset = entry & ~0xf000;
-
-        // Produce the VA of the relocation
-        ::uint32_t relocVA;
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_MAGIC);
-          return NULL;
-        }
-
-        // Store in our list
-        reloc r;
-
-        r.shiftedAddr = relocVA;
-        r.type = (reloc_type)type;
-        p->internal->relocs.push_back(r);
-
-        entryCount--;
-        rvaofft += sizeof(::uint16_t);
-      }
-    }
-  }
-   
-  //get imports
-  data_directory importDir;
-  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-    importDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_IMPORT];
-  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-    importDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_IMPORT];
-  } else {
+  // Get imports
+  if (!getImports(p)) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
-    PE_ERR(PEERR_MAGIC);
-    return NULL;
-  }
-
-  if(importDir.Size != 0) {
-    //get section for the RVA in importDir
-    section c;
-    VA addr;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      addr = importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      addr = importDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_MAGIC);
-      return NULL;
-    }
-
-    if(getSecForVA(p->internal->secs, addr, c) == false) {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_READ);
-      return NULL;
-    }
-
-    //get import directory from this section
-    ::uint32_t  offt = addr - c.sectionBase;
-    do {
-      //read each directory entry out
-      import_dir_entry  curEnt;
-
-      READ_DWORD_NULL(c.sectionData, offt, curEnt, LookupTableRVA);
-      READ_DWORD_NULL(c.sectionData, offt, curEnt, TimeStamp);
-      READ_DWORD_NULL(c.sectionData, offt, curEnt, ForwarderChain);
-      READ_DWORD_NULL(c.sectionData, offt, curEnt, NameRVA);
-      READ_DWORD_NULL(c.sectionData, offt, curEnt, AddressRVA);
-
-      //are all the fields in curEnt null? then we break
-      if( curEnt.LookupTableRVA == 0 && 
-          curEnt.NameRVA == 0 &&
-          curEnt.AddressRVA == 0) {
-        break;
-      }
-
-      //then, try and get the name of this particular module...
-      VA name;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_MAGIC);
-        return NULL;
-      }
-
-      section nameSec;
-      if(getSecForVA(p->internal->secs, name, nameSec) == false) {
-        PE_ERR(PEERR_SECTVA);
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        return NULL;
-      }
-
-      ::uint32_t  nameOff = name - nameSec.sectionBase;
-      string      modName;
-      if (readCString(*nameSec.sectionData, nameOff, modName) == false ) {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_READ);
-          return NULL;
-      }
-	  std::transform(modName.begin(), modName.end(), modName.begin(), ::toupper);
-
-      //then, try and get all of the sub-symbols
-      VA lookupVA = 0;
-      if(curEnt.LookupTableRVA != 0) { 
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          lookupVA = curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_MAGIC);
-          return NULL;
-        }
-      } else if(curEnt.AddressRVA != 0 ) {
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          lookupVA = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          lookupVA = curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_MAGIC);
-          return NULL;
-        }
-      }
-
-      section lookupSec;
-      if(lookupVA == 0 || getSecForVA(p->internal->secs, lookupVA, lookupSec) == false) {
-        deleteBuffer(remaining);
-        deleteBuffer(p->fileBuffer);
-        delete p;
-        PE_ERR(PEERR_SECTVA);
-        return NULL;
-      }
-      
-      ::uint64_t  lookupOff = lookupVA - lookupSec.sectionBase;
-      ::uint32_t  offInTable = 0;
-      do {
-        VA          valVA = 0;
-        ::uint8_t   ord = 0;
-        ::uint16_t  oval = 0;
-        ::uint32_t  val32 = 0;
-        ::uint64_t  val64 = 0;
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          if(readDword(lookupSec.sectionData, lookupOff, val32) == false) {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_READ);
-            return NULL;
-          }
-          if(val32 == 0) {
-            break;
-          }
-          ord = (val32 >> 31);
-          oval = (val32 & ~0xFFFF0000);
-          valVA = val32 + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          if(readQword(lookupSec.sectionData, lookupOff, val64) == false) {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_READ);
-            return NULL;
-          }
-          if(val64 == 0) {
-            break;
-          }
-          ord = (val64 >> 63);
-          oval = (val64 & ~0xFFFF0000);
-          valVA = val64 + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_MAGIC);
-          return NULL;
-        }
-
-        if(ord == 0) {
-          //import by name
-          string  symName;
-          section symNameSec;
-
-          if(getSecForVA(p->internal->secs, valVA, symNameSec) == false) {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_SECTVA);
-            return NULL;
-          }
-          
-          ::uint32_t  nameOff = valVA - symNameSec.sectionBase;
-          nameOff += sizeof(::uint16_t);
-          do {
-            ::uint8_t d;
-
-            if(readByte(symNameSec.sectionData, nameOff, d) == false) {
-              deleteBuffer(remaining);
-              deleteBuffer(p->fileBuffer);
-              delete p;
-              PE_ERR(PEERR_READ);
-              return NULL;
-            }
-            
-            if(d == 0) {
-              break;
-            }
-
-            symName.push_back(d);
-            nameOff++;
-          } while(true);
-
-          //okay now we know the pair... add it
-          importent ent;
-
-          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-          } else {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_MAGIC);
-            return NULL;
-          }
-
-          ent.symbolName = symName;
-          ent.moduleName = modName;
-          p->internal->imports.push_back(ent);
-        } else {
-          string      symName = 
-            "ORDINAL_" + modName + "_" + to_string<uint32_t>(oval, dec);
-          
-          importent ent;
-
-          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-          } else {
-            deleteBuffer(remaining);
-            deleteBuffer(p->fileBuffer);
-            delete p;
-            PE_ERR(PEERR_MAGIC);
-            return NULL;
-          }
-          
-          ent.symbolName = symName;
-          ent.moduleName = modName;
-
-          p->internal->imports.push_back(ent);
-        }
-        
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          lookupOff += sizeof(::uint32_t);
-          offInTable += sizeof(::uint32_t);
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          lookupOff += sizeof(::uint64_t);
-          offInTable += sizeof(::uint64_t);
-        } else {
-          deleteBuffer(remaining);
-          deleteBuffer(p->fileBuffer);
-          delete p;
-          PE_ERR(PEERR_MAGIC);
-          return NULL;
-        }
-      } while(true);
-
-      offt += sizeof(import_dir_entry);
-    } while(true);
+    return nullptr;
   }
 
   // Get symbol table
-
-  if (getSymbolTable(p) == false) {
+  if (!getSymbolTable(p)) {
     deleteBuffer(remaining);
     deleteBuffer(p->fileBuffer);
     delete p;
-    return NULL;
+    return nullptr;
   }
 
   deleteBuffer(remaining);
@@ -1736,7 +1572,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
 }
 
 void DestructParsedPE(parsed_pe *p) {
-  if(p == NULL) {
+  if(p == nullptr) {
     return;
   }
 
@@ -1750,9 +1586,8 @@ void DestructParsedPE(parsed_pe *p) {
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
   list<importent> &l = pe->internal->imports;
 
-  for(list<importent>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
-    importent i = *it;
-    if(cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
+  for (importent i : l) {
+    if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
       break;
     }
   }
@@ -1764,9 +1599,8 @@ void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
   list<reloc> &l = pe->internal->relocs;
 
-  for(list<reloc>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
-    reloc r = *it;
-    if(cb(cbd, r.shiftedAddr, r.type) != 0) {
+  for (reloc r : l) {
+    if (cb(cbd, r.shiftedAddr, r.type) != 0) {
       break;
     }
   }
@@ -1778,8 +1612,7 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
 void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd) {
   list<symbol> &l = pe->internal->symbols;
 
-  for (list<symbol>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
-    symbol s = *it;
+  for (symbol s : l) {
     if (cb(cbd, s.strName, s.value, s.sectionNumber, s.type, s.storageClass,
            s.numberOfAuxSymbols) != 0) {
       break;
@@ -1793,10 +1626,8 @@ void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd) {
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
   list<exportent> &l = pe->internal->exports;
 
-  for(list<exportent>::iterator it = l.begin(), e = l.end(); it != e; ++it) {
-    exportent i = *it;
-
-    if(cb(cbd, i.addr, i.moduleName, i.symbolName)) {
+  for (exportent i : l) {
+    if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
       break;
     }
   }
@@ -1808,12 +1639,8 @@ void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
   parsed_pe_internal  *pint = pe->internal;
 
-  for(list<section>::iterator sit = pint->secs.begin(), e = pint->secs.end();
-      sit != e;
-      ++sit)
-  {
-    section s = *sit;
-    if(cb(cbd, s.sectionBase, s.sectionName, s.sec, s.sectionData) != 0) {
+  for (section s : pint->secs) {
+    if (cb(cbd, s.sectionBase, s.sectionName, s.sec, s.sectionData) != 0) {
       break;
     }
   }
@@ -1825,7 +1652,7 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
   //find this VA in a section
   section s;
 
-  if(getSecForVA(pe->internal->secs, v, s) == false) {
+  if(!getSecForVA(pe->internal->secs, v, s)) {
     PE_ERR(PEERR_SECTVA);
     return false;
   }
@@ -1837,7 +1664,7 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
 
 bool GetEntryPoint(parsed_pe *pe, VA &v) {
 
-  if(pe != NULL) {
+  if(pe != nullptr) {
     nt_header_32  *nthdr = &pe->peHeader.nt;
 
     if (nthdr->OptionalMagic == NT_OPTIONAL_32_MAGIC) {

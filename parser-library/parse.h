@@ -41,38 +41,38 @@ THE SOFTWARE.
   err_loc += ":" + to_string<std::uint32_t>(__LINE__, dec);
 
 #define READ_WORD(b, o, inst, member) \
-if(readWord(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+if (!readWord(b, o+_offset(__typeof__(inst), member), inst.member)) { \
   PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_DWORD(b, o, inst, member) \
-if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+if (!readDword(b, o+_offset(__typeof__(inst), member), inst.member)) { \
   PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_QWORD(b, o, inst, member) \
-if(readQword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+if (!readQword(b, o+_offset(__typeof__(inst), member), inst.member)) { \
   PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_DWORD_PTR(b, o, inst, member) \
-if(readDword(b, o+_offset(__typeof__(*inst), member), inst->member) == false) { \
+if (!readDword(b, o+_offset(__typeof__(*inst), member), inst->member)) { \
   PE_ERR(PEERR_READ); \
   return false; \
 }
 
 #define READ_BYTE(b, o, inst, member) \
-if(readByte(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+if (!readByte(b, o+_offset(__typeof__(inst), member), inst.member)) { \
   PE_ERR(PEERR_READ); \
   return false; \
 }
 
 /* This variant returns NULL instead of false. */
 #define READ_DWORD_NULL(b, o, inst, member) \
-if(readDword(b, o+_offset(__typeof__(inst), member), inst.member) == false) { \
+if (!readDword(b, o+_offset(__typeof__(inst), member), inst.member)) { \
   PE_ERR(PEERR_READ); \
   return NULL; \
 }
@@ -177,7 +177,7 @@ std::string GetPEErrLoc();
 parsed_pe *ParsePEFromFile(const char *filePath);
 
 //destruct a PE context
-void DestructParsedPE(parsed_pe *pe);
+void DestructParsedPE(parsed_pe *p);
 
 //iterate over the resources
 typedef int (*iterRsrc)(void *, resource);

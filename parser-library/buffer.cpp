@@ -53,7 +53,7 @@ struct buffer_detail {
 };
 
 bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return false;
   }
 
@@ -69,7 +69,7 @@ bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
 
 //TODO: perform endian swap as needed
 bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return false;
   }
 
@@ -77,7 +77,7 @@ bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
     return false;
   }
 
-  ::uint16_t  *tmp = (::uint16_t *)(b->buf+offset);
+  ::uint16_t  *tmp = reinterpret_cast<uint16_t *>(b->buf+offset);
   out = *tmp;
 
   return true;
@@ -85,7 +85,7 @@ bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
 
 //TODO: perform endian swap as needed
 bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return false;
   }
 
@@ -93,7 +93,7 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
     return false;
   }
 
-  ::uint32_t  *tmp = (::uint32_t *)(b->buf+offset);
+  ::uint32_t  *tmp = reinterpret_cast<uint32_t *>(b->buf+offset);
   out = *tmp;
 
   return true;
@@ -101,7 +101,7 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
 
 //TODO: perform endian swap as needed
 bool readQword(bounded_buffer *b, ::uint32_t offset, ::uint64_t &out) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return false;
   }
 
@@ -109,7 +109,7 @@ bool readQword(bounded_buffer *b, ::uint32_t offset, ::uint64_t &out) {
     return false;
   }
 
-  ::uint64_t  *tmp = (::uint64_t *)(b->buf+offset);
+  ::uint64_t  *tmp = reinterpret_cast<uint64_t *>(b->buf+offset);
   out = *tmp;
 
   return true;
@@ -120,19 +120,19 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   HANDLE  h = CreateFileA(filePath, 
                           GENERIC_READ, 
                           FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE, 
-                          NULL, 
+                          nullptr,
                           OPEN_EXISTING, 
                           FILE_ATTRIBUTE_NORMAL, 
-                          NULL);
+                          nullptr);
   if(h == INVALID_HANDLE_VALUE) {
-    return NULL;
+    return nullptr;
   }
 
-  DWORD fileSize = GetFileSize(h, NULL);
+  DWORD fileSize = GetFileSize(h, nullptr);
 
   if(fileSize == INVALID_FILE_SIZE) {
     CloseHandle(h);
-    return NULL;
+    return nullptr;
   }
 
 #else
@@ -141,25 +141,25 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   if(fd == -1) {
     PE_ERR(PEERR_OPEN);
-    return NULL;
+    return nullptr;
   }
 #endif
 
   //make a buffer object
-  bounded_buffer  *p = new bounded_buffer();
+  bounded_buffer  *p = new(std::nothrow) bounded_buffer();
 
-  if(p == NULL) {
+  if(p == nullptr) {
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
 
   memset(p, 0, sizeof(bounded_buffer));
-  buffer_detail *d = new buffer_detail();
+  buffer_detail *d = new(std::nothrow) buffer_detail();
 
-  if(d == NULL) {
+  if(d == nullptr) {
     delete p;
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
   memset(d, 0, sizeof(buffer_detail));
   p->detail = d;
@@ -168,21 +168,21 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 #ifdef WIN32
   p->detail->file = h;
 
-  HANDLE  hMap = CreateFileMapping(h, NULL, PAGE_READONLY, 0, 0, NULL);
+  HANDLE  hMap = CreateFileMapping(h, nullptr, PAGE_READONLY, 0, 0, nullptr);
 
-  if(hMap == NULL) {
+  if(hMap == nullptr) {
     CloseHandle(h);
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
 
   p->detail->sec = hMap;
 
   LPVOID  ptr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 
-  if(ptr == NULL) {
+  if(ptr == nullptr) {
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
 
   p->buf = (::uint8_t *)ptr;
@@ -198,20 +198,20 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     delete d;
     delete p;
     PE_ERR(PEERR_STAT);
-    return NULL;
+    return nullptr;
   }
 
-  void *maddr = mmap(NULL, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
+  void *maddr = mmap(nullptr, s.st_size, PROT_READ, MAP_SHARED, fd, 0);
 
   if(maddr == MAP_FAILED) {
     close(fd);
     delete d;
     delete p;
     PE_ERR(PEERR_MEM);
-    return NULL;
+    return nullptr;
   }
 
-  p->buf = (::uint8_t *)maddr;
+  p->buf = reinterpret_cast<uint8_t *>(maddr);
   p->bufLen = s.st_size;
   p->copy = false;
 #endif
@@ -221,20 +221,20 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
 //split buffer inclusively from from to to by offset
 bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
-  if(b == NULL) {
-    return NULL;
+  if(b == nullptr) {
+    return nullptr;
   }
 
   //safety checks
   if(to < from || to > b->bufLen) {
-    return NULL;
+    return nullptr;
   }
   
   //make a new buffer
-  bounded_buffer  *newBuff = new bounded_buffer();
+  bounded_buffer  *newBuff = new(std::nothrow) bounded_buffer();
 
-  if(newBuff == NULL) {
-    return NULL;
+  if(newBuff == nullptr) {
+    return nullptr;
   }
 
   newBuff->copy = true;
@@ -245,11 +245,11 @@ bounded_buffer *splitBuffer(bounded_buffer *b, ::uint32_t from, ::uint32_t to) {
 }
 
 void deleteBuffer(bounded_buffer *b) {
-  if(b == NULL) {
+  if(b == nullptr) {
     return;
   }
 
-  if(b->copy == false) {
+  if(!b->copy) {
 #ifdef WIN32
     UnmapViewOfFile(b->buf);
     CloseHandle(b->detail->sec);
