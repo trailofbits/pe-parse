@@ -1374,42 +1374,14 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     }
 
     ::uint32_t  rvaofft = vaAddr - d.sectionBase;
-    ::uint32_t  pageRva;
-    ::uint32_t  blockSize;
 
-    if(readDword( d.sectionData, 
-                  rvaofft+_offset(reloc_block, PageRVA), 
-                  pageRva) == false)
-    {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_READ);
-      return NULL;
-    }
-   
-    if(readDword( d.sectionData, 
-                  rvaofft+_offset(reloc_block, BlockSize), 
-                  blockSize) == false)
-    {
-      deleteBuffer(remaining);
-      deleteBuffer(p->fileBuffer);
-      delete p;
-      PE_ERR(PEERR_READ);
-      return NULL;
-    }
+    while (rvaofft < relocDir.Size) {
+      ::uint32_t  pageRva;
+      ::uint32_t  blockSize;
 
-    //iter over all of the blocks
-    ::uint32_t  blockCount = blockSize/sizeof(::uint16_t);
-
-    rvaofft += sizeof(reloc_block);
-
-    while(blockCount != 0) {
-      ::uint16_t  block;
-      ::uint8_t   type;
-      ::uint16_t  offset;
-
-      if(readWord(d.sectionData, rvaofft, block) == false) {
+      if (readDword(d.sectionData,
+                    rvaofft+_offset(reloc_block, PageRVA),
+                    pageRva) == false) {
         deleteBuffer(remaining);
         deleteBuffer(p->fileBuffer);
         delete p;
@@ -1417,34 +1389,68 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
         return NULL;
       }
 
-      //mask out the type and assign
-      type = block >> 12;
-      //mask out the offset and assign
-      offset = block & ~0xf000;
-
-      //produce the VA of the relocation
-      ::uint32_t relocVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
+      if (readDword(d.sectionData,
+                    rvaofft+_offset(reloc_block, BlockSize),
+                    blockSize) == false) {
         deleteBuffer(remaining);
         deleteBuffer(p->fileBuffer);
         delete p;
-        PE_ERR(PEERR_MAGIC);
+        PE_ERR(PEERR_READ);
         return NULL;
       }
 
-      //store in our list
-      reloc r;
+      // BlockSize - The total number of bytes in the base relocation block,
+      // including the Page RVA and Block Size fields and the Type/Offset fields
+      // that follow. Therefore we should subtract 8 bytes from BlockSize to
+      // exclude the Page RVA and Block Size fields.
+      ::uint32_t entryCount = (blockSize - 8) / sizeof(::uint16_t);
 
-      r.shiftedAddr = relocVA;
-      r.type = (reloc_type)type;
-      p->internal->relocs.push_back(r);
+      // Skip the Page RVA and Block Size fields
+      rvaofft += sizeof(reloc_block);
 
-      blockCount--;
-      rvaofft += sizeof(::uint16_t);
+      // Iterate over all of the block Type/Offset entries
+      while (entryCount != 0) {
+        ::uint16_t  entry;
+        ::uint8_t   type;
+        ::uint16_t  offset;
+
+        if (readWord(d.sectionData, rvaofft, entry) == false) {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
+          PE_ERR(PEERR_READ);
+          return NULL;
+        }
+
+        // Mask out the type and assign
+        type = entry >> 12;
+        // Mask out the offset and assign
+        offset = entry & ~0xf000;
+
+        // Produce the VA of the relocation
+        ::uint32_t relocVA;
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          deleteBuffer(remaining);
+          deleteBuffer(p->fileBuffer);
+          delete p;
+          PE_ERR(PEERR_MAGIC);
+          return NULL;
+        }
+
+        // Store in our list
+        reloc r;
+
+        r.shiftedAddr = relocVA;
+        r.type = (reloc_type)type;
+        p->internal->relocs.push_back(r);
+
+        entryCount--;
+        rvaofft += sizeof(::uint16_t);
+      }
     }
   }
    
