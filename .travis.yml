@@ -10,8 +10,6 @@ before_install:
 - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
 script: CXXFLAGS='-std=c++0x' cmake . && make
 matrix:
-  allow_failures:
-  - os: osx
   exclude:
   - compiler: gcc
     os: osx
