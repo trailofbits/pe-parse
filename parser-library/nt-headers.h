@@ -26,11 +26,11 @@ THE SOFTWARE.
 #define _NT_HEADERS
 #include <cstdint>
 
-#define _offset(t, f) ((std::uint32_t)(ptrdiff_t)&(((t*)0)->f))
+#define _offset(t, f) ((std::uint32_t)(ptrdiff_t) & (((t *) 0)->f))
 
-//need to pack these structure definitions
+// need to pack these structure definitions
 
-//some constant definitions
+// some constant definitions
 namespace peparse {
 const std::uint16_t MZ_MAGIC = 0x5A4D;
 const std::uint32_t NT_MAGIC = 0x00004550;
@@ -57,7 +57,7 @@ const std::uint16_t DIR_COM_DESCRIPTOR = 14;
 
 const std::uint32_t IMAGE_SCN_TYPE_NO_PAD = 0x00000008;
 const std::uint32_t IMAGE_SCN_CNT_CODE = 0x00000020;
-const std::uint32_t IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040; 
+const std::uint32_t IMAGE_SCN_CNT_INITIALIZED_DATA = 0x00000040;
 const std::uint32_t IMAGE_SCN_CNT_UNINITIALIZED_DATA = 0x00000080;
 const std::uint32_t IMAGE_SCN_LNK_OTHER = 0x00000100;
 const std::uint32_t IMAGE_SCN_LNK_INFO = 0x00000200;
@@ -151,35 +151,35 @@ const std::uint8_t IMAGE_SYM_CLASS_WEAK_EXTERNAL = 105;
 const std::uint8_t IMAGE_SYM_CLASS_CLR_TOKEN = 107;
 
 struct dos_header {
-    std::uint16_t   e_magic;           
-    std::uint16_t   e_cblp;            
-    std::uint16_t   e_cp;              
-    std::uint16_t   e_crlc;            
-    std::uint16_t   e_cparhdr;         
-    std::uint16_t   e_minalloc;        
-    std::uint16_t   e_maxalloc;        
-    std::uint16_t   e_ss;              
-    std::uint16_t   e_sp;              
-    std::uint16_t   e_csum;            
-    std::uint16_t   e_ip;              
-    std::uint16_t   e_cs;              
-    std::uint16_t   e_lfarlc; 
-    std::uint16_t   e_ovno;            
-    std::uint16_t   e_res[4];          
-    std::uint16_t   e_oemid;           
-    std::uint16_t   e_oeminfo; 
-    std::uint16_t   e_res2[10];        
-    std::uint32_t   e_lfanew;          
+  std::uint16_t e_magic;
+  std::uint16_t e_cblp;
+  std::uint16_t e_cp;
+  std::uint16_t e_crlc;
+  std::uint16_t e_cparhdr;
+  std::uint16_t e_minalloc;
+  std::uint16_t e_maxalloc;
+  std::uint16_t e_ss;
+  std::uint16_t e_sp;
+  std::uint16_t e_csum;
+  std::uint16_t e_ip;
+  std::uint16_t e_cs;
+  std::uint16_t e_lfarlc;
+  std::uint16_t e_ovno;
+  std::uint16_t e_res[4];
+  std::uint16_t e_oemid;
+  std::uint16_t e_oeminfo;
+  std::uint16_t e_res2[10];
+  std::uint32_t e_lfanew;
 };
 
 struct file_header {
-    std::uint16_t   Machine;
-    std::uint16_t   NumberOfSections;
-    std::uint32_t   TimeDateStamp;
-    std::uint32_t   PointerToSymbolTable;
-    std::uint32_t   NumberOfSymbols;
-    std::uint16_t   SizeOfOptionalHeader;
-    std::uint16_t   Characteristics;
+  std::uint16_t Machine;
+  std::uint16_t NumberOfSections;
+  std::uint32_t TimeDateStamp;
+  std::uint32_t PointerToSymbolTable;
+  std::uint32_t NumberOfSymbols;
+  std::uint16_t SizeOfOptionalHeader;
+  std::uint16_t Characteristics;
 };
 
 struct data_directory {
@@ -188,37 +188,37 @@ struct data_directory {
 };
 
 struct optional_header_32 {
-  std::uint16_t   Magic;
-  std::uint8_t    MajorLinkerVersion;
-  std::uint8_t    MinorLinkerVersion;
-  std::uint32_t   SizeOfCode;
-  std::uint32_t   SizeOfInitializedData;
-  std::uint32_t   SizeOfUninitializedData;
-  std::uint32_t   AddressOfEntryPoint;
-  std::uint32_t   BaseOfCode;
-  std::uint32_t   BaseOfData;
-  std::uint32_t   ImageBase;
-  std::uint32_t   SectionAlignment;
-  std::uint32_t   FileAlignment;
-  std::uint16_t   MajorOperatingSystemVersion;
-  std::uint16_t   MinorOperatingSystemVersion;
-  std::uint16_t   MajorImageVersion;
-  std::uint16_t   MinorImageVersion;
-  std::uint16_t   MajorSubsystemVersion;
-  std::uint16_t   MinorSubsystemVersion;
-  std::uint32_t   Win32VersionValue;
-  std::uint32_t   SizeOfImage;
-  std::uint32_t   SizeOfHeaders;
-  std::uint32_t   CheckSum;
-  std::uint16_t   Subsystem;
-  std::uint16_t   DllCharacteristics;
-  std::uint32_t   SizeOfStackReserve;
-  std::uint32_t   SizeOfStackCommit;
-  std::uint32_t   SizeOfHeapReserve;
-  std::uint32_t   SizeOfHeapCommit;
-  std::uint32_t   LoaderFlags;
-  std::uint32_t   NumberOfRvaAndSizes;
-  data_directory    DataDirectory[NUM_DIR_ENTRIES];
+  std::uint16_t Magic;
+  std::uint8_t MajorLinkerVersion;
+  std::uint8_t MinorLinkerVersion;
+  std::uint32_t SizeOfCode;
+  std::uint32_t SizeOfInitializedData;
+  std::uint32_t SizeOfUninitializedData;
+  std::uint32_t AddressOfEntryPoint;
+  std::uint32_t BaseOfCode;
+  std::uint32_t BaseOfData;
+  std::uint32_t ImageBase;
+  std::uint32_t SectionAlignment;
+  std::uint32_t FileAlignment;
+  std::uint16_t MajorOperatingSystemVersion;
+  std::uint16_t MinorOperatingSystemVersion;
+  std::uint16_t MajorImageVersion;
+  std::uint16_t MinorImageVersion;
+  std::uint16_t MajorSubsystemVersion;
+  std::uint16_t MinorSubsystemVersion;
+  std::uint32_t Win32VersionValue;
+  std::uint32_t SizeOfImage;
+  std::uint32_t SizeOfHeaders;
+  std::uint32_t CheckSum;
+  std::uint16_t Subsystem;
+  std::uint16_t DllCharacteristics;
+  std::uint32_t SizeOfStackReserve;
+  std::uint32_t SizeOfStackCommit;
+  std::uint32_t SizeOfHeapReserve;
+  std::uint32_t SizeOfHeapCommit;
+  std::uint32_t LoaderFlags;
+  std::uint32_t NumberOfRvaAndSizes;
+  data_directory DataDirectory[NUM_DIR_ENTRIES];
 };
 
 /*
@@ -226,44 +226,44 @@ struct optional_header_32 {
  * except some fields don't exist here (BaseOfData), and others are bigger.
  */
 struct optional_header_64 {
-  std::uint16_t   Magic;
-  std::uint8_t    MajorLinkerVersion;
-  std::uint8_t    MinorLinkerVersion;
-  std::uint32_t   SizeOfCode;
-  std::uint32_t   SizeOfInitializedData;
-  std::uint32_t   SizeOfUninitializedData;
-  std::uint32_t   AddressOfEntryPoint;
-  std::uint32_t   BaseOfCode;
-  std::uint64_t   ImageBase;
-  std::uint32_t   SectionAlignment;
-  std::uint32_t   FileAlignment;
-  std::uint16_t   MajorOperatingSystemVersion;
-  std::uint16_t   MinorOperatingSystemVersion;
-  std::uint16_t   MajorImageVersion;
-  std::uint16_t   MinorImageVersion;
-  std::uint16_t   MajorSubsystemVersion;
-  std::uint16_t   MinorSubsystemVersion;
-  std::uint32_t   Win32VersionValue;
-  std::uint32_t   SizeOfImage;
-  std::uint32_t   SizeOfHeaders;
-  std::uint32_t   CheckSum;
-  std::uint16_t   Subsystem;
-  std::uint16_t   DllCharacteristics;
-  std::uint64_t   SizeOfStackReserve;
-  std::uint64_t   SizeOfStackCommit;
-  std::uint64_t   SizeOfHeapReserve;
-  std::uint64_t   SizeOfHeapCommit;
-  std::uint32_t   LoaderFlags;
-  std::uint32_t   NumberOfRvaAndSizes;
-  data_directory    DataDirectory[NUM_DIR_ENTRIES];
+  std::uint16_t Magic;
+  std::uint8_t MajorLinkerVersion;
+  std::uint8_t MinorLinkerVersion;
+  std::uint32_t SizeOfCode;
+  std::uint32_t SizeOfInitializedData;
+  std::uint32_t SizeOfUninitializedData;
+  std::uint32_t AddressOfEntryPoint;
+  std::uint32_t BaseOfCode;
+  std::uint64_t ImageBase;
+  std::uint32_t SectionAlignment;
+  std::uint32_t FileAlignment;
+  std::uint16_t MajorOperatingSystemVersion;
+  std::uint16_t MinorOperatingSystemVersion;
+  std::uint16_t MajorImageVersion;
+  std::uint16_t MinorImageVersion;
+  std::uint16_t MajorSubsystemVersion;
+  std::uint16_t MinorSubsystemVersion;
+  std::uint32_t Win32VersionValue;
+  std::uint32_t SizeOfImage;
+  std::uint32_t SizeOfHeaders;
+  std::uint32_t CheckSum;
+  std::uint16_t Subsystem;
+  std::uint16_t DllCharacteristics;
+  std::uint64_t SizeOfStackReserve;
+  std::uint64_t SizeOfStackCommit;
+  std::uint64_t SizeOfHeapReserve;
+  std::uint64_t SizeOfHeapCommit;
+  std::uint32_t LoaderFlags;
+  std::uint32_t NumberOfRvaAndSizes;
+  data_directory DataDirectory[NUM_DIR_ENTRIES];
 };
 
 struct nt_header_32 {
-  std::uint32_t     Signature;
-  file_header         FileHeader;
-  optional_header_32  OptionalHeader;
-  optional_header_64  OptionalHeader64;
-  std::uint16_t     OptionalMagic;
+  std::uint32_t Signature;
+  file_header FileHeader;
+  optional_header_32 OptionalHeader;
+  optional_header_64 OptionalHeader64;
+  std::uint16_t OptionalMagic;
 };
 
 /*
@@ -278,21 +278,17 @@ struct resource_dir_entry_sz {
 };
 
 struct resource_dir_entry {
-  inline resource_dir_entry(void)
-      : ID(0),
-        RVA(0),
-        type(0),
-        name(0),
-        lang(0) {}
+  inline resource_dir_entry(void) : ID(0), RVA(0), type(0), name(0), lang(0) {
+  }
 
   std::uint32_t ID;
   std::uint32_t RVA;
   std::uint32_t type;
   std::uint32_t name;
   std::uint32_t lang;
-  std::string     type_str;
-  std::string     name_str;
-  std::string     lang_str;
+  std::string type_str;
+  std::string name_str;
+  std::string lang_str;
 };
 
 struct resource_dir_table {
@@ -312,19 +308,19 @@ struct resource_dat_entry {
 };
 
 struct image_section_header {
-    std::uint8_t    Name[NT_SHORT_NAME_LEN];
-    union {
-            std::uint32_t   PhysicalAddress;
-            std::uint32_t   VirtualSize;
-    } Misc;
-    std::uint32_t   VirtualAddress;
-    std::uint32_t   SizeOfRawData;
-    std::uint32_t   PointerToRawData;
-    std::uint32_t   PointerToRelocations;
-    std::uint32_t   PointerToLinenumbers;
-    std::uint16_t   NumberOfRelocations;
-    std::uint16_t   NumberOfLinenumbers;
-    std::uint32_t   Characteristics;
+  std::uint8_t Name[NT_SHORT_NAME_LEN];
+  union {
+    std::uint32_t PhysicalAddress;
+    std::uint32_t VirtualSize;
+  } Misc;
+  std::uint32_t VirtualAddress;
+  std::uint32_t SizeOfRawData;
+  std::uint32_t PointerToRawData;
+  std::uint32_t PointerToRelocations;
+  std::uint32_t PointerToLinenumbers;
+  std::uint16_t NumberOfRelocations;
+  std::uint16_t NumberOfLinenumbers;
+  std::uint32_t Characteristics;
 };
 
 struct import_dir_entry {
