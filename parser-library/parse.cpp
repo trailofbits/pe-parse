@@ -1668,7 +1668,7 @@ void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
     if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
       break;
     }
-  }
+  }ד
 
   return;
 }
