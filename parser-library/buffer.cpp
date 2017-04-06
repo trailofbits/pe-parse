@@ -260,6 +260,10 @@ void deleteBuffer(bounded_buffer *b) {
 #endif
   }
 
+  if (b->detail != nullptr) {
+    delete b->detail;
+  }
+
   delete b;
 
   return;

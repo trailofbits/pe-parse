@@ -341,6 +341,10 @@ bool parse_resource_table(bounded_buffer *sectionData,
     } else if (depth == 2) {
       rde->lang_str.clear();
     }
+
+    if (dirent == nullptr) {
+      delete rde;
+    }
   }
 
   return true;
@@ -1610,6 +1614,18 @@ void DestructParsedPE(parsed_pe *p) {
   }
 
   deleteBuffer(p->fileBuffer);
+
+  for (section s : p->internal->secs) {
+    if (s.sectionData != nullptr) {
+      deleteBuffer(s.sectionData);
+    }
+  }
+  for (resource r : p->internal->rsrcs) {
+    if (r.buf != nullptr) {
+      deleteBuffer(r.buf);
+    }
+  }
+
   delete p->internal;
   delete p;
   return;
