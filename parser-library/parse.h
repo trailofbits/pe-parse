@@ -76,6 +76,9 @@ THE SOFTWARE.
     return NULL;                                                           \
   }
 
+#define TEST_MACHINE_CHARACTERISTICS(h, m, ch) \
+  ((h.FileHeader.Machine == m) && (h.FileHeader.Characteristics & ch))
+
 namespace peparse {
 
 typedef std::uint32_t RVA;
@@ -87,6 +90,7 @@ typedef struct _bounded_buffer {
   std::uint8_t *buf;
   std::uint32_t bufLen;
   bool copy;
+  bool swapBytes;
   buffer_detail *detail;
 } bounded_buffer;
 

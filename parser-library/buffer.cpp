@@ -36,6 +36,28 @@ THE SOFTWARE.
 #include <unistd.h>
 #endif
 
+namespace {
+
+inline uint16_t byteSwapUint16(uint16_t val) {
+  uint16_t a = (val >> 8) & 0x00FFU;
+  uint16_t b = (val << 8) & 0xFF00U;
+  return a | b;
+}
+
+inline uint32_t byteSwapUint32(uint32_t val) {
+  uint32_t a = byteSwapUint16(val >> 16) & 0x0000FFFFU;
+  uint32_t b = ((static_cast<uint32_t>(byteSwapUint16(val))) << 16) & 0xFFFF0000U;
+  return a | b;
+}
+
+inline uint64_t byteSwapUint64(uint64_t val) {
+  uint64_t a = byteSwapUint32(val >> 32) & 0x00000000FFFFFFFFUL;
+  uint64_t b = ((static_cast<uint64_t>(byteSwapUint32(val))) << 32) & 0xFFFFFFFF00000000UL;
+  return a | b;
+}
+
+} // anonymous namespace
+
 using namespace std;
 
 namespace peparse {
@@ -67,7 +89,6 @@ bool readByte(bounded_buffer *b, ::uint32_t offset, ::uint8_t &out) {
   return true;
 }
 
-// TODO: perform endian swap as needed
 bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
   if (b == nullptr) {
     return false;
@@ -78,12 +99,15 @@ bool readWord(bounded_buffer *b, ::uint32_t offset, ::uint16_t &out) {
   }
 
   ::uint16_t *tmp = reinterpret_cast<uint16_t *>(b->buf + offset);
-  out = *tmp;
+  if (b->swapBytes) {
+    out = byteSwapUint16(*tmp);
+  } else {
+    out = *tmp;
+  }
 
   return true;
 }
 
-// TODO: perform endian swap as needed
 bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
   if (b == nullptr) {
     return false;
@@ -94,12 +118,15 @@ bool readDword(bounded_buffer *b, ::uint32_t offset, ::uint32_t &out) {
   }
 
   ::uint32_t *tmp = reinterpret_cast<uint32_t *>(b->buf + offset);
-  out = *tmp;
+  if (b->swapBytes) {
+    out = byteSwapUint32(*tmp);
+  } else {
+    out = *tmp;
+  }
 
   return true;
 }
 
-// TODO: perform endian swap as needed
 bool readQword(bounded_buffer *b, ::uint32_t offset, ::uint64_t &out) {
   if (b == nullptr) {
     return false;
@@ -110,7 +137,11 @@ bool readQword(bounded_buffer *b, ::uint32_t offset, ::uint64_t &out) {
   }
 
   ::uint64_t *tmp = reinterpret_cast<uint64_t *>(b->buf + offset);
-  out = *tmp;
+  if (b->swapBytes) {
+    out = byteSwapUint64(*tmp);
+  } else {
+    out = *tmp;
+  }
 
   return true;
 }
@@ -187,7 +218,6 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   p->buf = (::uint8_t *) ptr;
   p->bufLen = fileSize;
-  p->copy = false;
 #else
   p->detail->fd = fd;
 
@@ -213,8 +243,9 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   p->buf = reinterpret_cast<uint8_t *>(maddr);
   p->bufLen = s.st_size;
-  p->copy = false;
 #endif
+  p->copy = false;
+  p->swapBytes = false;
 
   return p;
 }
