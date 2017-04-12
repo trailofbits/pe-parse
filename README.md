@@ -22,7 +22,7 @@ Internally, the parser-library uses a bounded buffer abstraction to access infor
 
 Building
 ========
-pe-parse is built using [cmake] and has no major dependencies.
+pe-parse is built using `cmake` and has no major dependencies.
 
 1. Install cmake:
   * Debian/Ubuntu: `sudo apt-get install cmake`
