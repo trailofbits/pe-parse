@@ -585,6 +585,36 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
     return false;
   }
 
+  if (TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_AMD64,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_ARM,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_ARM64,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_ARMNT,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_I386,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_M32R,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_POWERPC,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_R4000,
+                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(header,
+                                   IMAGE_FILE_MACHINE_WCEMIPSV2,
+                                   IMAGE_FILE_BYTES_REVERSED_HI)) {
+    b->swapBytes = true;
+  }
+
   /*
    * The buffer is split using the OptionalHeader offset, even if it turns
    * out to be a PE32+. The start of the buffer is at the same spot in the
