@@ -239,8 +239,21 @@ bool parse_resource_table(bounded_buffer *sectionData,
       rde = new resource_dir_entry;
     }
 
-    READ_DWORD_PTR(sectionData, o, rde, ID);
-    READ_DWORD_PTR(sectionData, o, rde, RVA);
+    if (!readDword(sectionData, o + _offset(__typeof__(*rde), ID), rde->ID)) {
+      PE_ERR(PEERR_READ);
+      if (dirent == nullptr) {
+        delete rde;
+      }
+      return false;
+    }
+
+    if (!readDword(sectionData, o + _offset(__typeof__(*rde), RVA), rde->RVA)) {
+      PE_ERR(PEERR_READ);
+      if (dirent == nullptr) {
+        delete rde;
+      }
+      return false;
+    }
 
     o += sizeof(resource_dir_entry_sz);
 
@@ -249,6 +262,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
       if (i < rdt.NameEntries) {
         if (!parse_resource_id(
                 sectionData, rde->ID & 0x0FFFFFFF, rde->type_str)) {
+          if (dirent == nullptr) {
+            delete rde;
+          }
           return false;
         }
       }
@@ -257,6 +273,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
       if (i < rdt.NameEntries) {
         if (!parse_resource_id(
                 sectionData, rde->ID & 0x0FFFFFFF, rde->name_str)) {
+          if (dirent == nullptr) {
+            delete rde;
+          }
           return false;
         }
       }
@@ -265,6 +284,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
       if (i < rdt.NameEntries) {
         if (!parse_resource_id(
                 sectionData, rde->ID & 0x0FFFFFFF, rde->lang_str)) {
+          if (dirent == nullptr) {
+            delete rde;
+          }
           return false;
         }
       }
@@ -279,6 +301,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
                                 depth + 1,
                                 rde,
                                 rsrcs)) {
+        if (dirent == nullptr) {
+          delete rde;
+        }
         return false;
       }
     } else {
@@ -292,10 +317,46 @@ bool parse_resource_table(bounded_buffer *sectionData,
        * We could store the original o value and reset it when we are done,
        * but meh.
        */
-      READ_DWORD(sectionData, rde->RVA, rdat, RVA);
-      READ_DWORD(sectionData, rde->RVA, rdat, size);
-      READ_DWORD(sectionData, rde->RVA, rdat, codepage);
-      READ_DWORD(sectionData, rde->RVA, rdat, reserved);
+
+      if (!readDword(sectionData,
+                     rde->RVA + _offset(__typeof__(rdat), RVA),
+                     rdat.RVA)) {
+        PE_ERR(PEERR_READ);
+        if (dirent == nullptr) {
+          delete rde;
+        }
+        return false;
+      }
+
+      if (!readDword(sectionData,
+                     rde->RVA + _offset(__typeof__(rdat), size),
+                     rdat.size)) {
+        PE_ERR(PEERR_READ);
+        if (dirent == nullptr) {
+          delete rde;
+        }
+        return false;
+      }
+
+      if (!readDword(sectionData,
+                     rde->RVA + _offset(__typeof__(rdat), codepage),
+                     rdat.codepage)) {
+        PE_ERR(PEERR_READ);
+        if (dirent == nullptr) {
+          delete rde;
+        }
+        return false;
+      }
+
+      if (!readDword(sectionData,
+                     rde->RVA + _offset(__typeof__(rdat), reserved),
+                     rdat.reserved)) {
+        PE_ERR(PEERR_READ);
+        if (dirent == nullptr) {
+          delete rde;
+        }
+        return false;
+      }
 
       resource rsrc = {};
 
@@ -328,6 +389,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
 
       /* If we can't get even a zero length buffer, something is very wrong. */
       if (rsrc.buf == nullptr) {
+        if (dirent == nullptr) {
+          delete rde;
+        }
         return false;
       }
 
