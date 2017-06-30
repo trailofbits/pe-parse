@@ -33,15 +33,26 @@ using namespace peparse;
 
 #define PEPY_VERSION "0.2"
 
+/*
+ * Add some definition for compatibility between python2 and python3
+ */
 #if PY_MAJOR_VERSION >= 3
     #define PyInt_FromLong PyLong_FromLong
     #define PyInt_AsLong PyLong_AsLong
     #define PyString_FromString PyUnicode_FromString
 #endif
 
+/*
+ * Some macro only available after python 2.6
+ * Needed for compatibility with python3
+ */
 #ifndef PyVarObject_HEAD_INIT
     #define PyVarObject_HEAD_INIT(type, size) \
         PyObject_HEAD_INIT(type) size,
+#endif
+
+#ifndef Py_TYPE
+    #define Py_TYPE(_ob_) (((PyObject*)(_ob_))->ob_type)
 #endif
 
 /* These are used to across multiple objects. */
