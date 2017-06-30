@@ -693,10 +693,9 @@ static PyObject *pepy_parsed_get_entry_point(PyObject *self, PyObject *args) {
 }
 
 static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
-  uint64_t start, idx;
-  uint8_t b;
-  Py_ssize_t len;
-  PyObject *byte, *tmp, *ret, *newlist;
+  uint64_t start;
+  Py_ssize_t len, idx;
+  PyObject *ret;
 
   if (!PyArg_ParseTuple(args, "KK:pepy_parsed_get_bytes", &start, &len))
     return NULL;
@@ -728,54 +727,6 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 
   delete[] buf;
   return ret;
-
-#if 0
-
-  /*
-   * XXX: I don't think this is the best way to do this. I want a
-   * ByteArray object to be returned so first put each byte in a
-   * list and then call PyByteArray_FromObject to get the byte array.
-   */
-  tmp = PyList_New(len);
-  if (!tmp) {
-    PyErr_SetString(pepy_error, "Unable to create initial list.");
-    return NULL;
-  }
-
-  for (idx = 0; idx < len; idx++) {
-    if (!ReadByteAtVA(((pepy_parsed *) self)->pe, start + idx, b))
-      break;
-
-    byte = PyInt_FromLong(b);
-    if (!byte) {
-      Py_DECREF(tmp);
-      PyErr_SetString(pepy_error, "Unable to create integer object.");
-      return NULL;
-    }
-    PyList_SET_ITEM(tmp, idx, byte);
-    Py_DECREF(byte);
-  }
-
-  /* Didn't get all of it for some reason, so give back what we have. */
-  if (idx < len) {
-    newlist = PyList_GetSlice(tmp, 0, idx);
-    if (!newlist) {
-      PyErr_SetString(pepy_error, "Unable to create new list.");
-      return NULL;
-    }
-    Py_DECREF(tmp);
-    tmp = newlist;
-  }
-
-  ret = PyByteArray_FromObject(tmp);
-  if (!ret) {
-    PyErr_SetString(pepy_error, "Unable to create new list.");
-    return NULL;
-  }
-  Py_DECREF(tmp);
-
-  return ret;
-#endif
 }
 
 /*
