@@ -718,8 +718,8 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 
   uint8_t *buf = new(std::nothrow) uint8_t[len];
   if (!buf) {
-    /* in case allocation failed, could be usefull to get error message from new */
-    PyErr_SetString(pepy_error, "Unable to create initial buffer.");
+    /* in case allocation failed */
+    PyErr_SetString(pepy_error, "Unable to create initial buffer (allocation failure).");
     return NULL;
   }
 
