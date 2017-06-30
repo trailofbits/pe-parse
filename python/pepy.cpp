@@ -77,11 +77,11 @@ using namespace peparse;
 
 static PyObject *pepy_error;
 
-typedef struct { PyObject_HEAD } pepy;
+struct pepy { PyObject_HEAD };
 
-typedef struct { PyObject_HEAD parsed_pe *pe; } pepy_parsed;
+struct pepy_parsed { PyObject_HEAD parsed_pe *pe; };
 
-typedef struct {
+struct pepy_section {
   PyObject_HEAD PyObject *name;
   PyObject *base;
   PyObject *length;
@@ -91,9 +91,9 @@ typedef struct {
   PyObject *numlinenums;
   PyObject *characteristics;
   PyObject *data;
-} pepy_section;
+};
 
-typedef struct {
+struct pepy_resource {
   PyObject_HEAD PyObject *type_str;
   PyObject *name_str;
   PyObject *lang_str;
@@ -104,24 +104,24 @@ typedef struct {
   PyObject *RVA;
   PyObject *size;
   PyObject *data;
-} pepy_resource;
+};
 
-typedef struct {
+struct pepy_import {
   PyObject_HEAD PyObject *name;
   PyObject *sym;
   PyObject *addr;
-} pepy_import;
+};
 
-typedef struct {
+struct pepy_export {
   PyObject_HEAD PyObject *mod;
   PyObject *func;
   PyObject *addr;
-} pepy_export;
+};
 
-typedef struct {
+struct pepy_relocation {
   PyObject_HEAD PyObject *type;
   PyObject *addr;
-} pepy_relocation;
+};
 
 /* None of the attributes in these objects are writable. */
 static int
