@@ -718,6 +718,7 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
 
   uint8_t *buf = new uint8_t[len];
   if (!buf) {
+    /* in case allocation failed, could be usefull to get error message from new */
     PyErr_SetString(pepy_error, "Unable to create initial buffer.");
     return NULL;
   }
@@ -727,10 +728,8 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
       break;
   }
 
-  if (idx < len)
-    len = idx+1;
-
-  ret = PyByteArray_FromStringAndSize((char*)buf, len);
+  /* use idx as content length, if we get less than asked for */
+  ret = PyByteArray_FromStringAndSize(reinterpret_cast<char*>(buf), idx);
   if (!ret) {
     PyErr_SetString(pepy_error, "Unable to create new byte array.");
     return NULL;
