@@ -702,6 +702,36 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
     return NULL;
 
   /*
+   * XXX: a new implementation read all bytes in char* and use
+   * PybyteArray_FromStringAndSize
+   */
+
+  uint8_t *buf = new uint8_t[len];
+  if (!buf) {
+    PyErr_SetString(pepy_error, "Unable to create initial buffer.");
+    return NULL;
+  }
+
+  for (idx = 0; idx < len; idx++)  {
+    if (!ReadByteAtVA(((pepy_parsed *) self)->pe, start + idx, buf[idx]))
+      break;
+  }
+
+  if (idx < len)
+    len = idx+1;
+
+  ret = PyByteArray_FromStringAndSize((char*)buf, len);
+  if (!ret) {
+    PyErr_SetString(pepy_error, "Unable to create new byte array.");
+    return NULL;
+  }
+
+  delete[] buf;
+  return ret;
+
+#if 0
+
+  /*
    * XXX: I don't think this is the best way to do this. I want a
    * ByteArray object to be returned so first put each byte in a
    * list and then call PyByteArray_FromObject to get the byte array.
@@ -745,6 +775,7 @@ static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
   Py_DECREF(tmp);
 
   return ret;
+#endif
 }
 
 /*
