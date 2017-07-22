@@ -33,6 +33,28 @@ using namespace peparse;
 
 #define PEPY_VERSION "0.2"
 
+/*
+ * Add some definition for compatibility between python2 and python3
+ */
+#if PY_MAJOR_VERSION >= 3
+    #define PyInt_FromLong PyLong_FromLong
+    #define PyInt_AsLong PyLong_AsLong
+    #define PyString_FromString PyUnicode_FromString
+#endif
+
+/*
+ * Some macro only available after python 2.6
+ * Needed for compatibility with python3
+ */
+#ifndef PyVarObject_HEAD_INIT
+    #define PyVarObject_HEAD_INIT(type, size) \
+        PyObject_HEAD_INIT(type) size,
+#endif
+
+#ifndef Py_TYPE
+    #define Py_TYPE(_ob_) (((PyObject*)(_ob_))->ob_type)
+#endif
+
 /* These are used to across multiple objects. */
 #define PEPY_OBJECT_GET(OBJ, ATTR)                                          \
   static PyObject *pepy_##OBJ##_get_##ATTR(PyObject *self, void *closure) { \
@@ -55,11 +77,11 @@ using namespace peparse;
 
 static PyObject *pepy_error;
 
-typedef struct { PyObject_HEAD } pepy;
+struct pepy { PyObject_HEAD };
 
-typedef struct { PyObject_HEAD parsed_pe *pe; } pepy_parsed;
+struct pepy_parsed { PyObject_HEAD parsed_pe *pe; };
 
-typedef struct {
+struct pepy_section {
   PyObject_HEAD PyObject *name;
   PyObject *base;
   PyObject *length;
@@ -69,9 +91,9 @@ typedef struct {
   PyObject *numlinenums;
   PyObject *characteristics;
   PyObject *data;
-} pepy_section;
+};
 
-typedef struct {
+struct pepy_resource {
   PyObject_HEAD PyObject *type_str;
   PyObject *name_str;
   PyObject *lang_str;
@@ -82,24 +104,24 @@ typedef struct {
   PyObject *RVA;
   PyObject *size;
   PyObject *data;
-} pepy_resource;
+};
 
-typedef struct {
+struct pepy_import {
   PyObject_HEAD PyObject *name;
   PyObject *sym;
   PyObject *addr;
-} pepy_import;
+};
 
-typedef struct {
+struct pepy_export {
   PyObject_HEAD PyObject *mod;
   PyObject *func;
   PyObject *addr;
-} pepy_export;
+};
 
-typedef struct {
+struct pepy_relocation {
   PyObject_HEAD PyObject *type;
   PyObject *addr;
-} pepy_relocation;
+};
 
 /* None of the attributes in these objects are writable. */
 static int
@@ -128,7 +150,7 @@ static void pepy_import_dealloc(pepy_import *self) {
   Py_XDECREF(self->name);
   Py_XDECREF(self->sym);
   Py_XDECREF(self->addr);
-  self->ob_type->tp_free((PyObject *) self);
+  Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 PEPY_OBJECT_GET(import, name)
@@ -142,7 +164,7 @@ static PyGetSetDef pepy_import_getseters[] = {
     {NULL}};
 
 static PyTypeObject pepy_import_type = {
-    PyObject_HEAD_INIT(NULL) 0,       /* ob_size */
+    PyVarObject_HEAD_INIT(NULL,0)       /* ob_size */
     "pepy.import",                    /* tp_name */
     sizeof(pepy_import),              /* tp_basicsize */
     0,                                /* tp_itemsize */
@@ -202,7 +224,7 @@ static void pepy_export_dealloc(pepy_export *self) {
   Py_XDECREF(self->mod);
   Py_XDECREF(self->func);
   Py_XDECREF(self->addr);
-  self->ob_type->tp_free((PyObject *) self);
+  Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 PEPY_OBJECT_GET(export, mod)
@@ -216,7 +238,7 @@ static PyGetSetDef pepy_export_getseters[] = {
     {NULL}};
 
 static PyTypeObject pepy_export_type = {
-    PyObject_HEAD_INIT(NULL) 0,       /* ob_size */
+    PyVarObject_HEAD_INIT(NULL,0)       /* ob_size */
     "pepy.export",                    /* tp_name */
     sizeof(pepy_export),              /* tp_basicsize */
     0,                                /* tp_itemsize */
@@ -276,7 +298,7 @@ pepy_relocation_init(pepy_relocation *self, PyObject *args, PyObject *kwds) {
 static void pepy_relocation_dealloc(pepy_relocation *self) {
   Py_XDECREF(self->type);
   Py_XDECREF(self->addr);
-  self->ob_type->tp_free((PyObject *) self);
+  Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 PEPY_OBJECT_GET(relocation, type)
@@ -288,7 +310,7 @@ static PyGetSetDef pepy_relocation_getseters[] = {
     {NULL}};
 
 static PyTypeObject pepy_relocation_type = {
-    PyObject_HEAD_INIT(NULL) 0,           /* ob_size */
+    PyVarObject_HEAD_INIT(NULL,0)           /* ob_size */
     "pepy.relocation",                    /* tp_name */
     sizeof(pepy_relocation),              /* tp_basicsize */
     0,                                    /* tp_itemsize */
@@ -364,7 +386,7 @@ static void pepy_section_dealloc(pepy_section *self) {
   Py_XDECREF(self->numlinenums);
   Py_XDECREF(self->characteristics);
   Py_XDECREF(self->data);
-  self->ob_type->tp_free((PyObject *) self);
+  Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 PEPY_OBJECT_GET(section, name)
@@ -390,7 +412,7 @@ static PyGetSetDef pepy_section_getseters[] = {
     {NULL}};
 
 static PyTypeObject pepy_section_type = {
-    PyObject_HEAD_INIT(NULL) 0,        /* ob_size */
+    PyVarObject_HEAD_INIT(NULL,0)        /* ob_size */
     "pepy.section",                    /* tp_name */
     sizeof(pepy_section),              /* tp_basicsize */
     0,                                 /* tp_itemsize */
@@ -469,7 +491,7 @@ static void pepy_resource_dealloc(pepy_resource *self) {
   Py_XDECREF(self->RVA);
   Py_XDECREF(self->size);
   Py_XDECREF(self->data);
-  self->ob_type->tp_free((PyObject *) self);
+  Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 PEPY_OBJECT_GET(resource, type_str)
@@ -594,7 +616,7 @@ static PyGetSetDef pepy_resource_getseters[] = {
     {NULL}};
 
 static PyTypeObject pepy_resource_type = {
-    PyObject_HEAD_INIT(NULL) 0,         /* ob_size */
+    PyVarObject_HEAD_INIT(NULL,0)         /* ob_size */
     "pepy.resource",                    /* tp_name */
     sizeof(pepy_resource),              /* tp_basicsize */
     0,                                  /* tp_itemsize */
@@ -662,7 +684,7 @@ static int pepy_parsed_init(pepy_parsed *self, PyObject *args, PyObject *kwds) {
 
 static void pepy_parsed_dealloc(pepy_parsed *self) {
   DestructParsedPE(self->pe);
-  self->ob_type->tp_free((PyObject *) self);
+  Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static PyObject *pepy_parsed_get_entry_point(PyObject *self, PyObject *args) {
@@ -682,57 +704,38 @@ static PyObject *pepy_parsed_get_entry_point(PyObject *self, PyObject *args) {
 }
 
 static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
-  uint64_t start, idx;
-  uint8_t b;
-  Py_ssize_t len;
-  PyObject *byte, *tmp, *ret, *newlist;
+  uint64_t start;
+  Py_ssize_t len, idx;
+  PyObject *ret;
 
   if (!PyArg_ParseTuple(args, "KK:pepy_parsed_get_bytes", &start, &len))
     return NULL;
 
   /*
-   * XXX: I don't think this is the best way to do this. I want a
-   * ByteArray object to be returned so first put each byte in a
-   * list and then call PyByteArray_FromObject to get the byte array.
+   * XXX: a new implementation read all bytes in char* and use
+   * PybyteArray_FromStringAndSize
    */
-  tmp = PyList_New(len);
-  if (!tmp) {
-    PyErr_SetString(pepy_error, "Unable to create initial list.");
+
+  uint8_t *buf = new(std::nothrow) uint8_t[len];
+  if (!buf) {
+    /* in case allocation failed */
+    PyErr_SetString(pepy_error, "Unable to create initial buffer (allocation failure).");
     return NULL;
   }
 
-  for (idx = 0; idx < len; idx++) {
-    if (!ReadByteAtVA(((pepy_parsed *) self)->pe, start + idx, b))
+  for (idx = 0; idx < len; idx++)  {
+    if (!ReadByteAtVA(((pepy_parsed *) self)->pe, start + idx, buf[idx]))
       break;
-
-    byte = PyInt_FromLong(b);
-    if (!byte) {
-      Py_DECREF(tmp);
-      PyErr_SetString(pepy_error, "Unable to create integer object.");
-      return NULL;
-    }
-    PyList_SET_ITEM(tmp, idx, byte);
-    Py_DECREF(byte);
   }
 
-  /* Didn't get all of it for some reason, so give back what we have. */
-  if (idx < len) {
-    newlist = PyList_GetSlice(tmp, 0, idx);
-    if (!newlist) {
-      PyErr_SetString(pepy_error, "Unable to create new list.");
-      return NULL;
-    }
-    Py_DECREF(tmp);
-    tmp = newlist;
-  }
-
-  ret = PyByteArray_FromObject(tmp);
+  /* use idx as content length, if we get less than asked for */
+  ret = PyByteArray_FromStringAndSize(reinterpret_cast<char*>(buf), idx);
   if (!ret) {
-    PyErr_SetString(pepy_error, "Unable to create new list.");
+    PyErr_SetString(pepy_error, "Unable to create new byte array.");
     return NULL;
   }
-  Py_DECREF(tmp);
 
+  delete[] buf;
   return ret;
 }
 
@@ -1200,7 +1203,7 @@ static PyMethodDef pepy_parsed_methods[] = {
     {NULL}};
 
 static PyTypeObject pepy_parsed_type = {
-    PyObject_HEAD_INIT(NULL) 0,               /* ob_size */
+    PyVarObject_HEAD_INIT(NULL,0)               /* ob_size */
     "pepy.parsed",                            /* tp_name */
     sizeof(pepy_parsed),                      /* tp_basicsize */
     0,                                        /* tp_itemsize */
@@ -1276,7 +1279,8 @@ static PyObject *pepy_parse(PyObject *self, PyObject *args) {
 static PyMethodDef pepy_methods[] = {
     {"parse", pepy_parse, METH_VARARGS, "Parse PE from file."}, {NULL}};
 
-PyMODINIT_FUNC initpepy(void) {
+static
+PyObject* pepi_module_init(void) {
   PyObject *m;
 
   if (PyType_Ready(&pepy_parsed_type) < 0 ||
@@ -1285,11 +1289,29 @@ PyMODINIT_FUNC initpepy(void) {
       PyType_Ready(&pepy_export_type) < 0 ||
       PyType_Ready(&pepy_relocation_type) < 0 ||
       PyType_Ready(&pepy_resource_type) < 0)
-    return;
+    return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "pepy",
+    "Python interface to pe-parse.",
+    -1,
+    pepy_methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+  };
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+  m = PyModule_Create(&moduledef);
+#else
   m = Py_InitModule3("pepy", pepy_methods, "Python interface to pe-parse.");
+#endif
   if (!m)
-    return;
+    return NULL;
 
   pepy_error = PyErr_NewException((char *) "pepy.error", NULL, NULL);
   Py_INCREF(pepy_error);
@@ -1374,4 +1396,18 @@ PyMODINIT_FUNC initpepy(void) {
   PyModule_AddIntMacro(m, IMAGE_SCN_MEM_EXECUTE);
   PyModule_AddIntMacro(m, IMAGE_SCN_MEM_READ);
   PyModule_AddIntMacro(m, IMAGE_SCN_MEM_WRITE);
+
+  return m;
 }
+
+#if PY_MAJOR_VERSION >= 3
+PyMODINIT_FUNC PyInit_pepy(void)
+{
+  return pepi_module_init();
+}
+#else
+PyMODINIT_FUNC initpepy(void)
+{
+  pepi_module_init();
+}
+#endif
