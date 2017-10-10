@@ -25,10 +25,11 @@ THE SOFTWARE.
 #include "parse.h"
 #include "nt-headers.h"
 #include "to_string.h"
+
 #include <algorithm>
+#include <cstring>
 #include <list>
 #include <stdexcept>
-#include <string.h>
 
 using namespace std;
 
@@ -36,7 +37,7 @@ namespace peparse {
 
 struct section {
   string sectionName;
-  ::uint64_t sectionBase;
+  std::uint64_t sectionBase;
   bounded_buffer *sectionData;
   image_section_header sec;
 };
@@ -58,7 +59,7 @@ struct reloc {
   reloc_type type;
 };
 
-#define SYMBOL_NAME_OFFSET(sn) ((uint32_t)(sn.data >> 32))
+#define SYMBOL_NAME_OFFSET(sn) (static_cast<std::uint32_t>(sn.data >> 32))
 #define SYMBOL_TYPE_HI(x) (x.type >> 8)
 
 union symbol_name {
@@ -122,7 +123,7 @@ struct parsed_pe_internal {
   list<symbol> symbols;
 };
 
-::uint32_t err = 0;
+std::uint32_t err = 0;
 std::string err_loc;
 
 static const char *pe_err_str[] = {"None",
@@ -136,7 +137,7 @@ static const char *pe_err_str[] = {"None",
                                    "Unable to stat",
                                    "Bad magic"};
 
-int GetPEErr() {
+std::uint32_t GetPEErr() {
   return err;
 }
 
@@ -149,15 +150,17 @@ string GetPEErrLoc() {
 }
 
 static bool
-readCString(const bounded_buffer &buffer, ::uint32_t off, string &result) {
+readCString(const bounded_buffer &buffer, std::uint32_t off, string &result) {
   if (off < buffer.bufLen) {
-    ::uint8_t *p = buffer.buf;
-    ::uint32_t n = buffer.bufLen;
-    ::uint8_t *b = p + off;
-    ::uint8_t *x = std::find(b, p + n, 0);
+    std::uint8_t *p = buffer.buf;
+    std::uint32_t n = buffer.bufLen;
+    std::uint8_t *b = p + off;
+    std::uint8_t *x = std::find(b, p + n, 0);
+
     if (x == p + n) {
       return false;
     }
+
     result.insert(result.end(), b, x);
     return true;
   }
@@ -190,30 +193,29 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   return;
 }
 
-bool parse_resource_id(bounded_buffer *data, ::uint32_t id, string &result) {
-  ::uint8_t c;
-  ::uint16_t len;
+bool parse_resource_id(bounded_buffer *data, std::uint32_t id, string &result) {
+  std::uint8_t c;
+  std::uint16_t len;
 
   if (!readWord(data, id, len)) {
     return false;
   }
   id += 2;
-  for (::uint32_t i = 0; i < len * 2; i++) {
+  for (std::uint32_t i = 0; i < len * 2U; i++) {
     if (!readByte(data, id + i, c)) {
       return false;
     }
-    result.push_back((char) c);
+    result.push_back(static_cast<char>(c));
   }
   return true;
 }
 
 bool parse_resource_table(bounded_buffer *sectionData,
-                          ::uint32_t o,
-                          ::uint32_t virtaddr,
-                          ::uint32_t depth,
+                          std::uint32_t o,
+                          std::uint32_t virtaddr,
+                          std::uint32_t depth,
                           resource_dir_entry *dirent,
                           list<resource> &rsrcs) {
-  ::uint32_t i = 0;
   resource_dir_table rdt;
 
   if (sectionData == nullptr) {
@@ -233,7 +235,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
     return true; // This is not a hard error. It does happen.
   }
 
-  for (i = 0; i < rdt.NameEntries + rdt.IDEntries; i++) {
+  for (std::uint32_t i = 0;
+       i < static_cast<std::uint32_t>(rdt.NameEntries + rdt.IDEntries);
+       i++) {
     resource_dir_entry *rde = dirent;
     if (dirent == nullptr) {
       rde = new resource_dir_entry;
@@ -358,7 +362,8 @@ bool parse_resource_table(bounded_buffer *sectionData,
         return false;
       }
 
-      resource rsrc = {};
+      resource rsrc;
+      memset(&rsrc, 0, sizeof(resource));
 
       rsrc.type_str = rde->type_str;
       rsrc.name_str = rde->name_str;
@@ -418,6 +423,7 @@ bool getResources(bounded_buffer *b,
                   bounded_buffer *fileBegin,
                   list<section> secs,
                   list<resource> &rsrcs) {
+  static_cast<void>(fileBegin);
 
   if (b == nullptr)
     return false;
@@ -470,13 +476,13 @@ bool getSections(bounded_buffer *b,
     // now we have the section header information, so fill in a section
     // object appropriately
     section thisSec;
-    for (::uint32_t i = 0; i < NT_SHORT_NAME_LEN; i++) {
-      ::uint8_t c = curSec.Name[i];
+    for (::uint32_t charIndex = 0; charIndex < NT_SHORT_NAME_LEN; charIndex++) {
+      ::uint8_t c = curSec.Name[charIndex];
       if (c == 0) {
         break;
       }
 
-      thisSec.sectionName.push_back((char) c);
+      thisSec.sectionName.push_back(static_cast<char>(c));
     }
 
     if (nthdr.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
@@ -649,33 +655,24 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
     return false;
   }
 
-  if (TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_AMD64,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_ARM,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_ARM64,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_ARMNT,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_I386,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_M32R,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_POWERPC,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_R4000,
-                                   IMAGE_FILE_BYTES_REVERSED_HI) ||
-      TEST_MACHINE_CHARACTERISTICS(header,
-                                   IMAGE_FILE_MACHINE_WCEMIPSV2,
-                                   IMAGE_FILE_BYTES_REVERSED_HI)) {
+  if (TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_AMD64, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_ARM, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_ARM64, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_ARMNT, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_I386, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_M32R, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_POWERPC, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_R4000, IMAGE_FILE_BYTES_REVERSED_HI) ||
+      TEST_MACHINE_CHARACTERISTICS(
+          header, IMAGE_FILE_MACHINE_WCEMIPSV2, IMAGE_FILE_BYTES_REVERSED_HI)) {
     b->swapBytes = true;
   }
 
@@ -817,10 +814,10 @@ bool getExports(parsed_pe *p) {
       return false;
     }
 
-    ::uint32_t rvaofft = addr - s.sectionBase;
+    auto rvaofft = static_cast<std::uint32_t>(addr - s.sectionBase);
 
     // get the name of this module
-    ::uint32_t nameRva;
+    std::uint32_t nameRva;
     if (!readDword(s.sectionData,
                    rvaofft + _offset(export_dir_table, NameRVA),
                    nameRva)) {
@@ -841,14 +838,14 @@ bool getExports(parsed_pe *p) {
       return false;
     }
 
-    ::uint32_t nameOff = nameVA - nameSec.sectionBase;
+    auto nameOff = static_cast<std::uint32_t>(nameVA - nameSec.sectionBase);
     string modName;
     if (!readCString(*nameSec.sectionData, nameOff, modName)) {
       return false;
     }
 
     // now, get all the named export symbols
-    ::uint32_t numNames;
+    std::uint32_t numNames;
     if (!readDword(s.sectionData,
                    rvaofft + _offset(export_dir_table, NumberOfNamePointers),
                    numNames)) {
@@ -878,7 +875,8 @@ bool getExports(parsed_pe *p) {
         return false;
       }
 
-      ::uint32_t namesOff = namesVA - namesSec.sectionBase;
+      auto namesOff =
+          static_cast<std::uint32_t>(namesVA - namesSec.sectionBase);
 
       // get the EAT section
       ::uint32_t eatRVA;
@@ -902,7 +900,7 @@ bool getExports(parsed_pe *p) {
         return false;
       }
 
-      ::uint32_t eatOff = eatVA - eatSec.sectionBase;
+      auto eatOff = static_cast<std::uint32_t>(eatVA - eatSec.sectionBase);
 
       // get the ordinal base
       ::uint32_t ordinalBase;
@@ -913,7 +911,7 @@ bool getExports(parsed_pe *p) {
       }
 
       // get the ordinal table
-      ::uint32_t ordinalTableRVA;
+      std::uint32_t ordinalTableRVA;
       if (!readDword(s.sectionData,
                      rvaofft + _offset(export_dir_table, OrdinalTableRVA),
                      ordinalTableRVA)) {
@@ -936,7 +934,8 @@ bool getExports(parsed_pe *p) {
         return false;
       }
 
-      ::uint32_t ordinalOff = ordinalTableVA - ordinalTableSec.sectionBase;
+      auto ordinalOff = static_cast<std::uint32_t>(ordinalTableVA -
+                                                   ordinalTableSec.sectionBase);
 
       for (::uint32_t i = 0; i < numNames; i++) {
         ::uint32_t curNameRVA;
@@ -961,9 +960,10 @@ bool getExports(parsed_pe *p) {
           return false;
         }
 
-        ::uint32_t curNameOff = curNameVA - curNameSec.sectionBase;
+        auto curNameOff =
+            static_cast<std::uint32_t>(curNameVA - curNameSec.sectionBase);
         string symName;
-        ::uint8_t d;
+        std::uint8_t d;
 
         do {
           if (!readByte(curNameSec.sectionData, curNameOff, d)) {
@@ -974,7 +974,7 @@ bool getExports(parsed_pe *p) {
             break;
           }
 
-          symName.push_back(d);
+          symName.push_back(static_cast<char>(d));
           curNameOff++;
         } while (true);
 
@@ -999,7 +999,7 @@ bool getExports(parsed_pe *p) {
              (symRVA < exportDir.VirtualAddress + exportDir.Size));
 
         if (!isForwarded) {
-          ::uint32_t symVA;
+          VA symVA;
           if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
             symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
           } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
@@ -1049,11 +1049,11 @@ bool getRelocations(parsed_pe *p) {
       return false;
     }
 
-    ::uint32_t rvaofft = vaAddr - d.sectionBase;
+    auto rvaofft = static_cast<std::uint32_t>(vaAddr - d.sectionBase);
 
     while (rvaofft < relocDir.Size) {
-      ::uint32_t pageRva;
-      ::uint32_t blockSize;
+      std::uint32_t pageRva;
+      std::uint32_t blockSize;
 
       if (!readDword(d.sectionData,
                      rvaofft + _offset(reloc_block, PageRVA),
@@ -1071,7 +1071,7 @@ bool getRelocations(parsed_pe *p) {
       // including the Page RVA and Block Size fields and the Type/Offset fields
       // that follow. Therefore we should subtract 8 bytes from BlockSize to
       // exclude the Page RVA and Block Size fields.
-      ::uint32_t entryCount = (blockSize - 8) / sizeof(::uint16_t);
+      std::uint32_t entryCount = (blockSize - 8) / sizeof(std::uint16_t);
 
       // Skip the Page RVA and Block Size fields
       rvaofft += sizeof(reloc_block);
@@ -1092,7 +1092,7 @@ bool getRelocations(parsed_pe *p) {
         offset = entry & ~0xf000;
 
         // Produce the VA of the relocation
-        ::uint32_t relocVA;
+        VA relocVA;
         if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
           relocVA = pageRva + offset + p->peHeader.nt.OptionalHeader.ImageBase;
         } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
@@ -1106,7 +1106,7 @@ bool getRelocations(parsed_pe *p) {
         reloc r;
 
         r.shiftedAddr = relocVA;
-        r.type = (reloc_type) type;
+        r.type = static_cast<reloc_type>(type);
         p->internal->relocs.push_back(r);
 
         entryCount--;
@@ -1146,10 +1146,14 @@ bool getImports(parsed_pe *p) {
     }
 
     // get import directory from this section
-    ::uint32_t offt = addr - c.sectionBase;
+    auto offt = static_cast<std::uint32_t>(addr - c.sectionBase);
+
+    import_dir_entry emptyEnt;
+    memset(&emptyEnt, 0, sizeof(import_dir_entry));
+
     do {
       // read each directory entry out
-      import_dir_entry curEnt;
+      import_dir_entry curEnt = emptyEnt;
 
       READ_DWORD(c.sectionData, offt, curEnt, LookupTableRVA);
       READ_DWORD(c.sectionData, offt, curEnt, TimeStamp);
@@ -1178,7 +1182,7 @@ bool getImports(parsed_pe *p) {
         return false;
       }
 
-      ::uint32_t nameOff = name - nameSec.sectionBase;
+      auto nameOff = static_cast<std::uint32_t>(name - nameSec.sectionBase);
       string modName;
       if (!readCString(*nameSec.sectionData, nameOff, modName)) {
         return false;
@@ -1216,7 +1220,8 @@ bool getImports(parsed_pe *p) {
         return false;
       }
 
-      ::uint64_t lookupOff = lookupVA - lookupSec.sectionBase;
+      auto lookupOff =
+          static_cast<std::uint32_t>(lookupVA - lookupSec.sectionBase);
       ::uint32_t offInTable = 0;
       do {
         VA valVA = 0;
@@ -1257,21 +1262,21 @@ bool getImports(parsed_pe *p) {
             return false;
           }
 
-          ::uint32_t nameOff = valVA - symNameSec.sectionBase;
-          nameOff += sizeof(::uint16_t);
+          std::uint32_t nameOffset =
+              static_cast<std::uint32_t>(valVA - symNameSec.sectionBase) +
+              sizeof(::uint16_t);
           do {
-            ::uint8_t d;
-
-            if (!readByte(symNameSec.sectionData, nameOff, d)) {
+            std::uint8_t chr;
+            if (!readByte(symNameSec.sectionData, nameOffset, chr)) {
               return false;
             }
 
-            if (d == 0) {
+            if (chr == 0) {
               break;
             }
 
-            symName.push_back(d);
-            nameOff++;
+            symName.push_back(static_cast<char>(chr));
+            nameOffset++;
           } while (true);
 
           // okay now we know the pair... add it
@@ -1365,12 +1370,12 @@ bool getSymbolTable(parsed_pe *p) {
         if (ch == 0u) {
           break;
         }
-        sym.strName.push_back((char) ch);
+        sym.strName.push_back(static_cast<char>(ch));
         strOffset += sizeof(uint8_t);
       }
     } else {
       for (uint8_t n = 0; n < NT_SHORT_NAME_LEN; n++) {
-        sym.strName.push_back((char) (sym.name.shortName[n]));
+        sym.strName.push_back(static_cast<char>(sym.name.shortName[n]));
       }
     }
 
@@ -1390,7 +1395,7 @@ bool getSymbolTable(parsed_pe *p) {
       PE_ERR(PEERR_MAGIC);
       return false;
     }
-    sym.sectionNumber = (int16_t) secNum;
+    sym.sectionNumber = static_cast<int16_t>(secNum);
 
     offset += sizeof(uint16_t);
 
@@ -1537,7 +1542,7 @@ bool getSymbolTable(parsed_pe *p) {
             PE_ERR(PEERR_MAGIC);
             return false;
           }
-          asym.strFilename.push_back((char) asym.filename[j]);
+          asym.strFilename.push_back(static_cast<char>(asym.filename[j]));
         }
 
         // Save the record
@@ -1805,8 +1810,7 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, ::uint8_t &b) {
     return false;
   }
 
-  ::uint32_t off = v - s.sectionBase;
-
+  auto off = static_cast<std::uint32_t>(v - s.sectionBase);
   return readByte(s.sectionData, off, b);
 }
 

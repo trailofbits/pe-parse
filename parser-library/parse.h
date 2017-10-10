@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _PARSE_H
-#define _PARSE_H
+#pragma once
+
 #include <cstdint>
 #include <string>
 
@@ -34,10 +34,10 @@ THE SOFTWARE.
 #define __typeof__(x) std::remove_reference < decltype(x) > ::type
 #endif
 
-#define PE_ERR(x)           \
-  err = (pe_err) x;         \
-  err_loc.assign(__func__); \
-  err_loc += ":" + to_string<std::uint32_t>(__LINE__, dec);
+#define PE_ERR(x)               \
+  err = static_cast<pe_err>(x); \
+  err_loc.assign(__func__);     \
+  err_loc += ":" + to_string<std::uint32_t>(__LINE__, std::dec);
 
 #define READ_WORD(b, o, inst, member)                                     \
   if (!readWord(b, o + _offset(__typeof__(inst), member), inst.member)) { \
@@ -57,23 +57,10 @@ THE SOFTWARE.
     return false;                                                          \
   }
 
-#define READ_DWORD_PTR(b, o, inst, member)                                   \
-  if (!readDword(b, o + _offset(__typeof__(*inst), member), inst->member)) { \
-    PE_ERR(PEERR_READ);                                                      \
-    return false;                                                            \
-  }
-
 #define READ_BYTE(b, o, inst, member)                                     \
   if (!readByte(b, o + _offset(__typeof__(inst), member), inst.member)) { \
     PE_ERR(PEERR_READ);                                                   \
     return false;                                                         \
-  }
-
-/* This variant returns NULL instead of false. */
-#define READ_DWORD_NULL(b, o, inst, member)                                \
-  if (!readDword(b, o + _offset(__typeof__(inst), member), inst.member)) { \
-    PE_ERR(PEERR_READ);                                                    \
-    return NULL;                                                           \
   }
 
 #define TEST_MACHINE_CHARACTERISTICS(h, m, ch) \
@@ -158,7 +145,9 @@ uint64_t bufLen(bounded_buffer *b);
 
 struct parsed_pe_internal;
 
-typedef struct _pe_header { nt_header_32 nt; } pe_header;
+typedef struct _pe_header {
+  nt_header_32 nt;
+} pe_header;
 
 typedef struct _parsed_pe {
   bounded_buffer *fileBuffer;
@@ -167,7 +156,7 @@ typedef struct _parsed_pe {
 } parsed_pe;
 
 // get parser error status as integer
-int GetPEErr();
+std::uint32_t GetPEErr();
 
 // get parser error status as string
 std::string GetPEErrString();
@@ -196,11 +185,11 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 // Iterate over symbols (symbol table) in the PE file
 typedef int (*iterSymbol)(void *,
                           std::string &,
-                          uint32_t &,
-                          int16_t &,
-                          uint16_t &,
-                          uint8_t &,
-                          uint8_t &);
+                          std::uint32_t &,
+                          std::int16_t &,
+                          std::uint16_t &,
+                          std::uint8_t &,
+                          std::uint8_t &);
 void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd);
 
 // iterate over the exports
@@ -218,5 +207,3 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, std::uint8_t &b);
 // get entry point into PE
 bool GetEntryPoint(parsed_pe *pe, VA &v);
 } // namespace peparse
-
-#endif
