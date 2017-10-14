@@ -225,7 +225,8 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 #else
   p->detail->fd = fd;
 
-  struct stat s = {};
+  struct stat s;
+  memset(&s, 0, sizeof(struct stat));
 
   if (fstat(fd, &s) != 0) {
     close(fd);
