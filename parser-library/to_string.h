@@ -1,5 +1,5 @@
-#ifndef _TO_STRING_H
-#define _TO_STRING_H
+#pragma once
+
 #include <sstream>
 
 namespace peparse {
@@ -9,5 +9,4 @@ static std::string to_string(T t, std::ios_base &(*f)(std::ios_base &) ) {
   oss << f << t;
   return oss.str();
 }
-}
-#endif
+} // namespace peparse

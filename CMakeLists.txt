@@ -9,6 +9,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if (NOT DEFINED WIN32)
   set(CMAKE_CXX_STANDARD 14)
+  message(STATUS "Enabling C++14 support")
 endif ()
 
 list(APPEND PROJECT_CXXFLAGS
@@ -17,7 +18,7 @@ list(APPEND PROJECT_CXXFLAGS
   -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization
   -Wformat=2 -Winit-self -Wlong-long -Wmissing-declarations -Wmissing-include-dirs -Wcomment
   -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion
-  -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused
+  -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wunused
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
