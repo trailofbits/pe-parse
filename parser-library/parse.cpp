@@ -150,7 +150,7 @@ string GetPEErrLoc() {
 }
 
 static bool
-readCString(const bounded_buffer &buffer, ::uint32_t off, string &result) {
+readCString(const bounded_buffer &buffer, std::uint32_t off, string &result) {
   if (off < buffer.bufLen) {
     std::uint8_t *p = buffer.buf;
     std::uint32_t n = buffer.bufLen;
@@ -193,15 +193,15 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   return;
 }
 
-bool parse_resource_id(bounded_buffer *data, ::uint32_t id, string &result) {
-  ::uint8_t c;
-  ::uint16_t len;
+bool parse_resource_id(bounded_buffer *data, std::uint32_t id, string &result) {
+  std::uint8_t c;
+  std::uint16_t len;
 
   if (!readWord(data, id, len)) {
     return false;
   }
   id += 2;
-  for (::uint32_t i = 0; i < len * 2; i++) {
+  for (std::uint32_t i = 0; i < len * 2U; i++) {
     if (!readByte(data, id + i, c)) {
       return false;
     }
@@ -211,12 +211,11 @@ bool parse_resource_id(bounded_buffer *data, ::uint32_t id, string &result) {
 }
 
 bool parse_resource_table(bounded_buffer *sectionData,
-                          ::uint32_t o,
-                          ::uint32_t virtaddr,
-                          ::uint32_t depth,
+                          std::uint32_t o,
+                          std::uint32_t virtaddr,
+                          std::uint32_t depth,
                           resource_dir_entry *dirent,
                           list<resource> &rsrcs) {
-  ::uint32_t i = 0;
   resource_dir_table rdt;
 
   if (sectionData == nullptr) {
@@ -236,7 +235,9 @@ bool parse_resource_table(bounded_buffer *sectionData,
     return true; // This is not a hard error. It does happen.
   }
 
-  for (i = 0; i < rdt.NameEntries + rdt.IDEntries; i++) {
+  for (std::uint32_t i = 0;
+       i < static_cast<std::uint32_t>(rdt.NameEntries + rdt.IDEntries);
+       i++) {
     resource_dir_entry *rde = dirent;
     if (dirent == nullptr) {
       rde = new resource_dir_entry;
