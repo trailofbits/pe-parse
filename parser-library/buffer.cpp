@@ -23,6 +23,8 @@ THE SOFTWARE.
 */
 
 #include "parse.h"
+
+#include <cstring>
 #include <fstream>
 
 #ifdef WIN32
