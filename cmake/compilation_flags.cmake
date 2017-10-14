@@ -10,7 +10,8 @@ if (WIN32)
   endif ()
 
 else ()
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 
   list(APPEND DEFAULT_CXX_FLAGS
     -fPIC
