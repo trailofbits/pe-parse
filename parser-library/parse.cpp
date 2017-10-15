@@ -362,7 +362,8 @@ bool parse_resource_table(bounded_buffer *sectionData,
         return false;
       }
 
-      resource rsrc = {};
+      resource rsrc;
+      memset(&rsrc, 0, sizeof(resource));
 
       rsrc.type_str = rde->type_str;
       rsrc.name_str = rde->name_str;
@@ -1051,8 +1052,8 @@ bool getRelocations(parsed_pe *p) {
     auto rvaofft = static_cast<std::uint32_t>(vaAddr - d.sectionBase);
 
     while (rvaofft < relocDir.Size) {
-      ::uint32_t pageRva;
-      ::uint32_t blockSize;
+      std::uint32_t pageRva;
+      std::uint32_t blockSize;
 
       if (!readDword(d.sectionData,
                      rvaofft + _offset(reloc_block, PageRVA),
@@ -1070,7 +1071,7 @@ bool getRelocations(parsed_pe *p) {
       // including the Page RVA and Block Size fields and the Type/Offset fields
       // that follow. Therefore we should subtract 8 bytes from BlockSize to
       // exclude the Page RVA and Block Size fields.
-      ::uint32_t entryCount = (blockSize - 8) / sizeof(::uint16_t);
+      std::uint32_t entryCount = (blockSize - 8) / sizeof(std::uint16_t);
 
       // Skip the Page RVA and Block Size fields
       rvaofft += sizeof(reloc_block);
@@ -1148,7 +1149,8 @@ bool getImports(parsed_pe *p) {
     auto offt = static_cast<std::uint32_t>(addr - c.sectionBase);
     do {
       // read each directory entry out
-      import_dir_entry curEnt = {};
+      import_dir_entry curEnt;
+      memset(&curEnt, 0, sizeof(import_dir_entry));
 
       READ_DWORD(c.sectionData, offt, curEnt, LookupTableRVA);
       READ_DWORD(c.sectionData, offt, curEnt, TimeStamp);

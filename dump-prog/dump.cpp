@@ -84,6 +84,9 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
     case DIR64:
       std::cout << "DIR64";
       break;
+    default:
+      std::cout << "UNKNOWN";
+      break;
   }
 
   std::cout << " VA: 0x" << to_string<VA>(relocAddr, hex) << endl;
@@ -170,6 +173,9 @@ int printSymbols(void *N,
     case IMAGE_SYM_TYPE_DWORD:
       std::cout << "DWORD";
       break;
+    default:
+      std::cout << "UNKNOWN";
+      break;
   }
   std::cout << endl;
 
@@ -204,6 +210,9 @@ int printSymbols(void *N,
       break;
     case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
       std::cout << "MEMBER OF STRUCT";
+      break;
+    default:
+      std::cout << "UNKNOWN";
       break;
   }
   std::cout << endl;
