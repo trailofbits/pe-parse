@@ -30,53 +30,66 @@ using namespace std;
 using namespace peparse;
 
 int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
-  cout << "EXP: ";
-  cout << mod;
-  cout << "!";
-  cout << func;
-  cout << ": 0x";
-  cout << to_string<uint32_t>(funcAddr, hex);
-  cout << endl;
+  static_cast<void>(N);
+
+  auto address = static_cast<std::uint32_t>(funcAddr);
+
+  std::cout << "EXP: ";
+  std::cout << mod;
+  std::cout << "!";
+  std::cout << func;
+  std::cout << ": 0x";
+  std::cout << to_string<decltype(address)>(address, hex);
+  std::cout << endl;
   return 0;
 }
 
 int printImports(void *N, VA impAddr, string &modName, string &symName) {
-  cout << "0x" << to_string<uint32_t>(impAddr, hex);
-  cout << " " << modName << "!" << symName;
-  cout << endl;
+  static_cast<void>(N);
+
+  auto address = static_cast<std::uint32_t>(impAddr);
+
+  std::cout << "0x" << to_string<decltype(address)>(address, hex);
+  std::cout << " " << modName << "!" << symName;
+  std::cout << endl;
   return 0;
 }
 
 int printRelocs(void *N, VA relocAddr, reloc_type type) {
-  cout << "TYPE: ";
+  static_cast<void>(N);
+
+  std::cout << "TYPE: ";
   switch (type) {
     case ABSOLUTE:
-      cout << "ABSOLUTE";
+      std::cout << "ABSOLUTE";
       break;
     case HIGH:
-      cout << "HIGH";
+      std::cout << "HIGH";
       break;
     case LOW:
-      cout << "LOW";
+      std::cout << "LOW";
       break;
     case HIGHLOW:
-      cout << "HIGHLOW";
+      std::cout << "HIGHLOW";
       break;
     case HIGHADJ:
-      cout << "HIGHADJ";
+      std::cout << "HIGHADJ";
       break;
     case MIPS_JMPADDR:
-      cout << "MIPS_JMPADDR";
+      std::cout << "MIPS_JMPADDR";
       break;
     case MIPS_JMPADDR16:
-      cout << "MIPS_JMPADD16";
+      std::cout << "MIPS_JMPADD16";
       break;
     case DIR64:
-      cout << "DIR64";
+      std::cout << "DIR64";
+      break;
+    default:
+      std::cout << "UNKNOWN";
       break;
   }
 
-  cout << " VA: 0x" << to_string<VA>(relocAddr, hex) << endl;
+  std::cout << " VA: 0x" << to_string<VA>(relocAddr, hex) << endl;
 
   return 0;
 }
@@ -88,136 +101,146 @@ int printSymbols(void *N,
                  uint16_t &type,
                  uint8_t &storageClass,
                  uint8_t &numberOfAuxSymbols) {
-  cout << "Symbol Name: " << strName << endl;
-  cout << "Symbol Value: 0x" << to_string<uint32_t>(value, hex) << endl;
+  static_cast<void>(N);
 
-  cout << "Symbol Section Number: ";
+  std::cout << "Symbol Name: " << strName << endl;
+  std::cout << "Symbol Value: 0x" << to_string<uint32_t>(value, hex) << endl;
+
+  std::cout << "Symbol Section Number: ";
   switch (sectionNumber) {
     case IMAGE_SYM_UNDEFINED:
-      cout << "UNDEFINED";
+      std::cout << "UNDEFINED";
       break;
     case IMAGE_SYM_ABSOLUTE:
-      cout << "ABSOLUTE";
+      std::cout << "ABSOLUTE";
       break;
     case IMAGE_SYM_DEBUG:
-      cout << "DEBUG";
+      std::cout << "DEBUG";
       break;
     default:
-      cout << sectionNumber;
+      std::cout << sectionNumber;
       break;
   }
-  cout << endl;
+  std::cout << endl;
 
-  cout << "Symbol Type: ";
+  std::cout << "Symbol Type: ";
   switch (type) {
     case IMAGE_SYM_TYPE_NULL:
-      cout << "NULL";
+      std::cout << "NULL";
       break;
     case IMAGE_SYM_TYPE_VOID:
-      cout << "VOID";
+      std::cout << "VOID";
       break;
     case IMAGE_SYM_TYPE_CHAR:
-      cout << "CHAR";
+      std::cout << "CHAR";
       break;
     case IMAGE_SYM_TYPE_SHORT:
-      cout << "SHORT";
+      std::cout << "SHORT";
       break;
     case IMAGE_SYM_TYPE_INT:
-      cout << "INT";
+      std::cout << "INT";
       break;
     case IMAGE_SYM_TYPE_LONG:
-      cout << "LONG";
+      std::cout << "LONG";
       break;
     case IMAGE_SYM_TYPE_FLOAT:
-      cout << "FLOAT";
+      std::cout << "FLOAT";
       break;
     case IMAGE_SYM_TYPE_DOUBLE:
-      cout << "DOUBLE";
+      std::cout << "DOUBLE";
       break;
     case IMAGE_SYM_TYPE_STRUCT:
-      cout << "STRUCT";
+      std::cout << "STRUCT";
       break;
     case IMAGE_SYM_TYPE_UNION:
-      cout << "UNION";
+      std::cout << "UNION";
       break;
     case IMAGE_SYM_TYPE_ENUM:
-      cout << "ENUM";
+      std::cout << "ENUM";
       break;
     case IMAGE_SYM_TYPE_MOE:
-      cout << "IMAGE_SYM_TYPE_MOE";
+      std::cout << "IMAGE_SYM_TYPE_MOE";
       break;
     case IMAGE_SYM_TYPE_BYTE:
-      cout << "BYTE";
+      std::cout << "BYTE";
       break;
     case IMAGE_SYM_TYPE_WORD:
-      cout << "WORD";
+      std::cout << "WORD";
       break;
     case IMAGE_SYM_TYPE_UINT:
-      cout << "UINT";
+      std::cout << "UINT";
       break;
     case IMAGE_SYM_TYPE_DWORD:
-      cout << "DWORD";
+      std::cout << "DWORD";
+      break;
+    default:
+      std::cout << "UNKNOWN";
       break;
   }
-  cout << endl;
+  std::cout << endl;
 
-  cout << "Symbol Storage Class: ";
+  std::cout << "Symbol Storage Class: ";
   switch (storageClass) {
     case IMAGE_SYM_CLASS_END_OF_FUNCTION:
-      cout << "FUNCTION";
+      std::cout << "FUNCTION";
       break;
     case IMAGE_SYM_CLASS_NULL:
-      cout << "NULL";
+      std::cout << "NULL";
       break;
     case IMAGE_SYM_CLASS_AUTOMATIC:
-      cout << "AUTOMATIC";
+      std::cout << "AUTOMATIC";
       break;
     case IMAGE_SYM_CLASS_EXTERNAL:
-      cout << "EXTERNAL";
+      std::cout << "EXTERNAL";
       break;
     case IMAGE_SYM_CLASS_STATIC:
-      cout << "STATIC";
+      std::cout << "STATIC";
       break;
     case IMAGE_SYM_CLASS_REGISTER:
-      cout << "REGISTER";
+      std::cout << "REGISTER";
       break;
     case IMAGE_SYM_CLASS_EXTERNAL_DEF:
-      cout << "EXTERNAL DEF";
+      std::cout << "EXTERNAL DEF";
       break;
     case IMAGE_SYM_CLASS_LABEL:
-      cout << "LABEL";
+      std::cout << "LABEL";
       break;
     case IMAGE_SYM_CLASS_UNDEFINED_LABEL:
-      cout << "UNDEFINED LABEL";
+      std::cout << "UNDEFINED LABEL";
       break;
     case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
-      cout << "MEMBER OF STRUCT";
+      std::cout << "MEMBER OF STRUCT";
+      break;
+    default:
+      std::cout << "UNKNOWN";
       break;
   }
-  cout << endl;
+  std::cout << endl;
 
-  cout << "Symbol Number of Aux Symbols: " << (uint32_t) numberOfAuxSymbols
-       << endl;
+  std::cout << "Symbol Number of Aux Symbols: "
+            << static_cast<uint32_t>(numberOfAuxSymbols) << endl;
 
   return 0;
 }
 
 int printRsrc(void *N, resource r) {
+  static_cast<void>(N);
+
   if (r.type_str.length())
-    cout << "Type (string): " << r.type_str << endl;
+    std::cout << "Type (string): " << r.type_str << endl;
   else
-    cout << "Type: 0x" << to_string<uint32_t>(r.type, hex) << endl;
+    std::cout << "Type: 0x" << to_string<uint32_t>(r.type, hex) << endl;
   if (r.name_str.length())
-    cout << "Name (string): " << r.name_str << endl;
+    std::cout << "Name (string): " << r.name_str << endl;
   else
-    cout << "Name: 0x" << to_string<uint32_t>(r.name, hex) << endl;
+    std::cout << "Name: 0x" << to_string<uint32_t>(r.name, hex) << endl;
   if (r.lang_str.length())
-    cout << "Lang (string): " << r.lang_str << endl;
+    std::cout << "Lang (string): " << r.lang_str << endl;
   else
-    cout << "Lang: 0x" << to_string<uint32_t>(r.lang, hex) << endl;
-  cout << "Codepage: 0x" << to_string<uint32_t>(r.codepage, hex) << endl;
-  cout << "RVA: " << to_string<uint32_t>(r.RVA, dec) << endl;
-  cout << "Size: " << to_string<uint32_t>(r.size, dec) << endl;
+    std::cout << "Lang: 0x" << to_string<uint32_t>(r.lang, hex) << endl;
+  std::cout << "Codepage: 0x" << to_string<uint32_t>(r.codepage, hex) << endl;
+  std::cout << "RVA: " << to_string<uint32_t>(r.RVA, dec) << endl;
+  std::cout << "Size: " << to_string<uint32_t>(r.size, dec) << endl;
   return 0;
 }
 
@@ -226,28 +249,35 @@ int printSecs(void *N,
               string &secName,
               image_section_header s,
               bounded_buffer *data) {
-  cout << "Sec Name: " << secName << endl;
-  cout << "Sec Base: 0x" << to_string<uint64_t>(secBase, hex) << endl;
+  static_cast<void>(N);
+  static_cast<void>(s);
+
+  std::cout << "Sec Name: " << secName << endl;
+  std::cout << "Sec Base: 0x" << to_string<uint64_t>(secBase, hex) << endl;
   if (data)
-    cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
+    std::cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
   else
-    cout << "Sec Size: 0" << endl;
+    std::cout << "Sec Size: 0" << endl;
   return 0;
 }
+
+#define DUMP_FIELD(x)                                                      \
+  std::cout << "" #x << ": 0x";                                            \
+  std::cout << to_string<std::uint32_t>(                                   \
+                   static_cast<std::uint32_t>(p->peHeader.nt.x), std::hex) \
+            << endl;
+#define DUMP_DEC_FIELD(x)                                                  \
+  std::cout << "" #x << ": ";                                              \
+  std::cout << to_string<uint32_t>(                                        \
+                   static_cast<std::uint32_t>(p->peHeader.nt.x), std::dec) \
+            << endl;
 
 int main(int argc, char *argv[]) {
   if (argc == 2) {
     parsed_pe *p = ParsePEFromFile(argv[1]);
 
     if (p != NULL) {
-// print out some things
-#define DUMP_FIELD(x)      \
-  cout << "" #x << ": 0x"; \
-  cout << to_string<uint32_t>(p->peHeader.nt.x, hex) << endl;
-#define DUMP_DEC_FIELD(x) \
-  cout << "" #x << ": ";  \
-  cout << to_string<uint32_t>(p->peHeader.nt.x, dec) << endl;
-
+      // print out some things
       DUMP_FIELD(Signature);
       DUMP_FIELD(FileHeader.Machine);
       DUMP_FIELD(FileHeader.NumberOfSections);
@@ -314,40 +344,40 @@ int main(int argc, char *argv[]) {
 #undef DUMP_FIELD
 #undef DUMP_DEC_FIELD
 
-      cout << "Imports: " << endl;
+      std::cout << "Imports: " << endl;
       IterImpVAString(p, printImports, NULL);
-      cout << "Relocations: " << endl;
+      std::cout << "Relocations: " << endl;
       IterRelocs(p, printRelocs, NULL);
-      cout << "Symbols (symbol table): " << endl;
+      std::cout << "Symbols (symbol table): " << endl;
       IterSymbols(p, printSymbols, NULL);
-      cout << "Sections: " << endl;
+      std::cout << "Sections: " << endl;
       IterSec(p, printSecs, NULL);
-      cout << "Exports: " << endl;
+      std::cout << "Exports: " << endl;
       IterExpVA(p, printExps, NULL);
 
       // read the first 8 bytes from the entry point and print them
       VA entryPoint;
       if (GetEntryPoint(p, entryPoint)) {
-        cout << "First 8 bytes from entry point (0x";
+        std::cout << "First 8 bytes from entry point (0x";
 
-        cout << to_string<VA>(entryPoint, hex);
-        cout << "):" << endl;
-        for (int i = 0; i < 8; i++) {
+        std::cout << to_string<VA>(entryPoint, hex);
+        std::cout << "):" << endl;
+        for (std::size_t i = 0; i < 8; i++) {
           ::uint8_t b;
           ReadByteAtVA(p, i + entryPoint, b);
-          cout << " 0x" << to_string<uint32_t>(b, hex);
+          std::cout << " 0x" << to_string<uint32_t>(b, hex);
         }
 
-        cout << endl;
+        std::cout << endl;
       }
 
-      cout << "Resources: " << endl;
+      std::cout << "Resources: " << endl;
       IterRsrc(p, printRsrc, NULL);
       DestructParsedPE(p);
     } else {
-      cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")"
-           << endl;
-      cout << "Location: " << GetPEErrLoc() << endl;
+      std::cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")"
+                << endl;
+      std::cout << "Location: " << GetPEErrLoc() << endl;
     }
   }
   return 0;

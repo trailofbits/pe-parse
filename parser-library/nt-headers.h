@@ -22,15 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#ifndef _NT_HEADERS
-#define _NT_HEADERS
+#pragma once
+
 #include <cstdint>
 
-#define _offset(t, f) ((std::uint32_t)(ptrdiff_t) & (((t *) 0)->f))
+#define _offset(t, f)         \
+  static_cast<std::uint32_t>( \
+      reinterpret_cast<ptrdiff_t>(&static_cast<t *>(nullptr)->f))
 
 // need to pack these structure definitions
 
 // some constant definitions
+// clang-format off
 namespace peparse {
 constexpr std::uint16_t MZ_MAGIC = 0x5A4D;
 constexpr std::uint32_t NT_MAGIC = 0x00004550;
@@ -165,7 +168,7 @@ constexpr std::uint16_t IMAGE_SYM_DTYPE_FUNCTION = 2;
 constexpr std::uint16_t IMAGE_SYM_DTYPE_ARRAY = 3;
 
 // Symbol table storage classes
-constexpr std::uint8_t IMAGE_SYM_CLASS_END_OF_FUNCTION = -1;
+constexpr std::uint8_t IMAGE_SYM_CLASS_END_OF_FUNCTION = static_cast<const std::uint8_t>(-1);
 constexpr std::uint8_t IMAGE_SYM_CLASS_NULL = 0;
 constexpr std::uint8_t IMAGE_SYM_CLASS_AUTOMATIC = 1;
 constexpr std::uint8_t IMAGE_SYM_CLASS_EXTERNAL = 2;
@@ -192,6 +195,7 @@ constexpr std::uint8_t IMAGE_SYM_CLASS_FILE = 103;
 constexpr std::uint8_t IMAGE_SYM_CLASS_SECTION = 104;
 constexpr std::uint8_t IMAGE_SYM_CLASS_WEAK_EXTERNAL = 105;
 constexpr std::uint8_t IMAGE_SYM_CLASS_CLR_TOKEN = 107;
+// clang-format on
 
 struct dos_header {
   std::uint16_t e_magic;
@@ -405,5 +409,3 @@ struct reloc_block {
   std::uint32_t BlockSize;
 };
 } // namespace peparse
-
-#endif

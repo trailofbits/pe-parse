@@ -3,3 +3,9 @@ cmake_install.cmake
 dump-prog/dump-prog
 *.swp
 python/build
+.idea
+cmake-build-debug
+cmake-build-release
+build
+.vscode
+
