@@ -22,8 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "parse.h"
-
 #include <cstring>
 #include <fstream>
 
@@ -36,6 +34,8 @@ THE SOFTWARE.
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+
+#include <parser-library/parse.h>
 
 namespace {
 
