@@ -248,7 +248,7 @@ bool convertAddress(ParsedPeRef &pe,
 
 int main(int argc, char *argv[]) {
   if (argc != 3 || (argc == 2 && std::strcmp(argv[1], "--help") == 0)) {
-    std::cout << "PE address converter utility from Trail of Bits\n";
+    std::cout << "PE address conversion utility from Trail of Bits\n";
     std::cout << "Usage:\n\tpeaddrconv /path/to/executable.exe address\n\n";
     std::cout << "The <address> parameter is always interpreted as hex!\n";
 
@@ -282,11 +282,20 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  std::uint64_t image_base_address = 0ULL;
+  if (pe->peHeader.nt.FileHeader.Machine == peparse::IMAGE_FILE_MACHINE_AMD64) {
+    image_base_address = pe->peHeader.nt.OptionalHeader64.ImageBase;
+  } else {
+    image_base_address = pe->peHeader.nt.OptionalHeader.ImageBase;
+  }
+
+  std::cout << "Image base address: 0x" << std::hex << image_base_address
+            << "\n";
   std::cout << "Converting address 0x" << std::hex << address << "...\n\n";
 
   std::uintptr_t result = 0ULL;
 
-  std::cout << "as Physical offset\n";
+  std::cout << "as Physical offset (off)\n";
   std::cout << "  to rva:\t";
   if (convertAddress(pe,
                      address,
@@ -311,7 +320,7 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "\n\n";
 
-  std::cout << "as Relative virtual address\n";
+  std::cout << "as Relative virtual address (rva)\n";
   std::cout << "  to off:\t";
   if (convertAddress(pe,
                      address,
@@ -336,7 +345,7 @@ int main(int argc, char *argv[]) {
   }
   std::cout << "\n\n";
 
-  std::cout << "as Virtual address\n";
+  std::cout << "as Virtual address (va)\n";
   std::cout << "  to off:\t";
   if (convertAddress(pe,
                      address,
