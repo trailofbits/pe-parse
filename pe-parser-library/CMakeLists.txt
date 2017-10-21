@@ -16,5 +16,5 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/in
 target_compile_options(${PROJECT_NAME} PRIVATE ${GLOBAL_CXXFLAGS})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION "lib")
-install(FILES "cmake/Findpeparse.cmake" DESTINATION "share/cmake/Modules")
+install(FILES "cmake/peparse-config.cmake" DESTINATION "lib/cmake/peparse")
 install(DIRECTORY "include/parser-library" DESTINATION "include")
