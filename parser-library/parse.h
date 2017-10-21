@@ -82,6 +82,10 @@ typedef struct _bounded_buffer {
 } bounded_buffer;
 
 struct resource {
+  resource()
+      : type(0), name(0), lang(0), codepage(0), RVA(0), size(0), buf(nullptr) {
+  }
+
   std::string type_str;
   std::string name_str;
   std::string lang_str;

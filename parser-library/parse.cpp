@@ -363,8 +363,6 @@ bool parse_resource_table(bounded_buffer *sectionData,
       }
 
       resource rsrc;
-      memset(&rsrc, 0, sizeof(resource));
-
       rsrc.type_str = rde->type_str;
       rsrc.name_str = rde->name_str;
       rsrc.lang_str = rde->lang_str;
