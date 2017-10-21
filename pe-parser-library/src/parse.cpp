@@ -27,8 +27,8 @@ THE SOFTWARE.
 #include <list>
 #include <stdexcept>
 
-#include <parser-library/parse.h>
 #include <parser-library/nt-headers.h>
+#include <parser-library/parse.h>
 #include <parser-library/to_string.h>
 
 using namespace std;
