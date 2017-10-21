@@ -15,5 +15,6 @@ add_library(${PROJECT_NAME} STATIC ${PEPARSERLIB_SOURCEFILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(${PROJECT_NAME} PRIVATE ${GLOBAL_CXXFLAGS})
 
-install(TARGETS ${PROJECT_NAME} DESTINATION lib)
-install(DIRECTORY include/parser-library DESTINATION include)
+install(TARGETS ${PROJECT_NAME} DESTINATION "lib")
+install(FILES "cmake/Findpeparse.cmake" DESTINATION "share/cmake/Modules")
+install(DIRECTORY "include/parser-library" DESTINATION "include")
