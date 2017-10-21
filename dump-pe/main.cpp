@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 #include <parser-library/parse.h>
 
@@ -274,7 +275,7 @@ int printSecs(void *N,
             << endl;
 
 int main(int argc, char *argv[]) {
-  if (argc != 2 || (argc == 2 && strcmp(argv[1], "--help") == 0)) {
+  if (argc != 2 || (argc == 2 && std::strcmp(argv[1], "--help") == 0)) {
     std::cout << "dump-pe utility from Trail of Bits\n";
     std::cout << "Repository: https://github.com/trailofbits/pe-parse\n\n";
     std::cout << "Usage:\n\tdump-pe /path/to/executable.exe\n";
