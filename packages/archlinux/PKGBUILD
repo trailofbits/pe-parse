@@ -1,0 +1,18 @@
+pkgname=pe-parse
+pkgver=1.0
+pkgrel=1
+arch=("x86_64" "x86")
+pkgdesc="PE parsing library from Trail of Bits"
+url="https://github.com/trailofbits/pe-parse"
+license=('MIT')
+makedepends=("cmake")
+provides=("pe-parse")
+
+build() {
+  cmake ../../../
+  make -j `nproc`
+}
+
+package() {
+  make DESTDIR="$pkgdir/" install
+}
