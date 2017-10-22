@@ -31,6 +31,19 @@ pe-parse is built using `cmake` and has no major dependencies.
 2. `cmake .`
 3. `make`
 
+Using the library
+=======
+Once the library is installed, linking to it is easy! Add the following lines in your CMake project:
+
+```
+find_package(peparse REQUIRED)
+
+target_link_libraries(your_target_name ${PEPARSE_LIBRARIES})
+target_include_directories(your_target_name PRIVATE ${PEPARSE_INCLUDE_DIRS})
+```
+
+You can see a full example in the examples/peaddrconv folder.
+
 Authors
 =======
 pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com), with significant contributions from [Wesley Shields](https://github.com/wxsBSD).
