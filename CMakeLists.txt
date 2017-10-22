@@ -18,4 +18,3 @@ add_subdirectory(dump-pe)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
-message("DEBUG: ${CMAKE_MODULE_PATH}")

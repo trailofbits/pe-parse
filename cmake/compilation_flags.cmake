@@ -24,13 +24,13 @@ else ()
   )
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    list(APPEND PROJECT_CXXFLAGS -gdwarf-2 -g3)
+  list(APPEND DEFAULT_CXX_FLAGS -gdwarf-2 -g3)
   endif ()
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "This is a debug build; enabling -Weverything...")
 
-    list(APPEND PROJECT_CXXFLAGS
+    list(APPEND DEFAULT_CXX_FLAGS
       -Weverything -Wno-c++98-compat -Wno-missing-prototypes
       -Wno-missing-variable-declarations -Wno-global-constructors
       -Wno-exit-time-destructors -Wno-padded -Wno-error
