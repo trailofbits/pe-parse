@@ -30,18 +30,21 @@ main() {
 
 linux_initialize() {
   printf "Initializing platform: linux\n"
+  local log_file=`mktemp`
 
   printf " > Updating the package database..\n"
-  sudo apt-get -qq update
+  sudo apt-get -qq update > "${log_file}" 2>&1
   if [ $? -ne 0 ] ; then
-    printf " x The package database could not be updated\n"
+    printf " x The package database could not be updated\n\n\n"
+    cat "${log_file}"
     return 1
   fi
 
   printf " > Installing the required packages...\n"
-  sudo apt-get install -qqy cmake python2.7 python-dev build-essential realpath
+  sudo apt-get install -qqy cmake python2.7 python-dev build-essential realpath > "${log_file}" 2>&1
   if [ $? -ne 0 ] ; then
-    printf " x Could not install the required dependencies\n"
+    printf " x Could not install the required dependencies\n\n\n"
+    cat "${log_file}"
     return 1
   fi
 
@@ -51,22 +54,28 @@ linux_initialize() {
 
 osx_initialize() {
   printf "Initializing platform: osx\n"
+  local log_file=`mktemp`
 
   printf " > Updating the package database..\n"
-  brew update
+  brew update > "${log_file}" 2>&1
   if [ $? -ne 0 ] ; then
-    printf " x The package database could not be updated\n"
+    printf " x The package database could not be updated\n\n\n"
+    cat "${log_file}"
     return 1
+  fi
+
+  printf " > Installing CMake...\n"
+  brew install cmake  > "${log_file}" 2>&1
+  if [ $? -ne 0 ] ; then
+    printf " x Failed to install CMake\n\n\n"
+    cat "${log_file}"
   fi
 
   printf " > The system has been successfully initialized\n"
   return 0
 }
 
-linux_build() {
-  printf "Building platform: linux\n\n"
-  local log_file=`mktemp`
-
+common_build() {
   which cmake > /dev/null
   printf "CMake version: "
   if [ $? -eq 0 ] ; then
@@ -91,11 +100,6 @@ linux_build() {
     printf "not found\n"
   fi
 
-  source /etc/*-release
-  printf "Distribution: ${DISTRIB_DESCRIPTION}\n"
-
-  printf "\n\n"
-
   printf "Library\n"
   if [ ! -d "build" ] ; then
     printf " > Creating the build directory...\n"
@@ -105,6 +109,8 @@ linux_build() {
       return 1
     fi
   fi
+
+  local log_file=`mktemp`
 
   printf " > Configuring...\n"
   ( cd "build" && cmake .. ) > "$log_file" 2>&1
@@ -162,11 +168,33 @@ linux_build() {
   return 0
 }
 
-osx_build() {
-  printf "Building for platform: osx\n\n"
+linux_build() {
+  printf "Building platform: linux\n\n"
 
-  printf " x This platform is not yet supported\n"
-  return 1
+  source /etc/*-release
+  printf "Distribution: ${DISTRIB_DESCRIPTION}\n"
+
+  printf "\n\n"
+
+  common_build
+  if [ $? -ne 0 ] ; then
+    return 1
+  fi
+
+  return 0
+}
+
+osx_build() {
+  printf "Building platform: macOS\n\n"
+
+  printf "\n\n"
+
+  common_build
+  if [ $? -ne 0 ] ; then
+    return 1
+  fi
+
+  return 0
 }
 
 main $@
