@@ -67,6 +67,35 @@ linux_build() {
   printf "Building platform: linux\n\n"
   local log_file=`mktemp`
 
+  which cmake > /dev/null
+  printf "CMake version: "
+  if [ $? -eq 0 ] ; then
+    cmake --version | head -n 1 | awk '{ print $3 }'
+  else
+    printf "not found\n"
+  fi
+
+  which gcc > /dev/null
+  printf "GCC version: "
+  if [ $? -eq 0 ] ; then
+    gcc --version | head -n 1 | awk '{ print $3 }'
+  else
+    printf "not found\n"
+  fi
+
+  which clang > /dev/null
+  printf "Clang version: "
+  if [ $? -eq 0 ] ; then
+    clang --version | head -n 1 | awk '{ print $3 }'
+  else
+    printf "not found\n"
+  fi
+
+  source /etc/*-release
+  printf "Distribution: ${DISTRIB_DESCRIPTION}\n"
+
+  printf "\n\n"
+
   printf "Library\n"
   if [ ! -d "build" ] ; then
     printf " > Creating the build directory...\n"
@@ -96,7 +125,7 @@ linux_build() {
   printf " > Installing...\n"
   ( cd "build" && sudo make install ) > "$log_file" 2>&1
   if [ $? -ne 0 ] ; then
-    printf " x Failed to install the library.\n"\n\n
+    printf " x Failed to install the library.\n\n\n"
     cat "$log_file"
     return 1
   fi

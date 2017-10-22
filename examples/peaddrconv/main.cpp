@@ -37,7 +37,7 @@ bool convertAddress(ParsedPeRef &pe,
     return true;
   }
 
-  std::uint64_t image_base_address = 0ULL;
+  std::uint64_t image_base_address = 0U;
   if (pe->peHeader.nt.FileHeader.Machine == peparse::IMAGE_FILE_MACHINE_AMD64) {
     image_base_address = pe->peHeader.nt.OptionalHeader64.ImageBase;
   } else {
@@ -142,7 +142,7 @@ bool convertAddress(ParsedPeRef &pe,
           return 0;
         };
 
-        CallbackData callback_data = {false, address, 0ULL};
+        CallbackData callback_data = {false, address, 0U};
         IterSec(pe.get(), L_inspectSection, &callback_data);
 
         if (!callback_data.found) {
@@ -153,7 +153,7 @@ bool convertAddress(ParsedPeRef &pe,
         return true;
 
       } else if (destination_type == AddressType::VirtualAddress) {
-        std::uintptr_t rva = 0ULL;
+        std::uintptr_t rva = 0U;
         if (!convertAddress(pe,
                             address,
                             source_type,
@@ -211,7 +211,7 @@ bool convertAddress(ParsedPeRef &pe,
           return 0;
         };
 
-        CallbackData callback_data = {false, address, 0ULL};
+        CallbackData callback_data = {false, address, 0U};
         IterSec(pe.get(), L_inspectSection, &callback_data);
 
         if (!callback_data.found) {
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
   errno = 0;
 
   auto address = std::strtoull(address_as_string, &last_parsed_char, 16);
-  if (address == 0ULL && *last_parsed_char != 0) {
+  if (address == 0U && *last_parsed_char != 0) {
     std::cout << "Invalid address specified\n";
     return 1;
 
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  std::uint64_t image_base_address = 0ULL;
+  std::uint64_t image_base_address = 0U;
   if (pe->peHeader.nt.FileHeader.Machine == peparse::IMAGE_FILE_MACHINE_AMD64) {
     image_base_address = pe->peHeader.nt.OptionalHeader64.ImageBase;
   } else {
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
             << "\n";
   std::cout << "Converting address 0x" << std::hex << address << "...\n\n";
 
-  std::uintptr_t result = 0ULL;
+  std::uintptr_t result = 0U;
 
   std::cout << "as Physical offset (off)\n";
   std::cout << "  to rva:\t";
