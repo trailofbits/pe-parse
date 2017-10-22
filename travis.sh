@@ -97,7 +97,7 @@ common_build() {
   which cmake > /dev/null
   printf " > CMake version: "
   if [ $? -eq 0 ] ; then
-    cmake --version | head -n 1 | awk '{ print $3 }'
+    cmake --version | head -n 1
   else
     printf "not found\n"
   fi
@@ -105,7 +105,7 @@ common_build() {
   which gcc > /dev/null
   printf " > GCC version: "
   if [ $? -eq 0 ] ; then
-    gcc --version | head -n 1 | awk '{ print $3 }'
+    gcc --version | head -n 1
   else
     printf "not found\n"
   fi
@@ -113,7 +113,7 @@ common_build() {
   which clang > /dev/null
   printf " > Clang version: "
   if [ $? -eq 0 ] ; then
-    clang --version | head -n 1 | awk '{ print $3 }'
+    clang --version | head -n 1
   else
     printf "not found\n"
   fi
@@ -147,6 +147,15 @@ common_build() {
     printf " x The build has failed.\n\n\n"
     cat "$log_file"
     return 1
+  fi
+
+  printf " > Checking for write access on /usr/bin...\n"
+  sudo touch /usr/lib/test_file > /dev/null 2>&1
+  if [ $? -ne 0 ] ; then
+    printf " x Access denied; examples will not be built\n"
+    return 0
+  else
+    printf " > Writeable! Examples will be built\n"
   fi
 
   printf " > Installing...\n"
@@ -205,6 +214,9 @@ linux_build() {
 
 osx_build() {
   printf "Building platform: macOS\n\n"
+
+  printf "macOS version: "
+  sw_vers -productVersion
 
   common_build
   if [ $? -ne 0 ] ; then
