@@ -28,6 +28,22 @@ main() {
   fi
 }
 
+get_processor_count() {
+  which nproc > /dev/null
+  if [ $? -eq 0 ] ; then
+    nproc
+    return 0
+  fi
+
+  which sysctl > /dev/null
+  if [ $? -eq 0 ] ; then
+    sysctl -n hw.ncpu
+    return 0
+  fi
+
+  return 1
+}
+
 linux_initialize() {
   printf "Initializing platform: linux\n"
   local log_file=`mktemp`
@@ -53,7 +69,7 @@ linux_initialize() {
 }
 
 osx_initialize() {
-  printf "Initializing platform: osx\n"
+  printf "Initializing platform: macOS\n"
   local log_file=`mktemp`
 
   printf " > Updating the package database..\n"
@@ -76,8 +92,10 @@ osx_initialize() {
 }
 
 common_build() {
+  printf "Gathering system information...\n"
+
   which cmake > /dev/null
-  printf "CMake version: "
+  printf " > CMake version: "
   if [ $? -eq 0 ] ; then
     cmake --version | head -n 1 | awk '{ print $3 }'
   else
@@ -85,7 +103,7 @@ common_build() {
   fi
 
   which gcc > /dev/null
-  printf "GCC version: "
+  printf " > GCC version: "
   if [ $? -eq 0 ] ; then
     gcc --version | head -n 1 | awk '{ print $3 }'
   else
@@ -93,12 +111,14 @@ common_build() {
   fi
 
   which clang > /dev/null
-  printf "Clang version: "
+  printf " > Clang version: "
   if [ $? -eq 0 ] ; then
     clang --version | head -n 1 | awk '{ print $3 }'
   else
     printf "not found\n"
   fi
+
+  printf "\n"
 
   printf "Library\n"
   if [ ! -d "build" ] ; then
@@ -111,6 +131,7 @@ common_build() {
   fi
 
   local log_file=`mktemp`
+  local processor_count=`get_processor_count`
 
   printf " > Configuring...\n"
   ( cd "build" && cmake .. ) > "$log_file" 2>&1
@@ -121,7 +142,7 @@ common_build() {
   fi
 
   printf " > Building...\n"
-  ( cd "build" && make -j `nproc` ) > "$log_file" 2>&1
+  ( cd "build" && make -j "${processor_count}" ) > "$log_file" 2>&1
   if [ $? -ne 0 ] ; then
     printf " x The build has failed.\n\n\n"
     cat "$log_file"
@@ -136,7 +157,7 @@ common_build() {
     return 1
   fi
 
-  printf "\n\n"
+  printf "\n"
 
   printf "Examples\n"
   if [ ! -d "examples_build" ] ; then
@@ -158,7 +179,7 @@ common_build() {
   fi
 
   printf " > Building...\n"
-  ( cd "examples_build" && make -j `nproc` ) > "$log_file" 2>&1
+  ( cd "examples_build" && make -j "${processor_count}" ) > "$log_file" 2>&1
   if [ $? -ne 0 ] ; then
     printf " x The build has failed.\n\n\n"
     cat "$log_file"
@@ -169,12 +190,10 @@ common_build() {
 }
 
 linux_build() {
-  printf "Building platform: linux\n\n"
+  printf "Building platform: linux\n"
 
   source /etc/*-release
-  printf "Distribution: ${DISTRIB_DESCRIPTION}\n"
-
-  printf "\n\n"
+  printf "Distribution: ${DISTRIB_DESCRIPTION}\n\n"
 
   common_build
   if [ $? -ne 0 ] ; then
@@ -186,8 +205,6 @@ linux_build() {
 
 osx_build() {
   printf "Building platform: macOS\n\n"
-
-  printf "\n\n"
 
   common_build
   if [ $? -ne 0 ] ; then
