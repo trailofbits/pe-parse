@@ -1,27 +1,32 @@
 language: cpp
+
 os:
 - linux
 - osx
+
 compiler:
 - clang
 - gcc
+
 before_install:
-- if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update -qq ; fi
-- if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update ; fi
-script: cmake . && make
+- ./travis.sh "$TRAVIS_OS_NAME" initialize
+script:
+- ./travis.sh "$TRAVIS_OS_NAME" build
+
 matrix:
   exclude:
   - compiler: gcc
     os: osx
+
 env:
   global:
   - secure: "O+BGqz4ugoVIJbQTh0dJjKRrsSVzkCYSe0WpRzEWK3l8Mw7hqX300g81TxRwTzN2zfUsROMzaeGaXWfGzYakgW59K1WIioaczxtv2MzzUQTbqzJPa+qQoP9bk/b2wJ5jcOL965/rudRju4UiIwuIgzDAMN3nAfIEJgV/2zANLIg="
+
 addons:
   coverity_scan:
     project:
       name: "trailofbits/pe-parse"
       description: "Principled, lightweight C/C++ PE parser"
     notification_email: dan@trailofbits.com
-    build_command_prepend: "cmake ."
-    build_command: "make"
+    build_command: "./travis.sh linux build"
     branch_pattern: master
