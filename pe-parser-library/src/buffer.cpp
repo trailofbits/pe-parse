@@ -25,7 +25,14 @@ THE SOFTWARE.
 #include <cstring>
 #include <fstream>
 
+// keep this header above "windows.h" because it contains many types
+#include <parser-library/parse.h>
+
 #ifdef WIN32
+
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
+
 #include <intrin.h>
 #include <windows.h>
 #else
@@ -34,8 +41,6 @@ THE SOFTWARE.
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
-
-#include <parser-library/parse.h>
 
 namespace {
 
