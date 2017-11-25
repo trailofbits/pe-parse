@@ -28,15 +28,15 @@ from distutils.core import setup, Extension
 INCLUDE_DIRS = ['/usr/local/include',
                 '/opt/local/include',
                 '/usr/include',
-                '../parser-library']
+                '../pe-parser-library/include']
 LIBRARY_DIRS = ['/usr/lib',
                 '/usr/local/lib']
 
 extension_mod = Extension('pepy',
                           sources = ['pepy.cpp',
-                                     '../parser-library/parse.cpp',
-                                     '../parser-library/buffer.cpp'],
-                          extra_compile_args = ["-g", "-O0"], # Debug only
+                                     '../pe-parser-library/src/parse.cpp',
+                                     '../pe-parser-library/src/buffer.cpp'],
+                          extra_compile_args = ["-std=c++11", "-g", "-O0"], # Debug only
                           include_dirs = INCLUDE_DIRS,
                           library_dirs = LIBRARY_DIRS)
 

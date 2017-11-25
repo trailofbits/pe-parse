@@ -1,21 +1,22 @@
+cmake_minimum_required(VERSION 3.1)
+project(peaddrconv)
+
 if (WIN32)
-  list(APPEND DEFAULT_CXX_FLAGS /W4 /analyze)
+  list(APPEND PEADDRCONV_CXXFLAGS /W4 /analyze)
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    list(APPEND DEFAULT_CXX_FLAGS /Zi)
+    list(APPEND PEADDRCONV_CXXFLAGS /Zi)
   endif ()
 
   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    list(APPEND DEFAULT_CXX_FLAGS /WX)
+    list(APPEND PEADDRCONV_CXXFLAGS /WX)
   endif ()
 
 else ()
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
-  list(APPEND DEFAULT_CXX_FLAGS
-    -fPIC
-
+  list(APPEND PEADDRCONV_CXXFLAGS
     -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization
     -Wformat=2 -Winit-self -Wlong-long -Wmissing-declarations -Wmissing-include-dirs -Wcomment
     -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion
@@ -24,16 +25,15 @@ else ()
   )
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-  list(APPEND DEFAULT_CXX_FLAGS -gdwarf-2 -g3)
-  endif ()
-
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message(STATUS "This is a debug build; enabling -Weverything...")
-
-    list(APPEND DEFAULT_CXX_FLAGS
-      -Weverything -Wno-c++98-compat -Wno-missing-prototypes
-      -Wno-missing-variable-declarations -Wno-global-constructors
-      -Wno-exit-time-destructors -Wno-padded -Wno-error
-    )
+    list(APPEND PEADDRCONV_CXXFLAGS -gdwarf-2 -g3)
   endif ()
 endif ()
+
+find_package(peparse REQUIRED)
+
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} ${PEPARSE_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PEPARSE_INCLUDE_DIRS})
+target_compile_options(${PROJECT_NAME} PRIVATE ${PEADDRCONV_CXXFLAGS})
+
+install(TARGETS ${PROJECT_NAME} DESTINATION "bin")

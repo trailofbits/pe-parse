@@ -8,4 +8,5 @@ cmake-build-debug
 cmake-build-release
 build
 .vscode
+examples_build
 

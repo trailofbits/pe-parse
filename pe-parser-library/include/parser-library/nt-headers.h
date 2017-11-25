@@ -25,6 +25,7 @@ THE SOFTWARE.
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #define _offset(t, f)         \
   static_cast<std::uint32_t>( \

@@ -22,14 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "parse.h"
-#include "nt-headers.h"
-#include "to_string.h"
-
 #include <algorithm>
 #include <cstring>
 #include <list>
 #include <stdexcept>
+
+#include <parser-library/nt-headers.h>
+#include <parser-library/parse.h>
+#include <parser-library/to_string.h>
 
 using namespace std;
 

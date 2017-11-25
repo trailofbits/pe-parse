@@ -22,12 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include "parse.h"
-
 #include <cstring>
 #include <fstream>
 
+// keep this header above "windows.h" because it contains many types
+#include <parser-library/parse.h>
+
 #ifdef WIN32
+
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
+
 #include <intrin.h>
 #include <windows.h>
 #else
