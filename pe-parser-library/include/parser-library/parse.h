@@ -86,9 +86,9 @@ struct resource {
       : type(0), name(0), lang(0), codepage(0), RVA(0), size(0), buf(nullptr) {
   }
 
-  std::string type_str;
-  std::string name_str;
-  std::string lang_str;
+  std::u16string type_str;
+  std::u16string name_str;
+  std::u16string lang_str;
   std::uint32_t type;
   std::uint32_t name;
   std::uint32_t lang;

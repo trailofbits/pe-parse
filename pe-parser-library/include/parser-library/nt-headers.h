@@ -334,9 +334,9 @@ struct resource_dir_entry {
   std::uint32_t type;
   std::uint32_t name;
   std::uint32_t lang;
-  std::string type_str;
-  std::string name_str;
-  std::string lang_str;
+  std::u16string type_str;
+  std::u16string name_str;
+  std::u16string lang_str;
 };
 
 struct resource_dir_table {
