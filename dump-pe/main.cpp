@@ -25,8 +25,6 @@ THE SOFTWARE.
 #include <iostream>
 #include <sstream>
 #include <cstring>
-#include <locale>
-#include <codecvt>
 
 #include <parser-library/parse.h>
 
@@ -229,18 +227,20 @@ int printSymbols(void *N,
 
 int printRsrc(void *N, resource r) {
   static_cast<void>(N);
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>,char16_t> c;
+  std::basic_string<char> name(r.name_str.begin(), r.name_str.end());
+  std::basic_string<char> type(r.type_str.begin(), r.type_str.end());
+  std::basic_string<char> lang(r.lang_str.begin(), r.lang_str.end());
 
   if (r.type_str.length())
-    std::cout << "Type (string): " << c.to_bytes(r.type_str) << endl;
+    std::cout << "Type (string): " << type << endl;
   else
     std::cout << "Type: 0x" << to_string<uint32_t>(r.type, hex) << endl;
   if (r.name_str.length())
-    std::cout << "Name (string): " << c.to_bytes(r.name_str) << endl;
+    std::cout << "Name (string): " << name << endl;
   else
     std::cout << "Name: 0x" << to_string<uint32_t>(r.name, hex) << endl;
   if (r.lang_str.length())
-    std::cout << "Lang (string): " << c.to_bytes(r.lang_str) << endl;
+    std::cout << "Lang (string): " << lang << endl;
   else
     std::cout << "Lang: 0x" << to_string<uint32_t>(r.lang, hex) << endl;
   std::cout << "Codepage: 0x" << to_string<uint32_t>(r.codepage, hex) << endl;

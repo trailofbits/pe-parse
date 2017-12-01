@@ -193,7 +193,7 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   return;
 }
 
-bool parse_resource_id(bounded_buffer *data, std::uint32_t id, u16string &result) {
+bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::u16string &result) {
   std::uint8_t c;
   std::uint16_t len;
 
