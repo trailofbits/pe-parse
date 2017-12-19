@@ -152,41 +152,12 @@ common_build() {
   printf " > Installing...\n"
   sudo touch /usr/lib/test_file > /dev/null 2>&1
   if [ $? -ne 0 ] ; then
-    printf " x Access denied to /usr/lib; examples will not be built\n"
+    printf " x Access denied to /usr/lib; the 'install' step will be skipped\n"
 
   else
     ( cd "build" && sudo make install ) > "$log_file" 2>&1
     if [ $? -ne 0 ] ; then
       printf " x Failed to install the library.\n\n\n"
-      cat "$log_file"
-      return 1
-    fi
-
-    printf "\n"
-
-    printf "Examples\n"
-    if [ ! -d "examples_build" ] ; then
-      printf " > Creating the build directory...\n"
-      mkdir "examples_build"
-      if [ $? -ne 0 ] ; then
-        printf " x Failed to create the build directory\n\n\n"
-        cat "$log_file"
-        return 1
-      fi
-    fi
-
-    printf " > Configuring...\n"
-    ( cd "examples_build" && cmake "../examples/peaddrconv" ) > "$log_file" 2>&1
-    if [ $? -ne 0 ] ; then
-      printf " x Configure failed; CMake returned an error.\n\n\n"
-      cat "$log_file"
-      return 1
-    fi
-
-    printf " > Building...\n"
-    ( cd "examples_build" && make -j "${processor_count}" ) > "$log_file" 2>&1
-    if [ $? -ne 0 ] ; then
-      printf " x The build has failed.\n\n\n"
       cat "$log_file"
       return 1
     fi
