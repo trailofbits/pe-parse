@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 project(peaddrconv)
 
-if (WIN32)
+if (MSVC)
   list(APPEND PEADDRCONV_CXXFLAGS /W4 /analyze)
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
