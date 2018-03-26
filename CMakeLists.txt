@@ -14,9 +14,15 @@ include(cmake/compilation_flags.cmake)
 list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
+option(BUILD_COMMAND_LINE_TOOLS "Build Command Line Tools" ON)
+
 add_subdirectory(pe-parser-library)
-add_subdirectory(dump-pe)
+
+if (BUILD_COMMAND_LINE_TOOLS)
+  add_subdirectory(dump-pe)
+endif ()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build Shared: ${BUILD_SHARED_LIBS}")
+message(STATUS "Build Command Line Tools: ${BUILD_COMMAND_LINE_TOOLS}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
