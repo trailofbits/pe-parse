@@ -13,8 +13,10 @@ endif ()
 include(cmake/compilation_flags.cmake)
 list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
+option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
 add_subdirectory(pe-parser-library)
 add_subdirectory(dump-pe)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build Shared: ${BUILD_SHARED_LIBS}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
