@@ -20,16 +20,42 @@ The interface is defined in `parser-library/parse.h`. The program in `dump-prog/
 
 Internally, the parser-library uses a bounded buffer abstraction to access information stored in the PE file. This should help in constructing a sane parser that allows for detection of the use of bogus values in the PE that would result in out of bounds accesses of the input buffer. Once data is read from the file it is sanitized and placed in C++ STL containers of internal types.
 
-Building
+Dependencies
 ========
-pe-parse is built using `cmake` and has no major dependencies.
-
-1. Install cmake:
+### CMake
   * Debian/Ubuntu: `sudo apt-get install cmake`
   * RedHat/Fedora: `sudo yum install cmake`
   * OSX: `brew install cmake`
-2. `cmake .`
-3. `make`
+  * Windows: Download the installer from the [CMake page](https://cmake.org/download/)
+
+Building
+========
+### Generic instructions
+```
+git clone https://github.com/trailofbits/pe-parse.git
+cd pe-parse
+
+mkdir build
+cd build
+
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
+
+# optional
+cmake --build . --config Release --target install
+```
+
+### Notes about Windows
+
+If you are building on Windows with Visual Studio, the generator option can be used to select the compiler version and the output architecture:
+
+```
+# Compile 64-bit binaries with Visual Studio 2017
+cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release ..
+
+# Compile 32-bit binaries with Visual Studio 2017
+cmake -G "Visual Studio 15 2017" -DCMAKE_BUILD_TYPE=Release ..
+```
 
 Using the library
 =======
