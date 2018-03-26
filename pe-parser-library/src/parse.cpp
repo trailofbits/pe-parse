@@ -1185,8 +1185,18 @@ bool getImports(parsed_pe *p) {
       if (!readCString(*nameSec.sectionData, nameOff, modName)) {
         return false;
       }
+
+      // clang-format off
       std::transform(
-          modName.begin(), modName.end(), modName.begin(), ::toupper);
+        modName.begin(),
+        modName.end(),
+        modName.begin(),
+
+        [](char chr) -> char {
+          return static_cast<char>(::toupper(chr));
+        }
+      );
+      // clang-format on
 
       // then, try and get all of the sub-symbols
       VA lookupVA = 0;
