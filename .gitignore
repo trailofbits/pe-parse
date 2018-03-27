@@ -7,6 +7,8 @@ python/build
 cmake-build-debug
 cmake-build-release
 build
+CMakeSettings.json
+.vs
 .vscode
 examples_build
 

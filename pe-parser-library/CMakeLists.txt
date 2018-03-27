@@ -11,10 +11,14 @@ list(APPEND PEPARSERLIB_SOURCEFILES
   src/parse.cpp
 )
 
-add_library(${PROJECT_NAME} STATIC ${PEPARSERLIB_SOURCEFILES})
+add_library(${PROJECT_NAME} ${PEPARSERLIB_SOURCEFILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(${PROJECT_NAME} PRIVATE ${GLOBAL_CXXFLAGS})
 
-install(TARGETS ${PROJECT_NAME} DESTINATION "lib")
+install(TARGETS ${PROJECT_NAME}
+  RUNTIME DESTINATION "bin"
+  LIBRARY DESTINATION "lib"
+  ARCHIVE DESTINATION "lib"
+)
 install(FILES "cmake/peparse-config.cmake" DESTINATION "lib/cmake/peparse")
 install(DIRECTORY "include/parser-library" DESTINATION "include")

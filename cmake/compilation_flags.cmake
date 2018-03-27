@@ -1,4 +1,4 @@
-if (WIN32)
+if (MSVC)
   list(APPEND DEFAULT_CXX_FLAGS /W4 /analyze)
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -13,8 +13,11 @@ else ()
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
+  if (NOT MINGW)
+    list(APPEND DEFAULT_CXX_FLAGS -fPIC)
+  endif ()
+
   list(APPEND DEFAULT_CXX_FLAGS
-    -fPIC
 
     -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization
     -Wformat=2 -Winit-self -Wlong-long -Wmissing-declarations -Wmissing-include-dirs -Wcomment
