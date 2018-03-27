@@ -225,7 +225,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     return nullptr;
   }
 
-  p->buf = (::uint8_t *) ptr;
+  p->buf = reinterpret_cast<std::uint8_t *>(ptr);
   p->bufLen = fileSize;
 #else
   p->detail->fd = fd;

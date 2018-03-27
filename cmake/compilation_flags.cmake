@@ -13,9 +13,7 @@ else ()
   set(CMAKE_CXX_STANDARD 11)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
-  if (MINGW)
-    list(APPEND DEFAULT_CXX_FLAGS -Wno-error=old-style-cast)
-  else ()
+  if (NOT MINGW)
     list(APPEND DEFAULT_CXX_FLAGS -fPIC)
   endif ()
 
