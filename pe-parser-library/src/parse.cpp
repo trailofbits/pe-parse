@@ -1186,7 +1186,7 @@ bool getImports(parsed_pe *p) {
         return false;
       }
       std::transform(
-          modName.begin(), modName.end(), modName.begin(), [](char c) { return (char)::toupper(c); });
+          modName.begin(), modName.end(), modName.begin(), [](char c) { return static_cast<char>(::toupper(c)); });
 
       // then, try and get all of the sub-symbols
       VA lookupVA = 0;
