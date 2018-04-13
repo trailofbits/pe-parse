@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 #include <list>
 #include <stdexcept>
 
@@ -147,6 +148,67 @@ string GetPEErrString() {
 
 string GetPEErrLoc() {
   return err_loc;
+}
+
+const char *GetSymbolTableStorageClassName(std::uint8_t id) {
+  switch (id) {
+    case IMAGE_SYM_CLASS_END_OF_FUNCTION:
+      return "CLASS_END_OF_FUNCTION";
+    case IMAGE_SYM_CLASS_NULL:
+      return "CLASS_NULL";
+    case IMAGE_SYM_CLASS_AUTOMATIC:
+      return "CLASS_AUTOMATIC";
+    case IMAGE_SYM_CLASS_EXTERNAL:
+      return "CLASS_EXTERNAL";
+    case IMAGE_SYM_CLASS_STATIC:
+      return "CLASS_STATIC";
+    case IMAGE_SYM_CLASS_REGISTER:
+      return "CLASS_REGISTER";
+    case IMAGE_SYM_CLASS_EXTERNAL_DEF:
+      return "CLASS_EXTERNAL_DEF";
+    case IMAGE_SYM_CLASS_LABEL:
+      return "CLASS_LABEL";
+    case IMAGE_SYM_CLASS_UNDEFINED_LABEL:
+      return "CLASS_UNDEFINED_LABEL";
+    case IMAGE_SYM_CLASS_MEMBER_OF_STRUCT:
+      return "CLASS_MEMBER_OF_STRUCT";
+    case IMAGE_SYM_CLASS_ARGUMENT:
+      return "CLASS_ARGUMENT";
+    case IMAGE_SYM_CLASS_STRUCT_TAG:
+      return "CLASS_STRUCT_TAG";
+    case IMAGE_SYM_CLASS_MEMBER_OF_UNION:
+      return "CLASS_MEMBER_OF_UNION";
+    case IMAGE_SYM_CLASS_UNION_TAG:
+      return "CLASS_UNION_TAG";
+    case IMAGE_SYM_CLASS_TYPE_DEFINITION:
+      return "CLASS_TYPE_DEFINITION";
+    case IMAGE_SYM_CLASS_UNDEFINED_STATIC:
+      return "CLASS_UNDEFINED_STATIC";
+    case IMAGE_SYM_CLASS_ENUM_TAG:
+      return "CLASS_ENUM_TAG";
+    case IMAGE_SYM_CLASS_MEMBER_OF_ENUM:
+      return "CLASS_MEMBER_OF_ENUM";
+    case IMAGE_SYM_CLASS_REGISTER_PARAM:
+      return "CLASS_REGISTER_PARAM";
+    case IMAGE_SYM_CLASS_BIT_FIELD:
+      return "CLASS_BIT_FIELD";
+    case IMAGE_SYM_CLASS_BLOCK:
+      return "CLASS_BLOCK";
+    case IMAGE_SYM_CLASS_FUNCTION:
+      return "CLASS_FUNCTION";
+    case IMAGE_SYM_CLASS_END_OF_STRUCT:
+      return "CLASS_END_OF_STRUCT";
+    case IMAGE_SYM_CLASS_FILE:
+      return "CLASS_FILE";
+    case IMAGE_SYM_CLASS_SECTION:
+      return "CLASS_SECTION";
+    case IMAGE_SYM_CLASS_WEAK_EXTERNAL:
+      return "CLASS_WEAK_EXTERNAL";
+    case IMAGE_SYM_CLASS_CLR_TOKEN:
+      return "CLASS_CLR_TOKEN";
+    default:
+      return nullptr;
+  }
 }
 
 static bool
@@ -1382,7 +1444,8 @@ bool getSymbolTable(parsed_pe *p) {
         strOffset += sizeof(uint8_t);
       }
     } else {
-      for (uint8_t n = 0; n < NT_SHORT_NAME_LEN; n++) {
+      for (uint8_t n = 0; n < NT_SHORT_NAME_LEN && sym.name.shortName[n] != 0;
+           n++) {
         sym.strName.push_back(static_cast<char>(sym.name.shortName[n]));
       }
     }
@@ -1440,6 +1503,11 @@ bool getSymbolTable(parsed_pe *p) {
     }
 
     // Read auxiliary symbol records
+    auto nextSymbolOffset =
+        offset + (static_cast<std::uint32_t>(sym.numberOfAuxSymbols) *
+                  static_cast<std::uint32_t>(SYMTAB_RECORD_LEN));
+
+    i += sym.numberOfAuxSymbols;
 
     if (sym.storageClass == IMAGE_SYM_CLASS_EXTERNAL &&
         SYMBOL_TYPE_HI(sym) == 0x20 && sym.sectionNumber > 0) {
@@ -1484,6 +1552,7 @@ bool getSymbolTable(parsed_pe *p) {
         // Save the record
         sym.aux_symbols_f1.push_back(asym);
       }
+
     } else if (sym.storageClass == IMAGE_SYM_CLASS_FUNCTION) {
       // Auxiliary Format 2: .bf and .ef Symbols
 
@@ -1497,6 +1566,8 @@ bool getSymbolTable(parsed_pe *p) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
+
+        offset += sizeof(uint16_t);
 
         // Skip unused 6 bytes
         offset += sizeof(uint8_t) * 6;
@@ -1513,6 +1584,7 @@ bool getSymbolTable(parsed_pe *p) {
         // Save the record
         sym.aux_symbols_f2.push_back(asym);
       }
+
     } else if (sym.storageClass == IMAGE_SYM_CLASS_EXTERNAL &&
                sym.sectionNumber == IMAGE_SYM_UNDEFINED && sym.value == 0) {
       // Auxiliary Format 3: Weak Externals
@@ -1538,6 +1610,7 @@ bool getSymbolTable(parsed_pe *p) {
         // Save the record
         sym.aux_symbols_f3.push_back(asym);
       }
+
     } else if (sym.storageClass == IMAGE_SYM_CLASS_FILE) {
       // Auxiliary Format 4: Files
 
@@ -1545,17 +1618,30 @@ bool getSymbolTable(parsed_pe *p) {
         aux_symbol_f4 asym;
 
         // Read filename
+        bool terminatorFound = false;
+
         for (uint16_t j = 0; j < SYMTAB_RECORD_LEN; j++) {
+          // Save the raw field
           if (!readByte(p->fileBuffer, offset, asym.filename[j])) {
             PE_ERR(PEERR_MAGIC);
             return false;
           }
-          asym.strFilename.push_back(static_cast<char>(asym.filename[j]));
+
+          offset += sizeof(std::uint8_t);
+
+          if (asym.filename[j] == 0) {
+            terminatorFound = true;
+          }
+
+          if (!terminatorFound) {
+            asym.strFilename.push_back(static_cast<char>(asym.filename[j]));
+          }
         }
 
         // Save the record
         sym.aux_symbols_f4.push_back(asym);
       }
+
     } else if (sym.storageClass == IMAGE_SYM_CLASS_STATIC) {
       // Auxiliary Format 5: Section Definitions
 
@@ -1600,11 +1686,15 @@ bool getSymbolTable(parsed_pe *p) {
           return false;
         }
 
+        offset += sizeof(uint16_t);
+
         // Read selection
         if (!readByte(p->fileBuffer, offset, asym.selection)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
+
+        offset += sizeof(uint8_t);
 
         // Skip unused 3 bytes
         offset += sizeof(uint8_t) * 3;
@@ -1612,9 +1702,34 @@ bool getSymbolTable(parsed_pe *p) {
         // Save the record
         sym.aux_symbols_f5.push_back(asym);
       }
+
     } else {
-      // Skip an unknown auxiliary record types
-      offset += sizeof(uint8_t) * SYMTAB_RECORD_LEN * sym.numberOfAuxSymbols;
+      std::ios::fmtflags originalStreamFlags(std::cerr.flags());
+
+      auto storageClassName = GetSymbolTableStorageClassName(sym.storageClass);
+      if (storageClassName == nullptr) {
+        std::cerr << "Warning: Skipping auxiliary symbol of type 0x" << std::hex
+                  << static_cast<std::uint32_t>(sym.storageClass)
+                  << " at offset 0x" << std::hex << offset << "\n";
+      } else {
+        std::cerr << "Warning: Skipping auxiliary symbol of type "
+                  << storageClassName << " at offset 0x" << std::hex << offset
+                  << "\n";
+      }
+
+      std::cerr.flags(originalStreamFlags);
+      offset = nextSymbolOffset;
+    }
+
+    if (offset != nextSymbolOffset) {
+      std::ios::fmtflags originalStreamFlags(std::cerr.flags());
+
+      std::cerr << "Warning: Invalid internal offset (current: 0x" << std::hex
+                << offset << ", expected: 0x" << std::hex << nextSymbolOffset
+                << ")\n";
+
+      std::cerr.flags(originalStreamFlags);
+      offset = nextSymbolOffset;
     }
   }
 
