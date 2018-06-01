@@ -28,7 +28,7 @@ THE SOFTWARE.
 // keep this header above "windows.h" because it contains many types
 #include <parser-library/parse.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
@@ -76,7 +76,7 @@ extern std::uint32_t err;
 extern std::string err_loc;
 
 struct buffer_detail {
-#ifdef WIN32
+#ifdef _WIN32
   HANDLE file;
   HANDLE sec;
 #else
@@ -157,7 +157,7 @@ bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
 }
 
 bounded_buffer *readFileToFileBuffer(const char *filePath) {
-#ifdef WIN32
+#ifdef _WIN32
   HANDLE h = CreateFileA(filePath,
                          GENERIC_READ,
                          FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -205,7 +205,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   p->detail = d;
 
 // only where we have mmap / open / etc
-#ifdef WIN32
+#ifdef _WIN32
   p->detail->file = h;
 
   HANDLE hMap = CreateFileMapping(h, nullptr, PAGE_READONLY, 0, 0, nullptr);
@@ -225,7 +225,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
     return nullptr;
   }
 
-  p->buf = (::uint8_t *) ptr;
+  p->buf = reinterpret_cast<std::uint8_t *>(ptr);
   p->bufLen = fileSize;
 #else
   p->detail->fd = fd;
@@ -296,7 +296,7 @@ void deleteBuffer(bounded_buffer *b) {
   }
 
   if (!b->copy) {
-#ifdef WIN32
+#ifdef _WIN32
     UnmapViewOfFile(b->buf);
     CloseHandle(b->detail->sec);
     CloseHandle(b->detail->file);
