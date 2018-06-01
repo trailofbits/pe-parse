@@ -1259,7 +1259,7 @@ bool getImports(parsed_pe *p) {
         }
       );
       // clang-format on
-
+      
       // then, try and get all of the sub-symbols
       VA lookupVA = 0;
       if (curEnt.LookupTableRVA != 0) {
