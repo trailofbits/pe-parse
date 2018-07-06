@@ -62,7 +62,7 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
 
   std::cout << "TYPE: ";
   switch (type) {
-    case ABSOLUTE:
+    case ABS:
       std::cout << "ABSOLUTE";
       break;
     case HIGH:
