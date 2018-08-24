@@ -1,6 +1,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <algorithm>
 
 #include <climits>
 #include <cstring>
@@ -28,10 +29,10 @@ enum class AddressType {
 };
 
 bool convertAddress(ParsedPeRef &pe,
-                    std::uintptr_t address,
+                    std::uint64_t address,
                     AddressType source_type,
                     AddressType destination_type,
-                    std::uintptr_t &result) noexcept {
+                    std::uint64_t &result) noexcept {
   if (source_type == destination_type) {
     result = address;
     return true;
@@ -107,8 +108,8 @@ bool convertAddress(ParsedPeRef &pe,
       if (destination_type == AddressType::RelativeVirtualAddress) {
         struct CallbackData final {
           bool found;
-          std::uintptr_t address;
-          std::uintptr_t result;
+          std::uint64_t address;
+          std::uint64_t result;
         };
 
         auto L_inspectSection = [](void *N,
@@ -153,7 +154,7 @@ bool convertAddress(ParsedPeRef &pe,
         return true;
 
       } else if (destination_type == AddressType::VirtualAddress) {
-        std::uintptr_t rva = 0U;
+        std::uint64_t rva = 0U;
         if (!convertAddress(pe,
                             address,
                             source_type,
@@ -180,8 +181,8 @@ bool convertAddress(ParsedPeRef &pe,
       if (destination_type == AddressType::PhysicalOffset) {
         struct CallbackData final {
           bool found;
-          std::uintptr_t address;
-          std::uintptr_t result;
+          std::uint64_t address;
+          std::uint64_t result;
         };
 
         auto L_inspectSection = [](void *N,
@@ -234,7 +235,7 @@ bool convertAddress(ParsedPeRef &pe,
         return false;
       }
 
-      std::uintptr_t rva = address - image_base_address;
+      std::uint64_t rva = address - image_base_address;
       return convertAddress(pe,
                             rva,
                             AddressType::RelativeVirtualAddress,
@@ -261,7 +262,7 @@ int main(int argc, char *argv[]) {
   char *last_parsed_char = nullptr;
   errno = 0;
 
-  auto address = std::strtoull(address_as_string, &last_parsed_char, 16);
+  std::uint64_t address = std::strtoull(address_as_string, &last_parsed_char, 16);
   if (address == 0U && *last_parsed_char != 0) {
     std::cout << "Invalid address specified\n";
     return 1;
@@ -293,7 +294,7 @@ int main(int argc, char *argv[]) {
             << "\n";
   std::cout << "Converting address 0x" << std::hex << address << "...\n\n";
 
-  std::uintptr_t result = 0U;
+  std::uint64_t result = 0U;
 
   std::cout << "as Physical offset (off)\n";
   std::cout << "  to rva:\t";
