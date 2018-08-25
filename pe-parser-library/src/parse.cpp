@@ -1966,7 +1966,7 @@ const char *GetMachineAsString(parsed_pe *pe) {
   switch (pe->peHeader.nt.FileHeader.Machine) {
     case 0x014c:
       return "x86";
-    case 0x1c4:
+    case 0x01c4:
       return "ARM Thumb-2 Little-Endian";
     case 0x0200:
       return "Intel IA64";
@@ -1988,7 +1988,7 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
   std::uint16_t subsystem;
   if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC)
     subsystem = pe->peHeader.nt.OptionalHeader.Subsystem;
-  else if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC)
+  else if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC)
     subsystem = pe->peHeader.nt.OptionalHeader64.Subsystem;
   else
     return nullptr;
