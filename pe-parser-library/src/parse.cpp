@@ -1958,4 +1958,73 @@ bool GetEntryPoint(parsed_pe *pe, VA &v) {
 
   return false;
 }
+
+const char *GetMachineAsString(parsed_pe *pe) {
+  if (pe == nullptr)
+    return nullptr;
+
+  switch (pe->peHeader.nt.FileHeader.Machine) {
+    case 0x014c:
+      return "x86";
+    case 0x1c4:
+      return "ARM Thumb-2 Little-Endian";
+    case 0x0200:
+      return "Intel IA64";
+    case 0x8664:
+      return "x64";
+    case 0xaa64:
+      return "ARM64";
+    case 0xc0ee:
+      return "CLR Pure MSIL";
+    default:
+      return nullptr;
+  }
+}
+
+const char *GetSubsystemAsString(parsed_pe *pe) {
+  if (pe == nullptr)
+    return nullptr;
+
+  std::uint16_t subsystem;
+  if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC)
+    subsystem = pe->peHeader.nt.OptionalHeader.Subsystem;
+  else if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC)
+    subsystem = pe->peHeader.nt.OptionalHeader64.Subsystem;
+  else
+    return nullptr;
+
+  switch (subsystem) {
+    case 0:
+      return "UNKNOWN";
+    case 1:
+      return "NATIVE";
+    case 2:
+      return "WINDOWS_GUI";
+    case 3:
+      return "WINDOWS_CUI";
+    case 5:
+      return "OS2_CUI";
+    case 7:
+      return "POSIX_CUI";
+    case 8:
+      return "NATIVE_WINDOWS";
+    case 9:
+      return "WINDOWS_CE_GUI";
+    case 10:
+      return "EFI_APPLICATION";
+    case 11:
+      return "EFI_BOOT_SERVICE_DRIVER";
+    case 12:
+      return "EFI_RUNTIME_DRIVER";
+    case 13:
+      return "EFI_ROM";
+    case 14:
+      return "XBOX";
+    case 16:
+      return "WINDOWS_BOOT_APPLICATION";
+    default:
+      return nullptr;
+  }
+}
+
 } // namespace peparse
