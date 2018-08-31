@@ -210,4 +210,10 @@ bool ReadByteAtVA(parsed_pe *pe, VA v, std::uint8_t &b);
 
 // get entry point into PE
 bool GetEntryPoint(parsed_pe *pe, VA &v);
+
+// get machine as human readable string
+const char *GetMachineAsString(parsed_pe *pe);
+
+// get subsystem as human readable string
+const char *GetSubsystemAsString(parsed_pe *pe);
 } // namespace peparse

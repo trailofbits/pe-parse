@@ -27,6 +27,8 @@ p = pepy.parse("/path/to/exe")
 The **parsed** object has a number of methods:
 
 * get_entry_point: Return the entry point address
+* get_machine_as_str: Return the machine as a human readable string
+* get_subsystem_as_str: Return the subsystem as a human readable string
 * get_bytes: Return the first N bytes at a given address
 * get_sections: Return a list of section objects
 * get_imports: Return a list of import objects

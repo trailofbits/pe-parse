@@ -706,6 +706,40 @@ static PyObject *pepy_parsed_get_entry_point(PyObject *self, PyObject *args) {
   return ret;
 }
 
+static PyObject *pepy_parsed_get_machine_as_str(PyObject *self, PyObject *args) {
+  PyObject *ret;
+  const char *str;
+
+  str = GetMachineAsString(((pepy_parsed *) self)->pe);
+  if (!str)
+    Py_RETURN_NONE;
+
+  ret = PyString_FromString(str);
+  if (!ret) {
+    PyErr_SetString(pepy_error, "Unable to create return string.");
+    return NULL;
+  }
+
+  return ret;
+}
+
+static PyObject *pepy_parsed_get_subsystem_as_str(PyObject *self, PyObject *args) {
+  PyObject *ret;
+  const char *str;
+
+  str = GetSubsystemAsString(((pepy_parsed *) self)->pe);
+  if (!str)
+    Py_RETURN_NONE;
+
+  ret = PyString_FromString(str);
+  if (!ret) {
+    PyErr_SetString(pepy_error, "Unable to create return string.");
+    return NULL;
+  }
+
+  return ret;
+}
+
 static PyObject *pepy_parsed_get_bytes(PyObject *self, PyObject *args) {
   uint64_t start;
   Py_ssize_t len, idx;
@@ -1180,6 +1214,14 @@ static PyMethodDef pepy_parsed_methods[] = {
      pepy_parsed_get_entry_point,
      METH_NOARGS,
      "Return the entry point address."},
+    {"get_machine_as_str",
+     pepy_parsed_get_machine_as_str,
+     METH_NOARGS,
+     "Return the machine as a human readable string."},
+    {"get_subsystem_as_str",
+     pepy_parsed_get_subsystem_as_str,
+     METH_NOARGS,
+     "Return the subsystem as a human readable string."},
     {"get_bytes",
      pepy_parsed_get_bytes,
      METH_VARARGS,
