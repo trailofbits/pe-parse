@@ -1964,17 +1964,17 @@ const char *GetMachineAsString(parsed_pe *pe) {
     return nullptr;
 
   switch (pe->peHeader.nt.FileHeader.Machine) {
-    case 0x014c:
+    case IMAGE_FILE_MACHINE_I386:
       return "x86";
-    case 0x01c4:
+    case IMAGE_FILE_MACHINE_ARMNT:
       return "ARM Thumb-2 Little-Endian";
-    case 0x0200:
+    case IMAGE_FILE_MACHINE_IA64:
       return "Intel IA64";
-    case 0x8664:
+    case IMAGE_FILE_MACHINE_AMD64:
       return "x64";
-    case 0xaa64:
+    case IMAGE_FILE_MACHINE_ARM64:
       return "ARM64";
-    case 0xc0ee:
+    case IMAGE_FILE_MACHINE_CEE:
       return "CLR Pure MSIL";
     default:
       return nullptr;
@@ -1994,34 +1994,36 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
     return nullptr;
 
   switch (subsystem) {
-    case 0:
+    case IMAGE_SUBSYSTEM_UNKNOWN:
       return "UNKNOWN";
-    case 1:
+    case IMAGE_SUBSYSTEM_NATIVE:
       return "NATIVE";
-    case 2:
+    case IMAGE_SUBSYSTEM_WINDOWS_GUI:
       return "WINDOWS_GUI";
-    case 3:
+    case IMAGE_SUBSYSTEM_WINDOWS_CUI:
       return "WINDOWS_CUI";
-    case 5:
+    case IMAGE_SUBSYSTEM_OS2_CUI:
       return "OS2_CUI";
-    case 7:
+    case IMAGE_SUBSYSTEM_POSIX_CUI:
       return "POSIX_CUI";
-    case 8:
+    case IMAGE_SUBSYSTEM_NATIVE_WINDOWS:
       return "NATIVE_WINDOWS";
-    case 9:
+    case IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
       return "WINDOWS_CE_GUI";
-    case 10:
+    case IMAGE_SUBSYSTEM_EFI_APPLICATION:
       return "EFI_APPLICATION";
-    case 11:
+    case IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
       return "EFI_BOOT_SERVICE_DRIVER";
-    case 12:
+    case IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
       return "EFI_RUNTIME_DRIVER";
-    case 13:
+    case IMAGE_SUBSYSTEM_EFI_ROM:
       return "EFI_ROM";
-    case 14:
+    case IMAGE_SUBSYSTEM_XBOX:
       return "XBOX";
-    case 16:
+    case IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION:
       return "WINDOWS_BOOT_APPLICATION";
+    case IMAGE_SUBSYSTEM_XBOX_CODE_CATALOG:
+      return "XBOX_CODE_CATALOG";
     default:
       return nullptr;
   }
