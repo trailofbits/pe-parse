@@ -15,7 +15,7 @@ except pepy.error as e:
 
 print "Magic: %s" % hex(p.magic)
 print "Signature: %s" % hex(p.signature)
-print "Machine: %s" % hex(p.machine)
+print "Machine: %s (%s)" % (hex(p.machine), p.get_machine_as_str())
 print "Number of sections: %s" % p.numberofsections
 print "Number of symbols: %s" % p.numberofsymbols
 print "Characteristics: %s" % hex(p.characteristics)
@@ -34,14 +34,14 @@ except:
     pass
 print "Image base address: %s" % hex(p.imagebase)
 print "Section alignment: %s" % hex(p.sectionalignement)
-print "File alignment: %s" % hex(p.filealingment)
+print "File alignment: %s" % hex(p.filealignment)
 print "Major OS version: %s" % hex(p.majorosver)
 print "Minor OS version: %s" % hex(p.minorosver)
 print "Win32 version: %s" % hex(p.win32ver)
 print "Size of image: %s" % hex(p.imagesize)
 print "Size of headers: %s" % hex(p.headersize)
 print "Checksum: %s" % hex(p.checksum)
-print "Subsystem: %s" % hex(p.subsystem)
+print "Subsystem: %s (%s)" % (hex(p.subsystem), p.get_subsystem_as_str())
 print "DLL characteristics: %s" % hex(p.dllcharacteristics)
 print "Size of stack reserve: %s" % hex(p.stackreservesize)
 print "Size of stack commit: %s" % hex(p.stackcommitsize)
