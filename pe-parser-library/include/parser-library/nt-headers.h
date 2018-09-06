@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #define _offset(t, f)         \
   static_cast<std::uint32_t>( \
-      reinterpret_cast<ptrdiff_t>(&static_cast<t *>(nullptr)->f))
+      reinterpret_cast<std::ptrdiff_t>(&static_cast<t *>(nullptr)->f))
 
 // need to pack these structure definitions
 

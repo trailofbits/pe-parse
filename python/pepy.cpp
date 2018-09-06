@@ -937,7 +937,10 @@ static PyObject *pepy_parsed_get_resources(PyObject *self, PyObject *args) {
   return ret;
 }
 
-int import_callback(void *cbd, VA addr, std::string &name, std::string &sym) {
+int import_callback(void *cbd,
+                    VA addr,
+                    const std::string &name,
+                    const std::string &sym) {
   PyObject *imp;
   PyObject *tuple;
   PyObject *list = (PyObject *) cbd;

@@ -179,7 +179,7 @@ typedef int (*iterRsrc)(void *, resource);
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd);
 
 // iterate over the imports by RVA and string
-typedef int (*iterVAStr)(void *, VA, std::string &, std::string &);
+typedef int (*iterVAStr)(void *, VA, const std::string &, const std::string &);
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 
 // iterate over relocations in the PE file
