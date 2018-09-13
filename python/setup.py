@@ -24,19 +24,38 @@
 # SUCH DAMAGE.
 
 from distutils.core import setup, Extension
+import os
+import sys
+import platform
 
-INCLUDE_DIRS = ['/usr/local/include',
-                '/opt/local/include',
-                '/usr/include',
-                '../pe-parser-library/include']
-LIBRARY_DIRS = ['/usr/lib',
-                '/usr/local/lib']
+here = os.path.abspath(os.path.dirname(__file__))
+
+SOURCE_FILES = [os.path.join(here, 'pepy.cpp'),
+                os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'parse.cpp')),
+                os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'buffer.cpp'))]
+
+if platform.system() == 'Linux':
+  INCLUDE_DIRS = ['/usr/local/include',
+                  '/opt/local/include',
+                  '/usr/include',
+                  os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'include'))]
+  LIBRARY_DIRS = ['/usr/lib',
+                  '/usr/local/lib']
+  COMPILE_ARGS = ["-std=c++11", "-g", "-O0"] # Debug only
+elif platform.system() == 'Windows':
+  INCLUDE_DIRS = [os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'include')),
+                  os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'include')),
+                  'C:\\usr\\include']
+  LIBRARY_DIRS = [os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'libs')),
+                  'C:\\usr\\lib']
+  COMPILE_ARGS = ["/EHsc"]
+else:
+    raise Exception('Platform not supported')
 
 extension_mod = Extension('pepy',
-                          sources = ['pepy.cpp',
-                                     '../pe-parser-library/src/parse.cpp',
-                                     '../pe-parser-library/src/buffer.cpp'],
-                          extra_compile_args = ["-std=c++11", "-g", "-O0"], # Debug only
+                          sources = SOURCE_FILES,
+                          extra_compile_args = COMPILE_ARGS,
+                          language='c++',
                           include_dirs = INCLUDE_DIRS,
                           library_dirs = LIBRARY_DIRS)
 
