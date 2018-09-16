@@ -34,15 +34,7 @@ SOURCE_FILES = [os.path.join(here, 'pepy.cpp'),
                 os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'parse.cpp')),
                 os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'buffer.cpp'))]
 
-if platform.system() == 'Linux':
-  INCLUDE_DIRS = ['/usr/local/include',
-                  '/opt/local/include',
-                  '/usr/include',
-                  os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'include'))]
-  LIBRARY_DIRS = ['/usr/lib',
-                  '/usr/local/lib']
-  COMPILE_ARGS = ["-std=c++11", "-g", "-O0"] # Debug only
-elif platform.system() == 'Windows':
+if platform.system() == 'Windows':
   INCLUDE_DIRS = [os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'include')),
                   os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'include')),
                   'C:\\usr\\include']
@@ -50,7 +42,13 @@ elif platform.system() == 'Windows':
                   'C:\\usr\\lib']
   COMPILE_ARGS = ["/EHsc"]
 else:
-    raise Exception('Platform not supported')
+  INCLUDE_DIRS = ['/usr/local/include',
+                  '/opt/local/include',
+                  '/usr/include',
+                  os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'include'))]
+  LIBRARY_DIRS = ['/usr/lib',
+                  '/usr/local/lib']
+  COMPILE_ARGS = ["-std=c++11", "-g", "-O0"] # Debug only
 
 extension_mod = Extension('pepy',
                           sources = SOURCE_FILES,
