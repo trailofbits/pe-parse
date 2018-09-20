@@ -136,7 +136,9 @@ static const char *pe_err_str[] = {"None",
                                    "Unable to read data",
                                    "Unable to open",
                                    "Unable to stat",
-                                   "Bad magic"};
+                                   "Bad magic",
+                                   "Invalid buffer",
+                                   "Invalid address",};
 
 std::uint32_t GetPEErr() {
   return err;
