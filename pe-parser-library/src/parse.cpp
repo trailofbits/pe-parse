@@ -359,6 +359,15 @@ bool parse_resource_table(bounded_buffer *sectionData,
         }
       }
     }
+    else {
+      /* .rsrc can accomodate up to 2**31 levels, but Windows only uses 3 by convention.
+       * As such, any depth above 3 indicates potentially unchecked recusion.
+       * See: https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#the-rsrc-section
+       */
+
+      PE_ERR(PEERR_RESC);
+      return false;
+    }
 
     // High bit 0 = RVA to RDT.
     // High bit 1 = RVA to RDE.
