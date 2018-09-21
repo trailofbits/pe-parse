@@ -31,7 +31,7 @@
 
 using namespace peparse;
 
-#define PEPY_VERSION "0.2"
+#define PEPY_VERSION "0.3"
 
 /*
  * Add some definition for compatibility between python2 and python3
