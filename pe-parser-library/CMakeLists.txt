@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.7)
 project(pe-parser-library)
 
 # List all files explicitly; this will make IDEs happy (i.e. QtCreator, CLion, ...)

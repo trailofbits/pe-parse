@@ -86,10 +86,12 @@ struct buffer_detail {
 
 bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out) {
   if (b == nullptr) {
+    PE_ERR(PEERR_BUFFER);
     return false;
   }
 
   if (offset >= b->bufLen) {
+    PE_ERR(PEERR_ADDRESS);
     return false;
   }
 
@@ -101,10 +103,12 @@ bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out) {
 
 bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out) {
   if (b == nullptr) {
+    PE_ERR(PEERR_BUFFER);
     return false;
   }
 
-  if (offset >= b->bufLen) {
+  if (offset + 1 >= b->bufLen) {
+    PE_ERR(PEERR_ADDRESS);
     return false;
   }
 
@@ -120,10 +124,12 @@ bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out) {
 
 bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out) {
   if (b == nullptr) {
+    PE_ERR(PEERR_BUFFER);
     return false;
   }
 
-  if (offset >= b->bufLen) {
+  if (offset + 3 >= b->bufLen) {
+    PE_ERR(PEERR_ADDRESS);
     return false;
   }
 
@@ -139,10 +145,12 @@ bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out) {
 
 bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
   if (b == nullptr) {
+    PE_ERR(PEERR_BUFFER);
     return false;
   }
 
-  if (offset >= b->bufLen) {
+  if (offset + 7 >= b->bufLen) {
+    PE_ERR(PEERR_ADDRESS);
     return false;
   }
 

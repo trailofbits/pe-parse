@@ -82,7 +82,7 @@ The **parsed** object has a number of attributes:
 * baseofdata
 * imagebase
 * sectionalignement
-* filealingment
+* filealignment
 * majorosver
 * minorosver
 * win32ver
