@@ -31,14 +31,12 @@
 
 using namespace peparse;
 
-#define PEPY_VERSION "0.2"
+#define PEPY_VERSION "0.3"
 
 /*
  * Add some definition for compatibility between python2 and python3
  */
 #if PY_MAJOR_VERSION >= 3
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_AsLong PyLong_AsLong
 #define PyString_FromString PyUnicode_FromString
 #endif
 
@@ -513,7 +511,7 @@ static PyObject *pepy_resource_type_as_str(PyObject *self, PyObject *args) {
   char *str;
   long type;
 
-  type = PyInt_AsLong(((pepy_resource *) self)->type);
+  type = PyLong_AsUnsignedLong(((pepy_resource *) self)->type);
   if (type == -1) {
     if (PyErr_Occurred()) {
       PyErr_PrintEx(0);
@@ -697,7 +695,7 @@ static PyObject *pepy_parsed_get_entry_point(PyObject *self, PyObject *args) {
   if (!GetEntryPoint(((pepy_parsed *) self)->pe, entrypoint))
     Py_RETURN_NONE;
 
-  ret = PyLong_FromLongLong(entrypoint);
+  ret = PyLong_FromUnsignedLongLong(entrypoint);
   if (!ret) {
     PyErr_SetString(pepy_error, "Unable to create return object.");
     return NULL;
@@ -887,6 +885,15 @@ int resource_callback(void *cbd, resource r) {
    * The tuple item order is important here. It is passed into the
    * section type initialization and parsed there.
    */
+#if PY_MAJOR_VERSION >= 3
+  tuple = Py_BuildValue("u#u#u#IIIIIIO&",
+                        r.type_str.c_str(),
+                        r.type_str.length() / 2,
+                        r.name_str.c_str(),
+                        r.name_str.length() / 2,
+                        r.lang_str.c_str(),
+                        r.lang_str.length() / 2,
+#else
   tuple = Py_BuildValue("s#s#s#IIIIIIO&",
                         r.type_str.c_str(),
                         r.type_str.length(),
@@ -894,6 +901,7 @@ int resource_callback(void *cbd, resource r) {
                         r.name_str.length(),
                         r.lang_str.c_str(),
                         r.lang_str.length(),
+#endif
                         r.type,
                         r.name,
                         r.lang,
@@ -1082,7 +1090,8 @@ static PyObject *pepy_parsed_get_relocations(PyObject *self, PyObject *args) {
 #define PEPY_PARSED_GET(ATTR, VAL)                                         \
   static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
     PyObject *ret =                                                        \
-        PyInt_FromLong(((pepy_parsed *) self)->pe->peHeader.nt.VAL);       \
+        PyLong_FromUnsignedLongLong(                                       \
+            ((pepy_parsed *) self)->pe->peHeader.nt.VAL);                  \
     if (!ret)                                                              \
       PyErr_SetString(PyExc_AttributeError, "Error getting attribute.");   \
     return ret;                                                            \
@@ -1109,13 +1118,13 @@ PEPY_PARSED_GET(magic, OptionalMagic)
     PyObject *ret = NULL;                                                  \
     if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic ==           \
         NT_OPTIONAL_32_MAGIC) {                                            \
-      ret = PyInt_FromLong(                                                \
+      ret = PyLong_FromUnsignedLongLong(                                   \
           ((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader.VAL);     \
       if (!ret)                                                            \
         PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
     } else if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic ==    \
                NT_OPTIONAL_64_MAGIC) {                                     \
-      ret = PyInt_FromLong(                                                \
+      ret = PyLong_FromUnsignedLongLong(                                   \
           ((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader64.VAL);   \
       if (!ret)                                                            \
         PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
@@ -1134,7 +1143,7 @@ PEPY_PARSED_GET_OPTIONAL(entrypointaddr, AddressOfEntryPoint);
 PEPY_PARSED_GET_OPTIONAL(baseofcode, BaseOfCode);
 PEPY_PARSED_GET_OPTIONAL(imagebase, ImageBase);
 PEPY_PARSED_GET_OPTIONAL(sectionalignement, SectionAlignment);
-PEPY_PARSED_GET_OPTIONAL(filealingment, FileAlignment);
+PEPY_PARSED_GET_OPTIONAL(filealignment, FileAlignment);
 PEPY_PARSED_GET_OPTIONAL(majorosver, MajorOperatingSystemVersion);
 PEPY_PARSED_GET_OPTIONAL(minorosver, MinorOperatingSystemVersion);
 PEPY_PARSED_GET_OPTIONAL(win32ver, Win32VersionValue);
@@ -1159,7 +1168,7 @@ static PyObject *pepy_parsed_get_optional_baseofdata(PyObject *self,
   PyObject *ret = NULL;
   if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic ==
       NT_OPTIONAL_32_MAGIC) {
-    ret = PyInt_FromLong(
+    ret = PyLong_FromUnsignedLong(
         ((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader.BaseOfData);
     if (!ret)
       PyErr_SetString(PyExc_AttributeError, "Error getting attribute.");
@@ -1189,7 +1198,7 @@ static PyGetSetDef pepy_parsed_getseters[] = {
     OBJECTGETTER_OPTIONAL(baseofcode, "Base address of code"),
     OBJECTGETTER_OPTIONAL(imagebase, "Image base address"),
     OBJECTGETTER_OPTIONAL(sectionalignement, "Section alignment"),
-    OBJECTGETTER_OPTIONAL(filealingment, "File alignment"),
+    OBJECTGETTER_OPTIONAL(filealignment, "File alignment"),
     OBJECTGETTER_OPTIONAL(majorosver, "Major OS version"),
     OBJECTGETTER_OPTIONAL(minorosver, "Minor OS version"),
     OBJECTGETTER_OPTIONAL(win32ver, "Win32 version"),

@@ -133,7 +133,9 @@ enum pe_err {
   PEERR_READ = 6,
   PEERR_OPEN = 7,
   PEERR_STAT = 8,
-  PEERR_MAGIC = 9
+  PEERR_MAGIC = 9,
+  PEERR_BUFFER = 10,
+  PEERR_ADDRESS = 11,
 };
 
 bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
