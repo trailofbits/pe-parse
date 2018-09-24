@@ -28,7 +28,6 @@ THE SOFTWARE.
 
 #include <parser-library/parse.h>
 
-using namespace std;
 using namespace peparse;
 
 int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
@@ -41,19 +40,22 @@ int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
   std::cout << "!";
   std::cout << func;
   std::cout << ": 0x";
-  std::cout << to_string<decltype(address)>(address, hex);
-  std::cout << endl;
+  std::cout << to_string<decltype(address)>(address, std::hex);
+  std::cout << "\n";
   return 0;
 }
 
-int printImports(void *N, VA impAddr, string &modName, string &symName) {
+int printImports(void *N,
+                 VA impAddr,
+                 const std::string &modName,
+                 const std::string &symName) {
   static_cast<void>(N);
 
   auto address = static_cast<std::uint32_t>(impAddr);
 
-  std::cout << "0x" << to_string<decltype(address)>(address, hex);
+  std::cout << "0x" << to_string<decltype(address)>(address, std::hex);
   std::cout << " " << modName << "!" << symName;
-  std::cout << endl;
+  std::cout << "\n";
   return 0;
 }
 
@@ -91,7 +93,7 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
       break;
   }
 
-  std::cout << " VA: 0x" << to_string<VA>(relocAddr, hex) << endl;
+  std::cout << " VA: 0x" << to_string<VA>(relocAddr, std::hex) << "\n";
 
   return 0;
 }
@@ -105,8 +107,9 @@ int printSymbols(void *N,
                  uint8_t &numberOfAuxSymbols) {
   static_cast<void>(N);
 
-  std::cout << "Symbol Name: " << strName << endl;
-  std::cout << "Symbol Value: 0x" << to_string<uint32_t>(value, hex) << endl;
+  std::cout << "Symbol Name: " << strName << "\n";
+  std::cout << "Symbol Value: 0x"
+            << to_string<std::uint32_t>(value, std::hex) << "\n";
 
   std::cout << "Symbol Section Number: ";
   switch (sectionNumber) {
@@ -123,7 +126,7 @@ int printSymbols(void *N,
       std::cout << sectionNumber;
       break;
   }
-  std::cout << endl;
+  std::cout << "\n";
 
   std::cout << "Symbol Type: ";
   switch (type) {
@@ -179,7 +182,7 @@ int printSymbols(void *N,
       std::cout << "UNKNOWN";
       break;
   }
-  std::cout << endl;
+  std::cout << "\n";
 
   std::cout << "Symbol Storage Class: ";
   switch (storageClass) {
@@ -217,10 +220,10 @@ int printSymbols(void *N,
       std::cout << "UNKNOWN";
       break;
   }
-  std::cout << endl;
+  std::cout << "\n";
 
   std::cout << "Symbol Number of Aux Symbols: "
-            << static_cast<uint32_t>(numberOfAuxSymbols) << endl;
+            << static_cast<std::uint32_t>(numberOfAuxSymbols) << "\n";
 
   return 0;
 }
@@ -229,37 +232,43 @@ int printRsrc(void *N, resource r) {
   static_cast<void>(N);
 
   if (r.type_str.length())
-    std::cout << "Type (string): " << r.type_str << endl;
+    std::cout << "Type (string): " << r.type_str << "\n";
   else
-    std::cout << "Type: 0x" << to_string<uint32_t>(r.type, hex) << endl;
+    std::cout << "Type: 0x"
+              << to_string<std::uint32_t>(r.type, std::hex) << "\n";
   if (r.name_str.length())
-    std::cout << "Name (string): " << r.name_str << endl;
+    std::cout << "Name (string): " << r.name_str << "\n";
   else
-    std::cout << "Name: 0x" << to_string<uint32_t>(r.name, hex) << endl;
+    std::cout << "Name: 0x"
+              << to_string<std::uint32_t>(r.name, std::hex) << "\n";
   if (r.lang_str.length())
-    std::cout << "Lang (string): " << r.lang_str << endl;
+    std::cout << "Lang (string): " << r.lang_str << "\n";
   else
-    std::cout << "Lang: 0x" << to_string<uint32_t>(r.lang, hex) << endl;
-  std::cout << "Codepage: 0x" << to_string<uint32_t>(r.codepage, hex) << endl;
-  std::cout << "RVA: " << to_string<uint32_t>(r.RVA, dec) << endl;
-  std::cout << "Size: " << to_string<uint32_t>(r.size, dec) << endl;
+    std::cout << "Lang: 0x"
+              << to_string<std::uint32_t>(r.lang, std::hex) << "\n";
+  std::cout << "Codepage: 0x"
+            << to_string<std::uint32_t>(r.codepage, std::hex) << "\n";
+  std::cout << "RVA: " << to_string<std::uint32_t>(r.RVA, std::dec) << "\n";
+  std::cout << "Size: " << to_string<std::uint32_t>(r.size, std::dec) << "\n";
   return 0;
 }
 
 int printSecs(void *N,
               VA secBase,
-              string &secName,
+              std::string &secName,
               image_section_header s,
               bounded_buffer *data) {
   static_cast<void>(N);
   static_cast<void>(s);
 
-  std::cout << "Sec Name: " << secName << endl;
-  std::cout << "Sec Base: 0x" << to_string<uint64_t>(secBase, hex) << endl;
+  std::cout << "Sec Name: " << secName << "\n";
+  std::cout << "Sec Base: 0x"
+            << to_string<std::uint64_t>(secBase, std::hex) << "\n";
   if (data)
-    std::cout << "Sec Size: " << to_string<uint64_t>(data->bufLen, dec) << endl;
+    std::cout << "Sec Size: "
+              << to_string<std::uint64_t>(data->bufLen, std::dec) << "\n";
   else
-    std::cout << "Sec Size: 0" << endl;
+    std::cout << "Sec Size: 0" << "\n";
   return 0;
 }
 
@@ -267,12 +276,12 @@ int printSecs(void *N,
   std::cout << "" #x << ": 0x";                                            \
   std::cout << to_string<std::uint32_t>(                                   \
                    static_cast<std::uint32_t>(p->peHeader.nt.x), std::hex) \
-            << endl;
+            << "\n";
 #define DUMP_DEC_FIELD(x)                                                  \
   std::cout << "" #x << ": ";                                              \
-  std::cout << to_string<uint32_t>(                                        \
+  std::cout << to_string<std::uint32_t>(                                   \
                    static_cast<std::uint32_t>(p->peHeader.nt.x), std::dec) \
-            << endl;
+            << "\n";
 
 int main(int argc, char *argv[]) {
   if (argc != 2 || (argc == 2 && std::strcmp(argv[1], "--help") == 0)) {
@@ -352,15 +361,15 @@ int main(int argc, char *argv[]) {
 #undef DUMP_FIELD
 #undef DUMP_DEC_FIELD
 
-    std::cout << "Imports: " << endl;
+    std::cout << "Imports: " << "\n";
     IterImpVAString(p, printImports, NULL);
-    std::cout << "Relocations: " << endl;
+    std::cout << "Relocations: " << "\n";
     IterRelocs(p, printRelocs, NULL);
-    std::cout << "Symbols (symbol table): " << endl;
+    std::cout << "Symbols (symbol table): " << "\n";
     IterSymbols(p, printSymbols, NULL);
-    std::cout << "Sections: " << endl;
+    std::cout << "Sections: " << "\n";
     IterSec(p, printSecs, NULL);
-    std::cout << "Exports: " << endl;
+    std::cout << "Exports: " << "\n";
     IterExpVA(p, printExps, NULL);
 
     // read the first 8 bytes from the entry point and print them
@@ -368,24 +377,24 @@ int main(int argc, char *argv[]) {
     if (GetEntryPoint(p, entryPoint)) {
       std::cout << "First 8 bytes from entry point (0x";
 
-      std::cout << to_string<VA>(entryPoint, hex);
-      std::cout << "):" << endl;
+      std::cout << to_string<VA>(entryPoint, std::hex);
+      std::cout << "):" << "\n";
       for (std::size_t i = 0; i < 8; i++) {
-        ::uint8_t b;
+        std::uint8_t b;
         ReadByteAtVA(p, i + entryPoint, b);
-        std::cout << " 0x" << to_string<uint32_t>(b, hex);
+        std::cout << " 0x" << to_string<std::uint32_t>(b, std::hex);
       }
 
-      std::cout << endl;
+      std::cout << "\n";
     }
 
-    std::cout << "Resources: " << endl;
+    std::cout << "Resources: " << "\n";
     IterRsrc(p, printRsrc, NULL);
     DestructParsedPE(p);
   } else {
     std::cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")"
-              << endl;
-    std::cout << "Location: " << GetPEErrLoc() << endl;
+              << "\n";
+    std::cout << "Location: " << GetPEErrLoc() << "\n";
   }
 
   return 0;
