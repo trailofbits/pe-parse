@@ -1162,7 +1162,7 @@ int tls_callback(void *cbd, VA addr) {
   PyObject *tlscb;
   PyObject *list = (PyObject *) cbd;
 
-  tlscb = PyLong_FromUnsignedLong(addr);
+  tlscb = PyLong_FromUnsignedLongLong(addr);
   if (!tlscb) {
     PyErr_SetString(pepy_error, "Error getting tls callback.");
     return 1;
@@ -1219,13 +1219,13 @@ PEPY_PARSED_GET(magic, OptionalMagic)
     PyObject *ret = NULL;                                                  \
     if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic ==           \
         NT_OPTIONAL_32_MAGIC) {                                            \
-      ret = PyLong_FromUnsignedLong(                                       \
+      ret = PyLong_FromUnsignedLongLong(                                       \
           ((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader.VAL);     \
       if (!ret)                                                            \
         PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
     } else if (((pepy_parsed *) self)->pe->peHeader.nt.OptionalMagic ==    \
                NT_OPTIONAL_64_MAGIC) {                                     \
-      ret = PyLong_FromUnsignedLong(                                       \
+      ret = PyLong_FromUnsignedLongLong(                                       \
           ((pepy_parsed *) self)->pe->peHeader.nt.OptionalHeader64.VAL);   \
       if (!ret)                                                            \
         PyErr_SetString(PyExc_AttributeError, "Error getting attribute."); \
