@@ -272,15 +272,39 @@ int printSecs(void *N,
   return 0;
 }
 
+int printTls(void *N, VA funcAddr) {
+  static_cast<void>(N);
+  auto address = static_cast<std::uint64_t>(funcAddr);
+  std::cout << "TLS: 0x";
+  std::cout << to_string<decltype(address)>(address, std::hex);
+  std::cout << "\n";
+  return 0;
+}
+
+int printTlsWithBinary(void *N, VA funcAddr) {
+  parsed_pe *p = static_cast<parsed_pe*>(N);
+  auto address = static_cast<std::uint64_t>(funcAddr);
+  std::cout << "First 8 bytes from tls callback (0x";
+  std::cout << to_string<VA>(address, std::hex);
+  std::cout << "):" << "\n";
+  for (std::size_t i = 0; i < 8; i++) {
+    std::uint8_t b;
+    ReadByteAtVA(p, i + address, b);
+    std::cout << " 0x" << to_string<uint64_t>(b, std::hex);
+  }
+  std::cout << "\n";
+  return 0;
+}
+
 #define DUMP_FIELD(x)                                                      \
   std::cout << "" #x << ": 0x";                                            \
-  std::cout << to_string<std::uint32_t>(                                   \
-                   static_cast<std::uint32_t>(p->peHeader.nt.x), std::hex) \
+  std::cout << to_string<std::uint64_t>(                                   \
+                   static_cast<std::uint64_t>(p->peHeader.nt.x), std::hex) \
             << "\n";
 #define DUMP_DEC_FIELD(x)                                                  \
   std::cout << "" #x << ": ";                                              \
-  std::cout << to_string<std::uint32_t>(                                   \
-                   static_cast<std::uint32_t>(p->peHeader.nt.x), std::dec) \
+  std::cout << to_string<std::uint64_t>(                                   \
+                   static_cast<std::uint64_t>(p->peHeader.nt.x), std::dec) \
             << "\n";
 
 int main(int argc, char *argv[]) {
@@ -371,6 +395,8 @@ int main(int argc, char *argv[]) {
     IterSec(p, printSecs, NULL);
     std::cout << "Exports: " << "\n";
     IterExpVA(p, printExps, NULL);
+    std::cout << "TLS callbacks: " << "\n";
+    IterTls(p, printTls, NULL);
 
     // read the first 8 bytes from the entry point and print them
     VA entryPoint;
@@ -382,11 +408,14 @@ int main(int argc, char *argv[]) {
       for (std::size_t i = 0; i < 8; i++) {
         std::uint8_t b;
         ReadByteAtVA(p, i + entryPoint, b);
-        std::cout << " 0x" << to_string<std::uint32_t>(b, std::hex);
+        std::cout << " 0x" << to_string<std::uint64_t>(b, std::hex);
       }
 
       std::cout << "\n";
     }
+
+    // read the first 8 bytes from each tls callback and print them
+    IterTls(p, printTlsWithBinary, p);
 
     std::cout << "Resources: " << "\n";
     IterRsrc(p, printRsrc, NULL);
