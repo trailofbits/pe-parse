@@ -1579,7 +1579,7 @@ bool getTlsCallbacks(parsed_pe *p) {
 
         // The list of TLS callbacks is zero-terminated
         std::uint64_t tlsCallback;
-        do {
+        while (true) {
           if (!readQword(lookupSec.sectionData, lookupOff, tlsCallback)) {
             return false;
           }
@@ -1588,7 +1588,7 @@ bool getTlsCallbacks(parsed_pe *p) {
           }
           tlsData.tlsCallbacks.push_back(tlsCallback);
           lookupOff += 8;
-        } while (true);
+        }
       }
 
     } else {

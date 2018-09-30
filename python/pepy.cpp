@@ -366,8 +366,9 @@ pepy_tls_callback_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
 static int pepy_tls_callback_init(pepy_tls_callback *self, PyObject *args, PyObject *kwds) {
   if (!PyArg_ParseTuple(
-          args, "O:pepy_tls_callback_init", &self->addr))
+          args, "O:pepy_tls_callback_init", &self->addr)) {
     return -1;
+  }
   return 0;
 }
 
