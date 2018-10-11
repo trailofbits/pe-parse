@@ -23,6 +23,7 @@ THE SOFTWARE.
 */
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <cstring>
 
@@ -40,7 +41,7 @@ int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
   std::cout << "!";
   std::cout << func;
   std::cout << ": 0x";
-  std::cout << to_string<decltype(address)>(address, std::hex);
+  std::cout << std::hex << address;
   std::cout << "\n";
   return 0;
 }
@@ -53,8 +54,7 @@ int printImports(void *N,
 
   auto address = static_cast<std::uint32_t>(impAddr);
 
-  std::cout << "0x" << to_string<decltype(address)>(address, std::hex);
-  std::cout << " " << modName << "!" << symName;
+  std::cout << "0x" << std::hex << address << " " << modName << "!" << symName;
   std::cout << "\n";
   return 0;
 }
@@ -93,7 +93,7 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
       break;
   }
 
-  std::cout << " VA: 0x" << to_string<VA>(relocAddr, std::hex) << "\n";
+  std::cout << " VA: 0x" << std::hex << relocAddr << "\n";
 
   return 0;
 }
@@ -108,8 +108,7 @@ int printSymbols(void *N,
   static_cast<void>(N);
 
   std::cout << "Symbol Name: " << strName << "\n";
-  std::cout << "Symbol Value: 0x"
-            << to_string<std::uint32_t>(value, std::hex) << "\n";
+  std::cout << "Symbol Value: 0x" << std::hex << value << "\n";
 
   std::cout << "Symbol Section Number: ";
   switch (sectionNumber) {
@@ -234,22 +233,21 @@ int printRsrc(void *N, resource r) {
   if (r.type_str.length())
     std::cout << "Type (string): " << r.type_str << "\n";
   else
-    std::cout << "Type: 0x"
-              << to_string<std::uint32_t>(r.type, std::hex) << "\n";
+    std::cout << "Type: 0x" << std::hex << r.type << "\n";
+
   if (r.name_str.length())
     std::cout << "Name (string): " << r.name_str << "\n";
   else
-    std::cout << "Name: 0x"
-              << to_string<std::uint32_t>(r.name, std::hex) << "\n";
+    std::cout << "Name: 0x" << std::hex << r.name << "\n";
+
   if (r.lang_str.length())
     std::cout << "Lang (string): " << r.lang_str << "\n";
   else
-    std::cout << "Lang: 0x"
-              << to_string<std::uint32_t>(r.lang, std::hex) << "\n";
-  std::cout << "Codepage: 0x"
-            << to_string<std::uint32_t>(r.codepage, std::hex) << "\n";
-  std::cout << "RVA: " << to_string<std::uint32_t>(r.RVA, std::dec) << "\n";
-  std::cout << "Size: " << to_string<std::uint32_t>(r.size, std::dec) << "\n";
+    std::cout << "Lang: 0x" << std::hex << r.lang << "\n";
+
+  std::cout << "Codepage: 0x" << std::hex << r.codepage << "\n";
+  std::cout << "RVA: " << std::dec << r.RVA << "\n";
+  std::cout << "Size: " << std::dec << r.size << "\n";
   return 0;
 }
 
@@ -262,25 +260,47 @@ int printSecs(void *N,
   static_cast<void>(s);
 
   std::cout << "Sec Name: " << secName << "\n";
-  std::cout << "Sec Base: 0x"
-            << to_string<std::uint64_t>(secBase, std::hex) << "\n";
+  std::cout << "Sec Base: 0x" << std::hex << secBase << "\n";
   if (data)
-    std::cout << "Sec Size: "
-              << to_string<std::uint64_t>(data->bufLen, std::dec) << "\n";
+    std::cout << "Sec Size: " << std::dec << data->bufLen << "\n";
   else
     std::cout << "Sec Size: 0" << "\n";
   return 0;
 }
 
-#define DUMP_FIELD(x)                                                      \
-  std::cout << "" #x << ": 0x";                                            \
-  std::cout << to_string<std::uint32_t>(                                   \
-                   static_cast<std::uint32_t>(p->peHeader.nt.x), std::hex) \
+int printTls(void *N, VA funcAddr) {
+  static_cast<void>(N);
+  auto address = static_cast<std::uint64_t>(funcAddr);
+  std::cout << "TLS: 0x" << std::hex << address << "\n";
+  return 0;
+}
+
+int printTlsWithBinary(void *N, VA funcAddr) {
+  parsed_pe *p = static_cast<parsed_pe*>(N);
+  auto address = static_cast<std::uint64_t>(funcAddr);
+  std::cout << "First 8 bytes from tls callback (0x";
+  std::cout << std::hex << address << "):" << "\n";
+
+  for (std::size_t i = 0; i < 8; i++) {
+    std::uint8_t b;
+    if (!ReadByteAtVA(p, i + address, b)) {
+      std::cout << " ERR";
+    } else {
+      std::cout << " 0x" << std::hex << static_cast<int>(b);
+    }
+  }
+
+  std::cout << "\n";
+  return 0;
+}
+
+#define DUMP_FIELD(x)                                                   \
+  std::cout << "" #x << ": 0x";                                         \
+  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.nt.x) \
             << "\n";
-#define DUMP_DEC_FIELD(x)                                                  \
-  std::cout << "" #x << ": ";                                              \
-  std::cout << to_string<std::uint32_t>(                                   \
-                   static_cast<std::uint32_t>(p->peHeader.nt.x), std::dec) \
+#define DUMP_DEC_FIELD(x)                                               \
+  std::cout << "" #x << ": ";                                           \
+  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.nt.x) \
             << "\n";
 
 int main(int argc, char *argv[]) {
@@ -371,22 +391,29 @@ int main(int argc, char *argv[]) {
     IterSec(p, printSecs, NULL);
     std::cout << "Exports: " << "\n";
     IterExpVA(p, printExps, NULL);
+    std::cout << "TLS callbacks: " << "\n";
+    IterTls(p, printTls, NULL);
 
     // read the first 8 bytes from the entry point and print them
     VA entryPoint;
     if (GetEntryPoint(p, entryPoint)) {
       std::cout << "First 8 bytes from entry point (0x";
 
-      std::cout << to_string<VA>(entryPoint, std::hex);
-      std::cout << "):" << "\n";
+      std::cout << std::hex << entryPoint << "):" << "\n";
       for (std::size_t i = 0; i < 8; i++) {
         std::uint8_t b;
-        ReadByteAtVA(p, i + entryPoint, b);
-        std::cout << " 0x" << to_string<std::uint32_t>(b, std::hex);
+        if (!ReadByteAtVA(p, i + entryPoint, b)) {
+          std::cout << " ERR";
+        } else {
+          std::cout << " 0x" << std::hex << static_cast<int>(b);
+        }
       }
 
       std::cout << "\n";
     }
+
+    // read the first 8 bytes from each tls callback and print them
+    IterTls(p, printTlsWithBinary, p);
 
     std::cout << "Resources: " << "\n";
     IterRsrc(p, printRsrc, NULL);

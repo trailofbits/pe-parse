@@ -58,6 +58,15 @@ struct reloc {
   reloc_type type;
 };
 
+struct tlsdir {
+  VA dataStartVA;
+  VA dataEndVA;
+  VA indexVA;
+  std::vector<std::uint64_t> tlsCallbacks;
+  std::uint32_t templateSize;
+  std::uint32_t characteristics;
+};
+
 #define SYMBOL_NAME_OFFSET(sn) (static_cast<std::uint32_t>(sn.data >> 32))
 #define SYMBOL_TYPE_HI(x) (x.type >> 8)
 
@@ -119,6 +128,7 @@ struct parsed_pe_internal {
   std::vector<importent> imports;
   std::vector<reloc> relocs;
   std::vector<exportent> exports;
+  std::vector<tlsdir> tls;
   std::vector<symbol> symbols;
 };
 
@@ -356,8 +366,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
           return false;
         }
       }
-    }
-    else {
+    } else {
       /* .rsrc can accomodate up to 2**31 levels, but Windows only uses 3 by convention.
        * As such, any depth above 3 indicates potentially unchecked recusion.
        * See: https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#the-rsrc-section
@@ -1414,6 +1423,184 @@ bool getImports(parsed_pe *p) {
   return true;
 }
 
+bool getTlsCallbacks(parsed_pe *p) {
+  data_directory tlsDir;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    tlsDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_TLS];
+  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    tlsDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_TLS];
+  } else {
+    return false;
+  }
+
+  if (tlsDir.Size != 0) {
+    section s;
+    VA addr;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      addr = tlsDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      addr =
+          tlsDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    if (!getSecForVA(p->internal->secs, addr, s)) {
+      return false;
+    }
+
+    // Get tls directory from this section
+    auto rvaofft = static_cast<std::uint32_t>(addr - s.sectionBase);
+
+    std::uint64_t imageBase = 0;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      imageBase = p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      imageBase = p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    // Reference:
+    //   https://docs.microsoft.com/en-us/windows/desktop/Debug/pe-format#the-tls-directory
+    tlsdir tlsData;
+
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      std::uint32_t val32;
+
+      // Get the start and end of the initialized data template
+      if (!readDword(s.sectionData, rvaofft, val32)) {
+        return false;
+      } else {
+        tlsData.dataStartVA = val32 + imageBase;
+      }
+      if (!readDword(s.sectionData, rvaofft + 4, val32)) {
+        return false;
+      } else {
+        tlsData.dataEndVA = val32 + imageBase;
+      }
+
+      // Get the location to receive the TLS index
+      if (!readDword(s.sectionData, rvaofft + 8, val32)) {
+        return false;
+      } else {
+        tlsData.indexVA = val32 + imageBase;
+      }
+
+      // Get the address to the array of TLS callbacks
+      std::uint32_t addrOfCallbacks;
+      if (!readDword(s.sectionData, rvaofft + 12, addrOfCallbacks)) {
+        return false;
+      }
+
+      // Get the total size of the data template
+      if (!readDword(s.sectionData, rvaofft + 16, tlsData.templateSize)) {
+        return false;
+      }
+
+      // Get the memory characteristics of the data template
+      if (!readDword(s.sectionData, rvaofft + 20, tlsData.characteristics)) {
+        return false;
+      }
+
+      // Build the list of TLS callbacks
+      if (addrOfCallbacks != 0) {
+        // Calculate the section and offset to the start of the TLS callbacks
+        section lookupSec;
+        if (!getSecForVA(p->internal->secs, addrOfCallbacks, lookupSec)) {
+          return false;
+        }
+
+        auto lookupOff =
+            static_cast<std::uint32_t>(addrOfCallbacks - lookupSec.sectionBase);
+
+        // The list of TLS callbacks is zero-terminated
+        std::uint32_t tlsCallback;
+        do {
+          if (!readDword(lookupSec.sectionData, lookupOff, tlsCallback)) {
+            return false;
+          }
+          if (tlsCallback == 0) {
+            break;
+          }
+          tlsData.tlsCallbacks.push_back(tlsCallback);
+          lookupOff += 4;
+        } while (true);
+      }
+
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      std::uint64_t val64;
+
+      // Get the start and end of the initialized data template
+      if (!readQword(s.sectionData, rvaofft, val64)) {
+        return false;
+      } else {
+        tlsData.dataStartVA = val64 + imageBase;
+      }
+      if (!readQword(s.sectionData, rvaofft + 8, val64)) {
+        return false;
+      } else {
+        tlsData.dataEndVA = val64 + imageBase;
+      }
+
+      // Get the location to receive the TLS index
+      if (!readQword(s.sectionData, rvaofft + 16, val64)) {
+        return false;
+      } else {
+        tlsData.indexVA = val64 + imageBase;
+      }
+
+      // Get the address to the array of TLS callbacks
+      std::uint64_t addrOfCallbacks;
+      if (!readQword(s.sectionData, rvaofft + 24, addrOfCallbacks)) {
+        return false;
+      }
+
+      // Get the total size of the data template
+      if (!readDword(s.sectionData, rvaofft + 32, tlsData.templateSize)) {
+        return false;
+      }
+
+      // Get the memory characteristics of the data template
+      if (!readDword(s.sectionData, rvaofft + 36, tlsData.characteristics)) {
+        return false;
+      }
+
+      // Build the list of TLS callbacks
+      if (addrOfCallbacks != 0) {
+        // Calculate the section and offset to the start of the TLS callbacks
+        section lookupSec;
+        if (!getSecForVA(p->internal->secs, addrOfCallbacks, lookupSec)) {
+          return false;
+        }
+
+        auto lookupOff =
+            static_cast<std::uint32_t>(addrOfCallbacks - lookupSec.sectionBase);
+
+        // The list of TLS callbacks is zero-terminated
+        std::uint64_t tlsCallback;
+        while (true) {
+          if (!readQword(lookupSec.sectionData, lookupOff, tlsCallback)) {
+            return false;
+          }
+          if (tlsCallback == 0) {
+            break;
+          }
+          tlsData.tlsCallbacks.push_back(tlsCallback);
+          lookupOff += 8;
+        }
+      }
+
+    } else {
+      return false;
+    }
+
+    p->internal->tls.push_back(tlsData);
+  }
+
+  return true;
+}
+
 bool getSymbolTable(parsed_pe *p) {
   if (p->peHeader.nt.FileHeader.PointerToSymbolTable == 0) {
     return true;
@@ -1826,6 +2013,14 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
     return nullptr;
   }
 
+  // Get tls
+  if (!getTlsCallbacks(p)) {
+    deleteBuffer(remaining);
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    return nullptr;
+  }
+
   // Get symbol table
   if (!getSymbolTable(p)) {
     deleteBuffer(remaining);
@@ -1926,6 +2121,21 @@ void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
 
   for (section s : pint->secs) {
     if (cb(cbd, s.sectionBase, s.sectionName, s.sec, s.sectionData) != 0) {
+      break;
+    }
+  }
+
+  return;
+}
+
+// iterate over tls callbacks
+void IterTls(parsed_pe *pe, iterTls cb, void *cbd) {
+  parsed_pe_internal *pint = pe->internal;
+  if (pint->tls.empty()) return;
+
+  tlsdir t = pint->tls.front();
+  for (std::uint64_t c : t.tlsCallbacks) {
+    if (cb(cbd, c) != 0) {
       break;
     }
   }

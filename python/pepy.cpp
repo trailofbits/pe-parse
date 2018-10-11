@@ -124,6 +124,10 @@ struct pepy_relocation {
   PyObject *addr;
 };
 
+struct pepy_tls_callback {
+  PyObject_HEAD PyObject *addr;
+};
+
 /* None of the attributes in these objects are writable. */
 static int
 pepy_attr_not_writable(PyObject *self, PyObject *value, void *closure) {
@@ -349,6 +353,74 @@ static PyTypeObject pepy_relocation_type = {
     (initproc) pepy_relocation_init,      /* tp_init */
     0,                                    /* tp_alloc */
     pepy_relocation_new                   /* tp_new */
+};
+
+static PyObject *
+pepy_tls_callback_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+  pepy_tls_callback *self;
+
+  self = (pepy_tls_callback *) type->tp_alloc(type, 0);
+
+  return (PyObject *) self;
+}
+
+static int pepy_tls_callback_init(pepy_tls_callback *self, PyObject *args, PyObject *kwds) {
+  if (!PyArg_ParseTuple(
+          args, "O:pepy_tls_callback_init", &self->addr)) {
+    return -1;
+  }
+  return 0;
+}
+
+static void pepy_tls_callback_dealloc(pepy_tls_callback *self) {
+  Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+PEPY_OBJECT_GET(tls_callback, addr)
+
+static PyGetSetDef pepy_tls_callback_getseters[] = {
+    OBJECTGETTER(tls_callback, addr, "Address"),
+    {NULL}};
+
+static PyTypeObject pepy_tls_callback_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)    /* ob_size */
+    "pepy.tls_callback",              /* tp_name */
+    sizeof(pepy_tls_callback),        /* tp_basicsize */
+    0,                                /* tp_itemsize */
+    (destructor) pepy_tls_callback_dealloc, /* tp_dealloc */
+    0,                                /* tp_print */
+    0,                                /* tp_getattr */
+    0,                                /* tp_setattr */
+    0,                                /* tp_compare */
+    0,                                /* tp_repr */
+    0,                                /* tp_as_number */
+    0,                                /* tp_as_sequence */
+    0,                                /* tp_as_mapping */
+    0,                                /* tp_hash */
+    0,                                /* tp_call */
+    0,                                /* tp_str */
+    0,                                /* tp_getattro */
+    0,                                /* tp_setattro */
+    0,                                /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,               /* tp_flags */
+    "pepy tls callback object",       /* tp_doc */
+    0,                                /* tp_traverse */
+    0,                                /* tp_clear */
+    0,                                /* tp_richcompare */
+    0,                                /* tp_weaklistoffset */
+    0,                                /* tp_iter */
+    0,                                /* tp_iternext */
+    0,                                /* tp_methods */
+    0,                                /* tp_members */
+    pepy_tls_callback_getseters,      /* tp_getset */
+    0,                                /* tp_base */
+    0,                                /* tp_dict */
+    0,                                /* tp_descr_get */
+    0,                                /* tp_descr_set */
+    0,                                /* tp_dictoffset */
+    (initproc) pepy_tls_callback_init, /* tp_init */
+    0,                                /* tp_alloc */
+    pepy_tls_callback_new             /* tp_new */
 };
 
 static PyObject *
@@ -1087,6 +1159,36 @@ static PyObject *pepy_parsed_get_relocations(PyObject *self, PyObject *args) {
   return ret;
 }
 
+int tls_callback(void *cbd, VA addr) {
+  PyObject *tlscb;
+  PyObject *list = (PyObject *) cbd;
+
+  tlscb = PyLong_FromUnsignedLongLong(addr);
+  if (!tlscb) {
+    PyErr_SetString(pepy_error, "Error getting tls callback.");
+    return 1;
+  }
+
+  if (PyList_Append(list, tlscb) == -1) {
+    Py_DECREF(tlscb);
+    return 1;
+  }
+
+  return 0;
+}
+
+static PyObject *pepy_parsed_get_tls_callbacks(PyObject *self, PyObject *args) {
+  PyObject *ret = PyList_New(0);
+  if (!ret) {
+    PyErr_SetString(pepy_error, "Unable to create new list.");
+    return NULL;
+  }
+
+  IterTls(((pepy_parsed *) self)->pe, tls_callback, ret);
+
+  return ret;
+}
+
 #define PEPY_PARSED_GET(ATTR, VAL)                                         \
   static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
     PyObject *ret =                                                        \
@@ -1254,6 +1356,10 @@ static PyMethodDef pepy_parsed_methods[] = {
      pepy_parsed_get_relocations,
      METH_NOARGS,
      "Return a list of relocation objects."},
+    {"get_tls_callbacks",
+     pepy_parsed_get_tls_callbacks,
+     METH_NOARGS,
+     "Return a list of VAs that are TLS callbacks."},
     {"get_resources",
      pepy_parsed_get_resources,
      METH_NOARGS,
@@ -1345,6 +1451,7 @@ static PyObject *pepi_module_init(void) {
       PyType_Ready(&pepy_import_type) < 0 ||
       PyType_Ready(&pepy_export_type) < 0 ||
       PyType_Ready(&pepy_relocation_type) < 0 ||
+      PyType_Ready(&pepy_tls_callback_type) < 0 ||
       PyType_Ready(&pepy_resource_type) < 0)
     return NULL;
 
@@ -1388,6 +1495,9 @@ static PyObject *pepi_module_init(void) {
 
   Py_INCREF(&pepy_relocation_type);
   PyModule_AddObject(m, "pepy_relocation", (PyObject *) &pepy_relocation_type);
+
+  Py_INCREF(&pepy_tls_callback_type);
+  PyModule_AddObject(m, "pepy_tls_callback", (PyObject *) &pepy_tls_callback_type);
 
   Py_INCREF(&pepy_resource_type);
   PyModule_AddObject(m, "pepy_resource", (PyObject *) &pepy_resource_type);

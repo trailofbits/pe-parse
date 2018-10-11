@@ -207,6 +207,10 @@ typedef int (*iterSec)(
     void *, VA secBase, std::string &, image_section_header, bounded_buffer *b);
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
+// iterate over tls callbacks
+typedef int (*iterTls)(void *, std::uint64_t);
+void IterTls(parsed_pe *pe, iterTls cb, void *cbd);
+
 // get byte at VA in PE
 bool ReadByteAtVA(parsed_pe *pe, VA v, std::uint8_t &b);
 
