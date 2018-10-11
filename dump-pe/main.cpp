@@ -283,8 +283,11 @@ int printTlsWithBinary(void *N, VA funcAddr) {
 
   for (std::size_t i = 0; i < 8; i++) {
     std::uint8_t b;
-    ReadByteAtVA(p, i + address, b);
-    std::cout << " 0x" << std::hex << static_cast<int>(b);
+    if (!ReadByteAtVA(p, i + address, b)) {
+      std::cout << " ERR";
+    } else {
+      std::cout << " 0x" << std::hex << static_cast<int>(b);
+    }
   }
 
   std::cout << "\n";
@@ -399,8 +402,11 @@ int main(int argc, char *argv[]) {
       std::cout << std::hex << entryPoint << "):" << "\n";
       for (std::size_t i = 0; i < 8; i++) {
         std::uint8_t b;
-        ReadByteAtVA(p, i + entryPoint, b);
-        std::cout << " 0x" << std::hex << static_cast<int>(b);
+        if (!ReadByteAtVA(p, i + entryPoint, b)) {
+          std::cout << " ERR";
+        } else {
+          std::cout << " 0x" << std::hex << static_cast<int>(b);
+        }
       }
 
       std::cout << "\n";
