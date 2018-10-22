@@ -23,7 +23,8 @@ THE SOFTWARE.
 */
 
 #include <algorithm>
-#include <cstring>
+#include <string>
+#include <codecvt>
 #include <iostream>
 #include <vector>
 #include <stdexcept>
@@ -256,19 +257,26 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
 }
 
 bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &result) {
-  std::uint8_t c;
   std::uint16_t len;
-
   if (!readWord(data, id, len)) {
     return false;
   }
   id += 2;
-  for (std::uint32_t i = 0; i < len * 2U; i++) {
-    if (!readByte(data, id + i, c)) {
+
+  std::vector<std::int16_t> rawBytes(len * 2);
+  std::uint16_t c;
+  for (std::uint32_t i = 0; i < len; ++i) {
+    if (!readWord(data, id + (i * 2), c)) {
       return false;
     }
-    result.push_back(static_cast<char>(c));
+    rawBytes[i] = c;
   }
+
+  // Convert string from UTF-16 to UTF-8
+  // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>convert; // Doesn't compile with Visual Studio.
+  // See https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
+  std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
+  result = convert.to_bytes(rawBytes.data(), rawBytes.data() + rawBytes.size());
   return true;
 }
 
