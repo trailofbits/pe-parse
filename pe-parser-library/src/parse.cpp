@@ -1236,11 +1236,9 @@ bool getImports(parsed_pe *p) {
     // get import directory from this section
     auto offt = static_cast<std::uint32_t>(addr - c.sectionBase);
 
-    import_dir_entry emptyEnt;
-
     do {
       // read each directory entry out
-      import_dir_entry curEnt = emptyEnt;
+      import_dir_entry curEnt;
 
       READ_DWORD(c.sectionData, offt, curEnt, LookupTableRVA);
       READ_DWORD(c.sectionData, offt, curEnt, TimeStamp);
