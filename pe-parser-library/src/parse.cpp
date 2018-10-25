@@ -25,6 +25,7 @@ THE SOFTWARE.
 #include <algorithm>
 #include <string>
 #include <codecvt>
+#include <locale>
 #include <iostream>
 #include <vector>
 #include <stdexcept>
@@ -263,20 +264,31 @@ bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &resu
   }
   id += 2;
 
-  std::vector<std::int16_t> rawBytes(len * 2);
-  std::uint16_t c;
-  for (std::uint32_t i = 0; i < len; ++i) {
-    if (!readWord(data, id + (i * 2), c)) {
+  std::uint32_t byteCount = len * 2U;
+  std::u16string rawString;
+  for (std::uint32_t i = 0; i < byteCount; i += 2) {
+    char16_t c;
+    if (!readChar16(data, id + i, c)) {
       return false;
     }
-    rawBytes[i] = c;
+    rawString.push_back(c);
   }
 
   // Convert string from UTF-16 to UTF-8
-  // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>convert; // Doesn't compile with Visual Studio.
+  // See https://stackoverflow.com/questions/38688417/utf-conversion-functions-in-c11
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+  // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert; // Doesn't compile with Visual Studio.
   // See https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
-  std::wstring_convert<std::codecvt_utf8_utf16<std::int16_t>, std::int16_t> convert;
-  result = convert.to_bytes(rawBytes.data(), rawBytes.data() + rawBytes.size());
+  std::wstring_convert<std::codecvt_utf8<std::int16_t>, std::int16_t> convert;
+  auto p = reinterpret_cast<const std::int16_t *>(rawString.data());
+  result = convert.to_bytes(p, p + rawString.size());
+#else
+  // Requires GCC 4.9.X or higher
+  // Requires Clang ??? or higher
+  std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
+  result = convert.to_bytes(rawString);
+#endif
+
   return true;
 }
 
@@ -1225,7 +1237,6 @@ bool getImports(parsed_pe *p) {
     auto offt = static_cast<std::uint32_t>(addr - c.sectionBase);
 
     import_dir_entry emptyEnt;
-    memset(&emptyEnt, 0, sizeof(import_dir_entry));
 
     do {
       // read each directory entry out
