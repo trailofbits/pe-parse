@@ -1,7 +1,7 @@
 language: cpp
 
-os: linux
-distr: trusty
+os: linux # Jobs are on Linux unless specified otherwise
+distr: trusty # Jobs are on Trusty unless specified otherwise
 
 before_install:
 - ./travis.sh "$TRAVIS_OS_NAME" initialize
@@ -13,12 +13,9 @@ matrix:
   - env: COMPILER=clang++-5.0
     addons: { apt: { packages: ["clang-5.0"], sources: ["llvm-toolchain-trusty-5.0"] } }
   - env: COMPILER=gcc++-7
-    addons: { apt: { packages: ["gcc++-7"] } }
+    addons: { apt: { packages: ["gcc++-7"], sources: ["ubuntu-toolchain-r-test"] } }
   - os: osx
-    osx_image: xcode7.3
-  exclude:
-  - compiler: gcc
-    os: osx
+    osx_image: xcode9.1
 
 env:
   global:
