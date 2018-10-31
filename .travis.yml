@@ -10,7 +10,7 @@ script:
 matrix:
   include:
   - os: linux
-    compiler: clang++-5.0
+    compiler: clang++-6.0
     env: TOOLSET=clang COMPILER=clang++-6.0 CXXSTD=c++11
     addons: { apt: { packages: ["clang-6.0"], sources: ["llvm-toolchain-trusty-6.0"] } }
   - os: linux
