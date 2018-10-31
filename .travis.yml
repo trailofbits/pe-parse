@@ -1,8 +1,6 @@
 language: cpp
 
-os:
-- linux
-- osx
+os: linux # Jobs are on Linux unless specified otherwise
 
 before_install:
 - ./travis.sh "$TRAVIS_OS_NAME" initialize
