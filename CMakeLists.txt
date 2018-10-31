@@ -14,7 +14,7 @@ include(cmake/compilation_flags.cmake)
 list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  list(APPEND CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
 endif ()
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
