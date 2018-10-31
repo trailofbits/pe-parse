@@ -11,11 +11,11 @@ matrix:
   include:
   - os: linux
     compiler: clang++-5.0
-    env: TOOLSET=clang COMPILER=clang++-5.0 CXXSTD=c++11
-    addons: { apt: { packages: ["clang-5.0"], sources: ["llvm-toolchain-trusty-5.0"] } }
+    env: TOOLSET=clang COMPILER=clang++-6.0 CXXSTD=c++11
+    addons: { apt: { packages: ["clang-6.0"], sources: ["llvm-toolchain-trusty-6.0"] } }
   - os: linux
-    env: TOOLSET=gcc COMPILER=g++-4.9 CXXSTD=c++11
-    addons: { apt: { packages: ["g++-4.9"], sources: ["ubuntu-toolchain-r-test"] } }
+    env: TOOLSET=gcc COMPILER=g++-5.0 CXXSTD=c++11
+    addons: { apt: { packages: ["g++-5.0"], sources: ["ubuntu-toolchain-r-test"] } }
   - os: osx
     env: TOOLSET=clang COMPILER=clang++ CXXSTD=c++14
     osx_image: xcode9.3
