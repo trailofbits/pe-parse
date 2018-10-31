@@ -13,7 +13,7 @@ matrix:
   - env: COMPILER=clang++-5.0
     addons: { apt: { packages: ["clang-5.0"], sources: ["llvm-toolchain-trusty-5.0"] } }
   - env: COMPILER=gcc++-6
-    addons: { apt: { packages: ["gcc++-6"] } }
+    addons: { apt: { packages: ["gcc++-6"], sources: ["ubuntu-toolchain-r-test"] } }
   - os: osx
     osx_image: xcode9.1
 
