@@ -13,6 +13,10 @@ endif ()
 include(cmake/compilation_flags.cmake)
 list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  list(APPEND CMAKE_EXE_LINKER_FLAGS "-stdlib=libc++")
+endif ()
+
 option(BUILD_SHARED_LIBS "Build Shared Libraries" OFF)
 option(BUILD_COMMAND_LINE_TOOLS "Build Command Line Tools" ON)
 
