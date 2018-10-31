@@ -3,10 +3,6 @@ language: cpp
 os: linux
 distr: trusty
 
-compiler:
-- clang
-- gcc
-
 before_install:
 - ./travis.sh "$TRAVIS_OS_NAME" initialize
 script:
@@ -16,6 +12,8 @@ matrix:
   include:
   - env: COMPILER=clang++-5.0
     addons: { apt: { packages: ["clang-5.0"], sources: ["llvm-toolchain-trusty-5.0"] } }
+  - env: COMPILER=gcc++-7
+    addons: { apt: { packages: ["gcc++-7"] } }
   - os: osx
     osx_image: xcode7.3
   exclude:
