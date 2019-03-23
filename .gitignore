@@ -12,3 +12,9 @@ CMakeSettings.json
 .vscode
 examples_build
 
+
+*.stash
+
+*.o
+
+*.user

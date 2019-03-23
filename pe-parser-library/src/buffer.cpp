@@ -26,7 +26,7 @@ THE SOFTWARE.
 #include <fstream>
 
 // keep this header above "windows.h" because it contains many types
-#include <parser-library/parse.h>
+#include <include/parser-library/parse.h>
 
 #ifdef _WIN32
 
