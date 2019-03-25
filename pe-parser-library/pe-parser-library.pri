@@ -5,7 +5,7 @@
 # of this license document, but changing it is not allowed.
 #
 
-!isEmpty(PE_LIB):error("Deploy.pri already included")
+!isEmpty(PE_LIB):error("pe-parser-library.pri already included")
 PE_LIB = 1
 
 #DEPENDS
@@ -15,9 +15,9 @@ CONFIG(release, debug|release): {
     PE_LIB_OUTPUT_DIR="$$PWD/build/debug"
 }
 
-LIBS += -L$$PE_LIB_OUTPUT_DIR -lPE
+LIBS += -L$$PE_LIB_OUTPUT_DIR -lpe-parser-library
 
-INCLUDEPATH += "$$PWD/include/parser-library"
+INCLUDEPATH += "$$PWD/include"
 
 
 

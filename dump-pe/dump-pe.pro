@@ -5,19 +5,10 @@
 # of this license document, but changing it is not allowed.
 #
 
-
-#-------------------------------------------------
-#
-# Project created by QtCreator 2019-01-26T13:55:47
-#
-#-------------------------------------------------
-
 QT       -= gui
 
-TARGET = PE
+TARGET = dump-pe
 TEMPLATE = lib
-
-DEFINES += PEPARSER_LIBRARY
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -36,11 +27,9 @@ CONFIG(release, debug|release): {
     DESTDIR="$$PWD/build/debug"
 }
 
-HEADERS += \
-    include/parser-library/nt-headers.h \
-    include/parser-library/parse.h \
-    include/parser-library/to_string.h
+include($$PWD/../pe-parser-library/pe-parser-library.pri)
 
 SOURCES += \
-    src/buffer.cpp \
-    src/parse.cpp
+    main.cpp
+
+
