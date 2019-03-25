@@ -5,7 +5,7 @@
 # of this license document, but changing it is not allowed.
 #
 
-QT       -= gui
+QT       -= core gui
 
 TARGET = pe-parser-library
 TEMPLATE = lib
