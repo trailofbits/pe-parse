@@ -57,7 +57,7 @@ linux_initialize() {
   fi
 
   printf " > Installing the required packages...\n"
-  sudo apt-get install -qqy cmake python2.7 python-dev build-essential realpath > "${log_file}" 2>&1
+  sudo apt-get install -qqy cmake python2.7 python-dev build-essential realpath libicu-dev > "${log_file}" 2>&1
   if [ $? -ne 0 ] ; then
     printf " x Could not install the required dependencies\n\n\n"
     cat "${log_file}"
