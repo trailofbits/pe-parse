@@ -193,7 +193,7 @@ constexpr std::uint16_t IMAGE_SYM_DTYPE_FUNCTION = 2;
 constexpr std::uint16_t IMAGE_SYM_DTYPE_ARRAY = 3;
 
 // Symbol table storage classes
-constexpr std::uint8_t IMAGE_SYM_CLASS_END_OF_FUNCTION = static_cast<const std::uint8_t>(-1);
+constexpr std::uint8_t IMAGE_SYM_CLASS_END_OF_FUNCTION = static_cast<std::uint8_t>(-1);
 constexpr std::uint8_t IMAGE_SYM_CLASS_NULL = 0;
 constexpr std::uint8_t IMAGE_SYM_CLASS_AUTOMATIC = 1;
 constexpr std::uint8_t IMAGE_SYM_CLASS_EXTERNAL = 2;
