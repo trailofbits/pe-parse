@@ -11,5 +11,5 @@ static std::string to_string(T t, std::ios_base &(*f)(std::ios_base &) ) {
   return oss.str();
 }
 
-std::string from_utf16(const std::uint16_t *data, std::uint32_t size);
+std::string from_utf16(const std::uint16_t *data, std::int32_t size);
 } // namespace peparse

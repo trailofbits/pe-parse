@@ -262,7 +262,7 @@ bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &resu
   }
   id += 2;
 
-  std::vector<std::uint16_t> rawBytes(len * 2);
+  std::vector<std::uint16_t> rawBytes(len * 2U);
   std::uint16_t c;
   for (std::uint32_t i = 0; i < len; ++i) {
     if (!readWord(data, id + (i * 2), c)) {
@@ -1219,12 +1219,9 @@ bool getImports(parsed_pe *p) {
     // get import directory from this section
     auto offt = static_cast<std::uint32_t>(addr - c.sectionBase);
 
-    import_dir_entry emptyEnt;
-    memset(&emptyEnt, 0, sizeof(import_dir_entry));
-
     do {
       // read each directory entry out
-      import_dir_entry curEnt = emptyEnt;
+      import_dir_entry curEnt;
 
       READ_DWORD(c.sectionData, offt, curEnt, LookupTableRVA);
       READ_DWORD(c.sectionData, offt, curEnt, TimeStamp);

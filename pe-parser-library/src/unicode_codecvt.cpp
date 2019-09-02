@@ -26,7 +26,7 @@ THE SOFTWARE.
 #include <codecvt>
 
 namespace peparse {
-std::string from_utf16(const std::uint16_t *data, std::uint32_t size)
+std::string from_utf16(const std::uint16_t *data, std::int32_t size)
 {
   // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>convert; // Doesn't compile with Visual Studio.
   // See https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t

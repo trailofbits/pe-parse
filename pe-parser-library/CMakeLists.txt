@@ -8,7 +8,7 @@ set_property(CACHE UNICODE_LIBRARY PROPERTY STRINGS "any" "icu" "codecvt")
 # the chance they get out of sync.
 # This is the minimum "required" version but there's a good chance early
 # versions of ICU support the simple functionality needed by this project.
-set(ICU_MINIMUM_REQUIRED 58.0)
+set(ICU_MINIMUM_REQUIRED 55.0)
 
 # List all files explicitly; this will make IDEs happy (i.e. QtCreator, CLion, ...)
 list(APPEND PEPARSERLIB_SOURCEFILES
