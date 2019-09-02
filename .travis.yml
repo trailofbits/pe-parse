@@ -15,7 +15,8 @@ script:
 matrix:
   include:
   - os: osx
-    osx_image: xcode7.3
+    casks:
+    - icu4c
   exclude:
   - compiler: gcc
     os: osx
