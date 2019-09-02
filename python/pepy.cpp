@@ -885,15 +885,6 @@ int resource_callback(void *cbd, resource r) {
    * The tuple item order is important here. It is passed into the
    * section type initialization and parsed there.
    */
-#if PY_MAJOR_VERSION >= 3
-  tuple = Py_BuildValue("u#u#u#IIIIIIO&",
-                        r.type_str.c_str(),
-                        r.type_str.length() / 2,
-                        r.name_str.c_str(),
-                        r.name_str.length() / 2,
-                        r.lang_str.c_str(),
-                        r.lang_str.length() / 2,
-#else
   tuple = Py_BuildValue("s#s#s#IIIIIIO&",
                         r.type_str.c_str(),
                         r.type_str.length(),
@@ -901,7 +892,6 @@ int resource_callback(void *cbd, resource r) {
                         r.name_str.length(),
                         r.lang_str.c_str(),
                         r.lang_str.length(),
-#endif
                         r.type,
                         r.name,
                         r.lang,
