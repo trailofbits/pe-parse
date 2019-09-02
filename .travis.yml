@@ -14,8 +14,6 @@ script:
 
 matrix:
   include:
-  - env: COMPILER=clang++-5.0
-    addons: { apt: { packages: ["clang-5.0"], sources: ["llvm-toolchain-trusty-5.0"] } }
   - os: osx
     osx_image: xcode7.3
   exclude:
