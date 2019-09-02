@@ -23,6 +23,7 @@ THE SOFTWARE.
 */
 
 #include <parser-library/to_string.h>
+#include <locale>
 #include <codecvt>
 
 namespace peparse {
@@ -36,8 +37,9 @@ std::string from_utf16(const std::u16string &u)
   auto p = reinterpret_cast<const std::int16_t *>(u.data());
   return convert.to_bytes(p, p + u.size());
 #else
-  // Requires GCC 4.9.X or higher
-  // Requires Clang ??? or higher
+  // -std=c++11 or -std=c++14
+  // Requires GCC 5 or higher
+  // Requires Clang ??? or higher (tested on Clang 3.8, 5.0, 6.0)
   std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
   return convert.to_bytes(u);
 #endif
