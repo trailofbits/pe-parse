@@ -164,6 +164,31 @@ bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
   return true;
 }
 
+bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out) {
+  if (b == nullptr) {
+    PE_ERR(PEERR_BUFFER);
+    return false;
+  }
+
+  if (offset + 1 >= b->bufLen) {
+    PE_ERR(PEERR_ADDRESS);
+    return false;
+  }
+
+  char16_t *tmp = nullptr;
+  if (b->swapBytes) {
+    std::uint8_t tmpBuf[2];
+    tmpBuf[0] = *(b->buf + offset + 1);
+    tmpBuf[1] = *(b->buf + offset);
+    tmp = reinterpret_cast<char16_t *>(tmpBuf);
+  } else {
+    tmp = reinterpret_cast<char16_t *>(b->buf + offset);
+  }
+  out = *tmp;
+
+  return true;
+}
+
 bounded_buffer *readFileToFileBuffer(const char *filePath) {
 #ifdef _WIN32
   HANDLE h = CreateFileA(filePath,

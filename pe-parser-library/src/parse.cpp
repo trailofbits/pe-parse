@@ -256,19 +256,23 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
 }
 
 bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &result) {
-  std::uint8_t c;
   std::uint16_t len;
-
   if (!readWord(data, id, len)) {
     return false;
   }
   id += 2;
-  for (std::uint32_t i = 0; i < len * 2U; i++) {
-    if (!readByte(data, id + i, c)) {
+
+  std::uint32_t rawSize = len * 2U;
+  std::u16string rawString;
+  for (std::uint32_t i = 0; i < rawSize; i += 2) {
+    char16_t c;
+    if (!readChar16(data, id + i, c)) {
       return false;
     }
-    result.push_back(static_cast<char>(c));
+    rawString.push_back(c);
   }
+
+  result = from_utf16(rawString);
   return true;
 }
 

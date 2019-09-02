@@ -142,6 +142,7 @@ bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
 bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out);
 bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out);
 bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out);
+bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out);
 
 bounded_buffer *readFileToFileBuffer(const char *filePath);
 bounded_buffer *
