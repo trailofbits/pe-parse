@@ -262,7 +262,8 @@ bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &resu
   }
   id += 2;
 
-  std::vector<std::uint16_t> rawBytes(len * 2U);
+  std::uint16_t rawSize = len * 2U;
+  std::vector<std::uint16_t> rawBytes(rawSize);
   std::uint16_t c;
   for (std::uint32_t i = 0; i < len; ++i) {
     if (!readWord(data, id + (i * 2), c)) {
@@ -271,7 +272,7 @@ bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &resu
     rawBytes[i] = c;
   }
 
-  result = from_utf16(rawBytes.data(), rawBytes.size());
+  result = from_utf16(rawBytes.data(), rawSize);
   return true;
 }
 
