@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 namespace peparse {
 // See https://stackoverflow.com/questions/38688417/utf-conversion-functions-in-c11
-std::string from_utf16(const std::u16string &u)
+std::string from_utf16(const UCharString &u)
 {
 #if defined(_MSC_VER)
   // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>convert; // Doesn't compile with Visual Studio.

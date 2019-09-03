@@ -263,7 +263,7 @@ bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &resu
   id += 2;
 
   std::uint32_t rawSize = len * 2U;
-  std::u16string rawString;
+  UCharString rawString;
   for (std::uint32_t i = 0; i < rawSize; i += 2) {
     char16_t c;
     if (!readChar16(data, id + i, c)) {
