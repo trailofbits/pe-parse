@@ -45,6 +45,12 @@ cmake --build . --config Release
 cmake --build . --config Release --target install
 ```
 
+PE files that have a Resource section with strings for the Type are encoded in UTF-16, but that `std::string` expects UTF-8. Some cross-platform solution
+is desired. You can let cmake choose one it finds in your build environment or you can choose one from the following options yourself and specify it with
+the `-DUNICODE_LIBRARY` argument when generating the project files with cmake:
+* `icu` (preferred) - "[ICU](http://site.icu-project.org/) is a mature, widely used set of C/C++ and Java libraries providing Unicode and Globalization support for software applications"
+* `codecvt` - A C++ library header file ([now deprecated](http://open-std.org/JTC1/SC22/WG21/docs/papers/2017/p0618r0.html)) supported by some C++ runtimes
+
 ### Notes about Windows
 
 If you are building on Windows with Visual Studio, the generator option can be used to select the compiler version and the output architecture:
@@ -56,6 +62,11 @@ cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release ..
 # Compile 32-bit binaries with Visual Studio 2017
 cmake -G "Visual Studio 15 2017" -DCMAKE_BUILD_TYPE=Release ..
 ```
+
+Visual Studio 2015 or higher is required to use codecvt, but you also have the option of using [ICU](http://site.icu-project.org/). The easiest way to
+get started with ICU in Windows is with [vcpkg](https://vcpkg.readthedocs.io/): `vcpkg install icu`. Then add the
+`-DCMAKE_TOOLCHAIN_FILE=C:\src\vcpkg\scripts\buildsystems\vcpkg.cmake` argument when generating the project files with cmake to add the appropriate
+library and include directories to the project.
 
 Using the library
 =======
