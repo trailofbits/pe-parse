@@ -227,6 +227,17 @@ int printSymbols(void *N,
   return 0;
 }
 
+int printRich(void *N, rich_entry r) {
+  static_cast<void>(N);
+
+  std::cout << std::setw(10) << "ProdId:" << std::setw(7) << r.ProductId;
+  std::cout << std::setw(10) << "Build:" << std::setw(7) << r.BuildNumber;
+  std::cout << std::setw(10) << "Name:"
+            << std::setw(20) << GetRichProductName(r.ProductId, r.BuildNumber);
+  std::cout << std::setw(10) << "Count:" << std::setw(7) << r.Count << "\n";
+  return 0;
+}
+
 int printRsrc(void *N, resource r) {
   static_cast<void>(N);
 
@@ -288,6 +299,13 @@ int main(int argc, char *argv[]) {
   parsed_pe *p = ParsePEFromFile(argv[1]);
 
   if (p != NULL) {
+    // Print Rich header info
+    if(p->peHeader.rich.isPresent) {
+      std::cout << "Rich header: present\n";
+      IterRich(p, printRich, NULL);
+    } else {
+      std::cout << "Rich header: not present\n";
+    }
     // print out some things
     DUMP_FIELD(Signature);
     DUMP_FIELD(FileHeader.Machine);

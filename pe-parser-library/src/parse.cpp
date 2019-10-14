@@ -122,6 +122,25 @@ struct parsed_pe_internal {
   std::vector<symbol> symbols;
 };
 
+// The mapping of Rich header product id / build number pairs
+// to strings
+static const std::map<ProductKey, const std::string> ProductMap = {
+  {std::make_pair(1, 0), "Imported Functions"}
+};
+
+static const std::string kUnknownProduct = "<unknown>";
+
+// Resolve a Rich header product id / build number pair to a known
+// product name
+const std::string& GetRichProductName(std::uint16_t prodId, std::uint16_t buildNum) {
+  auto it = ProductMap.find(std::make_pair(prodId, buildNum));
+  if (it != ProductMap.end()) {
+    return it->second;
+  } else {
+    return kUnknownProduct;
+  }
+}
+
 std::uint32_t err = 0;
 std::string err_loc;
 
@@ -241,6 +260,14 @@ bool getSecForVA(const std::vector<section> &secs, VA v, section &sec) {
   }
 
   return false;
+}
+
+void IterRich(parsed_pe *pe, iterRich cb, void *cbd) {
+  for (rich_entry r : pe->peHeader.rich.Entries) {
+    if (cb(cbd, r) != 0) {
+      break;
+    }
+  }
 }
 
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
@@ -798,6 +825,83 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   return true;
 }
 
+bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &rich_hdr) {
+  if (rich_buf == nullptr) {
+    return false;
+  }
+
+  std::uint32_t encrypted_dword;
+  std::uint32_t decrypted_dword;
+
+  // Confirm DanS signature exists first.
+  // The first decrypted DWORD value of the rich header
+  // at offset 0 should be 0x536e6144 aka the "DanS" signature
+  if (!readDword(rich_buf, 0, encrypted_dword)) {
+      PE_ERR(PEERR_READ);
+      return false;
+  }
+
+  decrypted_dword = encrypted_dword ^ key;
+
+  if (decrypted_dword == RICH_MAGIC_START) {
+    // DanS magic found
+    rich_hdr.isPresent = true;
+    rich_hdr.StartSignature = decrypted_dword;
+  } else {
+    // DanS magic not found
+    rich_hdr.isPresent = false;
+    return false;
+  }
+
+  // Iterate over the remaining entries.
+  // Start from buffer offset 16 because after "DanS" there
+  // are three DWORDs of zero padding that can be skipped over.
+  // a DWORD is 4 bytes. Loop is incrementing 8 bytes, however
+  // we are reading two DWORDS at a time, which is the size
+  // of one rich header entry.
+  for (std::uint32_t i = 16; i < rich_buf->bufLen-8; i += 8) {
+    rich_entry entry;
+    // Read first DWORD of entry and decrypt it
+    if (!readDword(rich_buf, i, encrypted_dword)) {
+      PE_ERR(PEERR_READ);
+      return false;
+    }
+    decrypted_dword = encrypted_dword ^ key;
+    // The high WORD of the first DWORD is the Product ID
+    entry.ProductId = (decrypted_dword & 0xFFFF0000) >> 16;
+    // The low WORD of the first DWORD is the Build Number
+    entry.BuildNumber = (decrypted_dword & 0xFFFF);
+
+    // The second DWORD represents the use count
+    if (!readDword(rich_buf, i+4, encrypted_dword)) {
+      PE_ERR(PEERR_READ);
+      return false;
+    }
+    decrypted_dword = encrypted_dword ^ key;
+    // The full 32-bit DWORD is the count
+    entry.Count = decrypted_dword;
+
+    // Preserve the individual entry
+    rich_hdr.Entries.push_back(entry);
+
+  }
+
+  // Preserve the end signature aka "Rich" magic
+  if (!readDword(rich_buf, rich_buf->bufLen-4, rich_hdr.EndSignature)) {
+      PE_ERR(PEERR_READ);
+      return false;
+  };
+  if (rich_hdr.EndSignature != RICH_MAGIC_END) {
+    PE_ERR(PEERR_MAGIC);
+    return false;
+  }
+
+  // Preserve the decryption key
+  rich_hdr.DecryptionKey =  key;
+
+  return true;
+}
+
 bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   if (file == nullptr) {
     return false;
@@ -822,6 +926,53 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
     return false;
   }
   curOffset += offset;
+
+  // read rich header
+  std::uint32_t dword;
+  std::uint32_t rich_end_signature_offset;
+  std::uint32_t xor_key;
+  bool found_rich = false;
+
+  // Start reading from RICH_OFFSET (0x80), a known Rich header offset.
+  // Note: 0x80 is based on anecdotal evidence.
+  //
+  // Iterate over the DWORDs, hence why i increments 4 bytes at a time.
+  for (std::uint32_t i = RICH_OFFSET; i < offset; i += 4) {
+    if (!readDword(file, i, dword)) {
+      PE_ERR(PEERR_READ);
+      return false;
+    }
+
+    // Found the trailing Rich signature
+    if (dword == RICH_MAGIC_END) {
+      found_rich = true;
+      rich_end_signature_offset = i;
+      break;
+    }
+  }
+
+  if (found_rich) {
+    // Get the XOR decryption key.  It is the DWORD immediately
+    // after the Rich signature.
+    if (!readDword(file, rich_end_signature_offset + 4, xor_key)) {
+      PE_ERR(PEERR_READ);
+      return false;
+    }
+
+    // Split the Rich header out into its own buffer
+    bounded_buffer *richBuf = splitBuffer(file, 0x80, rich_end_signature_offset + 4);
+    if (richBuf == nullptr) {
+      return false;
+    }
+
+    readRichHeader(richBuf, xor_key, p.rich);
+    if (richBuf != nullptr) {
+      deleteBuffer(richBuf);
+    }
+
+  } else {
+    p.rich.isPresent = false;
+  }
 
   // now, we can read out the fields of the NT headers
   bounded_buffer *ntBuf = splitBuffer(file, curOffset, file->bufLen);
