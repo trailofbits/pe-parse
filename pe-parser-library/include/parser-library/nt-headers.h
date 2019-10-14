@@ -26,6 +26,7 @@ THE SOFTWARE.
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #define _offset(t, f)         \
   static_cast<std::uint32_t>( \
@@ -36,6 +37,9 @@ THE SOFTWARE.
 // some constant definitions
 // clang-format off
 namespace peparse {
+constexpr std::uint32_t RICH_MAGIC_END = 0x68636952;
+constexpr std::uint32_t RICH_MAGIC_START = 0x536e6144;
+constexpr std::uint32_t RICH_OFFSET = 0x80;
 constexpr std::uint16_t MZ_MAGIC = 0x5A4D;
 constexpr std::uint32_t NT_MAGIC = 0x00004550;
 constexpr std::uint16_t NUM_DIR_ENTRIES = 16;
@@ -336,6 +340,20 @@ struct nt_header_32 {
   optional_header_32 OptionalHeader;
   optional_header_64 OptionalHeader64;
   std::uint16_t OptionalMagic;
+};
+
+struct rich_entry {
+  std::uint16_t ProductId;
+  std::uint16_t BuildNumber;
+  std::uint32_t Count;
+};
+
+struct rich_header {
+  std::uint32_t StartSignature;
+  std::vector<rich_entry> Entries;
+  std::uint32_t EndSignature;
+  std::uint32_t DecryptionKey;
+  bool isPresent;
 };
 
 /*

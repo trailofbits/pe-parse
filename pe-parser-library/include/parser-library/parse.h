@@ -25,6 +25,7 @@ THE SOFTWARE.
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <string>
 
 #include "nt-headers.h"
@@ -153,6 +154,7 @@ uint64_t bufLen(bounded_buffer *b);
 struct parsed_pe_internal;
 
 typedef struct _pe_header {
+  rich_header rich;
   nt_header_32 nt;
 } pe_header;
 
@@ -161,6 +163,11 @@ typedef struct _parsed_pe {
   parsed_pe_internal *internal;
   pe_header peHeader;
 } parsed_pe;
+
+// Resolve a Rich header product id / build number pair to a known
+// product name
+typedef std::pair<std::uint16_t, std::uint16_t> ProductKey;
+std::string GetRichProductName(std::uint16_t prodId, std::uint16_t buildNum);
 
 // get parser error status as integer
 std::uint32_t GetPEErr();
@@ -176,6 +183,10 @@ parsed_pe *ParsePEFromFile(const char *filePath);
 
 // destruct a PE context
 void DestructParsedPE(parsed_pe *p);
+
+// iterate over Rich header entries
+typedef int (*iterRich)(void *, rich_entry);
+void IterRich(parsed_pe *pe, iterRich cb, void *cbd);
 
 // iterate over the resources
 typedef int (*iterRsrc)(void *, resource);
