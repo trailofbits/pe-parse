@@ -902,29 +902,68 @@ bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &ri
   return true;
 }
 
+bool readDosHeader(bounded_buffer *file, dos_header &dos_hdr) {
+  if (file == nullptr) {
+    return false;
+  }
+
+  READ_WORD(file, 0, dos_hdr, e_magic);
+  READ_WORD(file, 0, dos_hdr, e_cblp);
+  READ_WORD(file, 0, dos_hdr, e_cp);
+  READ_WORD(file, 0, dos_hdr, e_crlc);
+  READ_WORD(file, 0, dos_hdr, e_cparhdr);
+  READ_WORD(file, 0, dos_hdr, e_minalloc);
+  READ_WORD(file, 0, dos_hdr, e_maxalloc);
+  READ_WORD(file, 0, dos_hdr, e_ss);
+  READ_WORD(file, 0, dos_hdr, e_sp);
+  READ_WORD(file, 0, dos_hdr, e_csum);
+  READ_WORD(file, 0, dos_hdr, e_ip);
+  READ_WORD(file, 0, dos_hdr, e_cs);
+  READ_WORD(file, 0, dos_hdr, e_lfarlc);
+  READ_WORD(file, 0, dos_hdr, e_ovno);
+  READ_WORD(file, 0, dos_hdr, e_res[0]);
+  READ_WORD(file, 0, dos_hdr, e_res[1]);
+  READ_WORD(file, 0, dos_hdr, e_res[2]);
+  READ_WORD(file, 0, dos_hdr, e_res[3]);
+  READ_WORD(file, 0, dos_hdr, e_oemid);
+  READ_WORD(file, 0, dos_hdr, e_oeminfo);
+  READ_WORD(file, 0, dos_hdr, e_res2[0]);
+  READ_WORD(file, 0, dos_hdr, e_res2[1]);
+  READ_WORD(file, 0, dos_hdr, e_res2[2]);
+  READ_WORD(file, 0, dos_hdr, e_res2[3]);
+  READ_WORD(file, 0, dos_hdr, e_res2[4]);
+  READ_WORD(file, 0, dos_hdr, e_res2[5]);
+  READ_WORD(file, 0, dos_hdr, e_res2[6]);
+  READ_WORD(file, 0, dos_hdr, e_res2[7]);
+  READ_WORD(file, 0, dos_hdr, e_res2[8]);
+  READ_WORD(file, 0, dos_hdr, e_res2[9]);
+  READ_DWORD(file, 0, dos_hdr, e_lfanew);
+  
+  return true;
+}
+
 bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   if (file == nullptr) {
     return false;
   }
 
   // start by reading MZ
-  std::uint16_t tmp = 0;
+  // std::uint16_t tmp = 0;
   std::uint32_t curOffset = 0;
-  if (!readWord(file, curOffset, tmp)) {
-    PE_ERR(PEERR_READ);
-    return false;
-  }
-  if (tmp != MZ_MAGIC) {
+  // if (!readWord(file, curOffset, tmp)) {
+  //   PE_ERR(PEERR_READ);
+  //   return false;
+  // }
+
+  readDosHeader(file, p.dos);
+  
+  if (p.dos.e_magic != MZ_MAGIC) {
     PE_ERR(PEERR_MAGIC);
     return false;
   }
 
   // read the offset to the NT headers
-  std::uint32_t offset;
-  if (!readDword(file, _offset(dos_header, e_lfanew), offset)) {
-    PE_ERR(PEERR_READ);
-    return false;
-  }
+  std::uint32_t offset = p.dos.e_lfanew;
   curOffset += offset;
 
   // read rich header

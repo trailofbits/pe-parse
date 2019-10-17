@@ -281,11 +281,11 @@ int printSecs(void *N,
 
 #define DUMP_FIELD(x)                                                   \
   std::cout << "" #x << ": 0x";                                         \
-  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.nt.x) \
+  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.x) \
             << "\n";
 #define DUMP_DEC_FIELD(x)                                               \
   std::cout << "" #x << ": ";                                           \
-  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.nt.x) \
+  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.x)     \
             << "\n";
 
 int main(int argc, char *argv[]) {
@@ -299,6 +299,37 @@ int main(int argc, char *argv[]) {
   parsed_pe *p = ParsePEFromFile(argv[1]);
 
   if (p != NULL) {
+    // Print DOS header
+    DUMP_FIELD(dos.e_magic);
+    DUMP_FIELD(dos.e_cp);
+    DUMP_FIELD(dos.e_crlc);
+    DUMP_FIELD(dos.e_cparhdr);
+    DUMP_FIELD(dos.e_minalloc);
+    DUMP_FIELD(dos.e_maxalloc);
+    DUMP_FIELD(dos.e_ss);
+    DUMP_FIELD(dos.e_sp);
+    DUMP_FIELD(dos.e_csum);
+    DUMP_FIELD(dos.e_ip);
+    DUMP_FIELD(dos.e_cs);
+    DUMP_FIELD(dos.e_lfarlc);
+    DUMP_FIELD(dos.e_ovno);
+    DUMP_FIELD(dos.e_res[0]);
+    DUMP_FIELD(dos.e_res[1]);
+    DUMP_FIELD(dos.e_res[2]);
+    DUMP_FIELD(dos.e_res[3]);
+    DUMP_FIELD(dos.e_oemid);
+    DUMP_FIELD(dos.e_oeminfo);
+    DUMP_FIELD(dos.e_res2[0]);
+    DUMP_FIELD(dos.e_res2[1]);
+    DUMP_FIELD(dos.e_res2[2]);
+    DUMP_FIELD(dos.e_res2[3]);
+    DUMP_FIELD(dos.e_res2[4]);
+    DUMP_FIELD(dos.e_res2[5]);
+    DUMP_FIELD(dos.e_res2[6]);
+    DUMP_FIELD(dos.e_res2[7]);
+    DUMP_FIELD(dos.e_res2[8]);
+    DUMP_FIELD(dos.e_res2[9]);
+    DUMP_FIELD(dos.e_lfanew);
     // Print Rich header info
     if(p->peHeader.rich.isPresent) {
       std::cout << "Rich header: present\n";
@@ -307,67 +338,67 @@ int main(int argc, char *argv[]) {
       std::cout << "Rich header: not present\n";
     }
     // print out some things
-    DUMP_FIELD(Signature);
-    DUMP_FIELD(FileHeader.Machine);
-    DUMP_FIELD(FileHeader.NumberOfSections);
-    DUMP_DEC_FIELD(FileHeader.TimeDateStamp);
-    DUMP_FIELD(FileHeader.PointerToSymbolTable);
-    DUMP_DEC_FIELD(FileHeader.NumberOfSymbols);
-    DUMP_FIELD(FileHeader.SizeOfOptionalHeader);
-    DUMP_FIELD(FileHeader.Characteristics);
+    DUMP_FIELD(nt.Signature);
+    DUMP_FIELD(nt.FileHeader.Machine);
+    DUMP_FIELD(nt.FileHeader.NumberOfSections);
+    DUMP_DEC_FIELD(nt.FileHeader.TimeDateStamp);
+    DUMP_FIELD(nt.FileHeader.PointerToSymbolTable);
+    DUMP_DEC_FIELD(nt.FileHeader.NumberOfSymbols);
+    DUMP_FIELD(nt.FileHeader.SizeOfOptionalHeader);
+    DUMP_FIELD(nt.FileHeader.Characteristics);
     if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      DUMP_FIELD(OptionalHeader.Magic);
-      DUMP_DEC_FIELD(OptionalHeader.MajorLinkerVersion);
-      DUMP_DEC_FIELD(OptionalHeader.MinorLinkerVersion);
-      DUMP_FIELD(OptionalHeader.SizeOfCode);
-      DUMP_FIELD(OptionalHeader.SizeOfInitializedData);
-      DUMP_FIELD(OptionalHeader.SizeOfUninitializedData);
-      DUMP_FIELD(OptionalHeader.AddressOfEntryPoint);
-      DUMP_FIELD(OptionalHeader.BaseOfCode);
-      DUMP_FIELD(OptionalHeader.BaseOfData);
-      DUMP_FIELD(OptionalHeader.ImageBase);
-      DUMP_FIELD(OptionalHeader.SectionAlignment);
-      DUMP_FIELD(OptionalHeader.FileAlignment);
-      DUMP_DEC_FIELD(OptionalHeader.MajorOperatingSystemVersion);
-      DUMP_DEC_FIELD(OptionalHeader.MinorOperatingSystemVersion);
-      DUMP_DEC_FIELD(OptionalHeader.Win32VersionValue);
-      DUMP_FIELD(OptionalHeader.SizeOfImage);
-      DUMP_FIELD(OptionalHeader.SizeOfHeaders);
-      DUMP_FIELD(OptionalHeader.CheckSum);
-      DUMP_FIELD(OptionalHeader.Subsystem);
-      DUMP_FIELD(OptionalHeader.DllCharacteristics);
-      DUMP_FIELD(OptionalHeader.SizeOfStackReserve);
-      DUMP_FIELD(OptionalHeader.SizeOfStackCommit);
-      DUMP_FIELD(OptionalHeader.SizeOfHeapReserve);
-      DUMP_FIELD(OptionalHeader.SizeOfHeapCommit);
-      DUMP_FIELD(OptionalHeader.LoaderFlags);
-      DUMP_DEC_FIELD(OptionalHeader.NumberOfRvaAndSizes);
+      DUMP_FIELD(nt.OptionalHeader.Magic);
+      DUMP_DEC_FIELD(nt.OptionalHeader.MajorLinkerVersion);
+      DUMP_DEC_FIELD(nt.OptionalHeader.MinorLinkerVersion);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfCode);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfInitializedData);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfUninitializedData);
+      DUMP_FIELD(nt.OptionalHeader.AddressOfEntryPoint);
+      DUMP_FIELD(nt.OptionalHeader.BaseOfCode);
+      DUMP_FIELD(nt.OptionalHeader.BaseOfData);
+      DUMP_FIELD(nt.OptionalHeader.ImageBase);
+      DUMP_FIELD(nt.OptionalHeader.SectionAlignment);
+      DUMP_FIELD(nt.OptionalHeader.FileAlignment);
+      DUMP_DEC_FIELD(nt.OptionalHeader.MajorOperatingSystemVersion);
+      DUMP_DEC_FIELD(nt.OptionalHeader.MinorOperatingSystemVersion);
+      DUMP_DEC_FIELD(nt.OptionalHeader.Win32VersionValue);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfImage);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfHeaders);
+      DUMP_FIELD(nt.OptionalHeader.CheckSum);
+      DUMP_FIELD(nt.OptionalHeader.Subsystem);
+      DUMP_FIELD(nt.OptionalHeader.DllCharacteristics);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfStackReserve);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfStackCommit);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfHeapReserve);
+      DUMP_FIELD(nt.OptionalHeader.SizeOfHeapCommit);
+      DUMP_FIELD(nt.OptionalHeader.LoaderFlags);
+      DUMP_DEC_FIELD(nt.OptionalHeader.NumberOfRvaAndSizes);
     } else {
-      DUMP_FIELD(OptionalHeader64.Magic);
-      DUMP_DEC_FIELD(OptionalHeader64.MajorLinkerVersion);
-      DUMP_DEC_FIELD(OptionalHeader64.MinorLinkerVersion);
-      DUMP_FIELD(OptionalHeader64.SizeOfCode);
-      DUMP_FIELD(OptionalHeader64.SizeOfInitializedData);
-      DUMP_FIELD(OptionalHeader64.SizeOfUninitializedData);
-      DUMP_FIELD(OptionalHeader64.AddressOfEntryPoint);
-      DUMP_FIELD(OptionalHeader64.BaseOfCode);
-      DUMP_FIELD(OptionalHeader64.ImageBase);
-      DUMP_FIELD(OptionalHeader64.SectionAlignment);
-      DUMP_FIELD(OptionalHeader64.FileAlignment);
-      DUMP_DEC_FIELD(OptionalHeader64.MajorOperatingSystemVersion);
-      DUMP_DEC_FIELD(OptionalHeader64.MinorOperatingSystemVersion);
-      DUMP_DEC_FIELD(OptionalHeader64.Win32VersionValue);
-      DUMP_FIELD(OptionalHeader64.SizeOfImage);
-      DUMP_FIELD(OptionalHeader64.SizeOfHeaders);
-      DUMP_FIELD(OptionalHeader64.CheckSum);
-      DUMP_FIELD(OptionalHeader64.Subsystem);
-      DUMP_FIELD(OptionalHeader64.DllCharacteristics);
-      DUMP_FIELD(OptionalHeader64.SizeOfStackReserve);
-      DUMP_FIELD(OptionalHeader64.SizeOfStackCommit);
-      DUMP_FIELD(OptionalHeader64.SizeOfHeapReserve);
-      DUMP_FIELD(OptionalHeader64.SizeOfHeapCommit);
-      DUMP_FIELD(OptionalHeader64.LoaderFlags);
-      DUMP_DEC_FIELD(OptionalHeader64.NumberOfRvaAndSizes);
+      DUMP_FIELD(nt.OptionalHeader64.Magic);
+      DUMP_DEC_FIELD(nt.OptionalHeader64.MajorLinkerVersion);
+      DUMP_DEC_FIELD(nt.OptionalHeader64.MinorLinkerVersion);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfCode);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfInitializedData);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfUninitializedData);
+      DUMP_FIELD(nt.OptionalHeader64.AddressOfEntryPoint);
+      DUMP_FIELD(nt.OptionalHeader64.BaseOfCode);
+      DUMP_FIELD(nt.OptionalHeader64.ImageBase);
+      DUMP_FIELD(nt.OptionalHeader64.SectionAlignment);
+      DUMP_FIELD(nt.OptionalHeader64.FileAlignment);
+      DUMP_DEC_FIELD(nt.OptionalHeader64.MajorOperatingSystemVersion);
+      DUMP_DEC_FIELD(nt.OptionalHeader64.MinorOperatingSystemVersion);
+      DUMP_DEC_FIELD(nt.OptionalHeader64.Win32VersionValue);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfImage);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfHeaders);
+      DUMP_FIELD(nt.OptionalHeader64.CheckSum);
+      DUMP_FIELD(nt.OptionalHeader64.Subsystem);
+      DUMP_FIELD(nt.OptionalHeader64.DllCharacteristics);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfStackReserve);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfStackCommit);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfHeapReserve);
+      DUMP_FIELD(nt.OptionalHeader64.SizeOfHeapCommit);
+      DUMP_FIELD(nt.OptionalHeader64.LoaderFlags);
+      DUMP_DEC_FIELD(nt.OptionalHeader64.NumberOfRvaAndSizes);
     }
 
 #undef DUMP_FIELD

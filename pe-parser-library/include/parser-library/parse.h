@@ -154,6 +154,7 @@ uint64_t bufLen(bounded_buffer *b);
 struct parsed_pe_internal;
 
 typedef struct _pe_header {
+  dos_header dos;
   rich_header rich;
   nt_header_32 nt;
 } pe_header;
