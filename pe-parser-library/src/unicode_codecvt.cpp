@@ -22,17 +22,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <parser-library/to_string.h>
-#include <locale>
 #include <codecvt>
+#include <locale>
+#include <parser-library/to_string.h>
 
 namespace peparse {
-// See https://stackoverflow.com/questions/38688417/utf-conversion-functions-in-c11
-std::string from_utf16(const UCharString &u)
-{
+// See
+// https://stackoverflow.com/questions/38688417/utf-conversion-functions-in-c11
+std::string from_utf16(const UCharString &u) {
 #if defined(_MSC_VER)
-  // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>convert; // Doesn't compile with Visual Studio.
-  // See https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
+  // std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>convert;
+  // // Doesn't compile with Visual Studio. See
+  // https://stackoverflow.com/questions/32055357/visual-studio-c-2015-stdcodecvt-with-char16-t-or-char32-t
   std::wstring_convert<std::codecvt_utf8<std::int16_t>, std::int16_t> convert;
   auto p = reinterpret_cast<const std::int16_t *>(u.data());
   return convert.to_bytes(p, p + u.size());

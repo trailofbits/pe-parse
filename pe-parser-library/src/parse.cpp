@@ -23,10 +23,11 @@ THE SOFTWARE.
 */
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iostream>
-#include <vector>
 #include <stdexcept>
+#include <vector>
 
 #include <parser-library/nt-headers.h>
 #include <parser-library/parse.h>
@@ -125,14 +126,14 @@ struct parsed_pe_internal {
 // The mapping of Rich header product id / build number pairs
 // to strings
 static const std::map<ProductKey, const std::string> ProductMap = {
-  {std::make_pair(1, 0), "Imported Functions"}
-};
+    {std::make_pair(1, 0), "Imported Functions"}};
 
 static const std::string kUnknownProduct = "<unknown>";
 
 // Resolve a Rich header product id / build number pair to a known
 // product name
-const std::string& GetRichProductName(std::uint16_t prodId, std::uint16_t buildNum) {
+const std::string &GetRichProductName(std::uint16_t prodId,
+                                      std::uint16_t buildNum) {
   auto it = ProductMap.find(std::make_pair(prodId, buildNum));
   if (it != ProductMap.end()) {
     return it->second;
@@ -144,18 +145,22 @@ const std::string& GetRichProductName(std::uint16_t prodId, std::uint16_t buildN
 std::uint32_t err = 0;
 std::string err_loc;
 
-static const char *pe_err_str[] = {"None",
-                                   "Out of memory",
-                                   "Invalid header",
-                                   "Invalid section",
-                                   "Invalid resource",
-                                   "Unable to get section for VA",
-                                   "Unable to read data",
-                                   "Unable to open",
-                                   "Unable to stat",
-                                   "Bad magic",
-                                   "Invalid buffer",
-                                   "Invalid address",};
+static const char *pe_err_str[] = {
+    "None",
+    "Out of memory",
+    "Invalid header",
+    "Invalid section",
+    "Invalid resource",
+    "Unable to get section for VA",
+    "Unable to read data",
+    "Unable to open",
+    "Unable to stat",
+    "Bad magic",
+    "Invalid buffer",
+    "Invalid address",
+    "Invalid index",
+    "Invalid size",
+};
 
 std::uint32_t GetPEErr() {
   return err;
@@ -230,8 +235,9 @@ const char *GetSymbolTableStorageClassName(std::uint8_t id) {
   }
 }
 
-static bool
-readCString(const bounded_buffer &buffer, std::uint32_t off, std::string &result) {
+static bool readCString(const bounded_buffer &buffer,
+                        std::uint32_t off,
+                        std::string &result) {
   if (off < buffer.bufLen) {
     std::uint8_t *p = buffer.buf;
     std::uint32_t n = buffer.bufLen;
@@ -282,7 +288,9 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   return;
 }
 
-bool parse_resource_id(bounded_buffer *data, std::uint32_t id, std::string &result) {
+bool parse_resource_id(bounded_buffer *data,
+                       std::uint32_t id,
+                       std::string &result) {
   std::uint16_t len;
   if (!readWord(data, id, len)) {
     return false;
@@ -388,9 +396,10 @@ bool parse_resource_table(bounded_buffer *sectionData,
         }
       }
     } else {
-      /* .rsrc can accomodate up to 2**31 levels, but Windows only uses 3 by convention.
-       * As such, any depth above 3 indicates potentially unchecked recusion.
-       * See: https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#the-rsrc-section
+      /* .rsrc can accomodate up to 2**31 levels, but Windows only uses 3 by
+       * convention. As such, any depth above 3 indicates potentially unchecked
+       * recusion. See:
+       * https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#the-rsrc-section
        */
 
       PE_ERR(PEERR_RESC);
@@ -575,7 +584,8 @@ bool getSections(bounded_buffer *b,
     // now we have the section header information, so fill in a section
     // object appropriately
     section thisSec;
-    for (std::uint32_t charIndex = 0; charIndex < NT_SHORT_NAME_LEN; charIndex++) {
+    for (std::uint32_t charIndex = 0; charIndex < NT_SHORT_NAME_LEN;
+         charIndex++) {
       std::uint8_t c = curSec.Name[charIndex];
       if (c == 0) {
         break;
@@ -825,7 +835,9 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   return true;
 }
 
-bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &rich_hdr) {
+bool readRichHeader(bounded_buffer *rich_buf,
+                    std::uint32_t key,
+                    rich_header &rich_hdr) {
   if (rich_buf == nullptr) {
     return false;
   }
@@ -837,8 +849,8 @@ bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &ri
   // The first decrypted DWORD value of the rich header
   // at offset 0 should be 0x536e6144 aka the "DanS" signature
   if (!readDword(rich_buf, 0, encrypted_dword)) {
-      PE_ERR(PEERR_READ);
-      return false;
+    PE_ERR(PEERR_READ);
+    return false;
   }
 
   decrypted_dword = encrypted_dword ^ key;
@@ -859,7 +871,7 @@ bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &ri
   // a DWORD is 4 bytes. Loop is incrementing 8 bytes, however
   // we are reading two DWORDS at a time, which is the size
   // of one rich header entry.
-  for (std::uint32_t i = 16; i < rich_buf->bufLen-8; i += 8) {
+  for (std::uint32_t i = 16; i < rich_buf->bufLen - 8; i += 8) {
     rich_entry entry;
     // Read first DWORD of entry and decrypt it
     if (!readDword(rich_buf, i, encrypted_dword)) {
@@ -873,7 +885,7 @@ bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &ri
     entry.BuildNumber = (decrypted_dword & 0xFFFF);
 
     // The second DWORD represents the use count
-    if (!readDword(rich_buf, i+4, encrypted_dword)) {
+    if (!readDword(rich_buf, i + 4, encrypted_dword)) {
       PE_ERR(PEERR_READ);
       return false;
     }
@@ -883,13 +895,12 @@ bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &ri
 
     // Preserve the individual entry
     rich_hdr.Entries.push_back(entry);
-
   }
 
   // Preserve the end signature aka "Rich" magic
-  if (!readDword(rich_buf, rich_buf->bufLen-4, rich_hdr.EndSignature)) {
-      PE_ERR(PEERR_READ);
-      return false;
+  if (!readDword(rich_buf, rich_buf->bufLen - 4, rich_hdr.EndSignature)) {
+    PE_ERR(PEERR_READ);
+    return false;
   };
   if (rich_hdr.EndSignature != RICH_MAGIC_END) {
     PE_ERR(PEERR_MAGIC);
@@ -897,7 +908,7 @@ bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &ri
   }
 
   // Preserve the decryption key
-  rich_hdr.DecryptionKey =  key;
+  rich_hdr.DecryptionKey = key;
 
   return true;
 }
@@ -960,7 +971,8 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
     }
 
     // Split the Rich header out into its own buffer
-    bounded_buffer *richBuf = splitBuffer(file, 0x80, rich_end_signature_offset + 4);
+    bounded_buffer *richBuf =
+        splitBuffer(file, 0x80, rich_end_signature_offset + 4);
     if (richBuf == nullptr) {
       return false;
     }
@@ -992,12 +1004,12 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   std::uint32_t rem_size;
   if (p.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
     // signature + file_header + optional_header_32
-    rem_size =
-        sizeof(std::uint32_t) + sizeof(file_header) + sizeof(optional_header_32);
+    rem_size = sizeof(std::uint32_t) + sizeof(file_header) +
+               sizeof(optional_header_32);
   } else if (p.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
     // signature + file_header + optional_header_64
-    rem_size =
-        sizeof(std::uint32_t) + sizeof(file_header) + sizeof(optional_header_64);
+    rem_size = sizeof(std::uint32_t) + sizeof(file_header) +
+               sizeof(optional_header_64);
   } else {
     PE_ERR(PEERR_MAGIC);
     deleteBuffer(ntBuf);
@@ -1529,8 +1541,8 @@ bool getImports(parsed_pe *p) {
           ent.moduleName = modName;
           p->internal->imports.push_back(ent);
         } else {
-          std::string symName =
-              "ORDINAL_" + modName + "_" + to_string<std::uint32_t>(oval, std::dec);
+          std::string symName = "ORDINAL_" + modName + "_" +
+                                to_string<std::uint32_t>(oval, std::dec);
 
           importent ent;
 
@@ -1579,7 +1591,8 @@ bool getSymbolTable(parsed_pe *p) {
 
   std::uint32_t offset = p->peHeader.nt.FileHeader.PointerToSymbolTable;
 
-  for (std::uint32_t i = 0; i < p->peHeader.nt.FileHeader.NumberOfSymbols; i++) {
+  for (std::uint32_t i = 0; i < p->peHeader.nt.FileHeader.NumberOfSymbols;
+       i++) {
     symbol sym;
 
     // Read name
@@ -1607,7 +1620,8 @@ bool getSymbolTable(parsed_pe *p) {
         strOffset += sizeof(std::uint8_t);
       }
     } else {
-      for (std::uint8_t n = 0; n < NT_SHORT_NAME_LEN && sym.name.shortName[n] != 0;
+      for (std::uint8_t n = 0;
+           n < NT_SHORT_NAME_LEN && sym.name.shortName[n] != 0;
            n++) {
         sym.strName.push_back(static_cast<char>(sym.name.shortName[n]));
       }
@@ -2190,6 +2204,55 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
     default:
       return nullptr;
   }
+}
+
+const void *GetDataDirectoryEntry(parsed_pe *pe, std::uint16_t dirnum) {
+  if (pe == nullptr || dirnum >= NUM_DIR_ENTRIES) {
+    PE_ERR(PEERR_NONE);
+    return nullptr;
+  }
+
+  if (dirnum >= NUM_DIR_ENTRIES) {
+    PE_ERR(PEERR_INDEX);
+    return nullptr;
+  }
+
+  data_directory dir;
+  VA addr;
+  if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    dir = pe->peHeader.nt.OptionalHeader.DataDirectory[dirnum];
+    addr = dir.VirtualAddress + pe->peHeader.nt.OptionalHeader.ImageBase;
+  } else if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    dir = pe->peHeader.nt.OptionalHeader64.DataDirectory[dirnum];
+    addr = dir.VirtualAddress + pe->peHeader.nt.OptionalHeader64.ImageBase;
+  } else {
+    PE_ERR(PEERR_MAGIC);
+    return nullptr;
+  }
+
+  if (dir.Size <= 0) {
+    PE_ERR(PEERR_SIZE);
+    return nullptr;
+  }
+
+  section sec;
+  if (!getSecForVA(pe->internal->secs, addr, sec)) {
+    PE_ERR(PEERR_SECTVA);
+    return nullptr;
+  }
+
+  auto off = static_cast<std::uint32_t>(addr - sec.sectionBase);
+  if (off + dir.Size >= sec.sectionData->bufLen) {
+    PE_ERR(PEERR_SIZE);
+    return nullptr;
+  }
+
+  std::cerr << "off: 0x" << std::hex << off << std::endl;
+
+  std::vector<uint8_t> rawEntry(sec.sectionData->buf + off,
+                                sec.sectionData->buf + off + dir.Size);
+
+  return rawEntry.data();
 }
 
 } // namespace peparse
