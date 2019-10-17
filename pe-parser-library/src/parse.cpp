@@ -158,7 +158,6 @@ static const char *pe_err_str[] = {
     "Bad magic",
     "Invalid buffer",
     "Invalid address",
-    "Invalid index",
     "Invalid size",
 };
 
@@ -2206,14 +2205,9 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
   }
 }
 
-const void *GetDataDirectoryEntry(parsed_pe *pe, std::uint16_t dirnum) {
-  if (pe == nullptr || dirnum >= NUM_DIR_ENTRIES) {
+const void *GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum) {
+  if (pe == nullptr) {
     PE_ERR(PEERR_NONE);
-    return nullptr;
-  }
-
-  if (dirnum >= NUM_DIR_ENTRIES) {
-    PE_ERR(PEERR_INDEX);
     return nullptr;
   }
 

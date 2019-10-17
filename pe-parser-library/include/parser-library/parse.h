@@ -137,8 +137,7 @@ enum pe_err {
   PEERR_MAGIC = 9,
   PEERR_BUFFER = 10,
   PEERR_ADDRESS = 11,
-  PEERR_INDEX = 12,
-  PEERR_SIZE = 13,
+  PEERR_SIZE = 12,
 };
 
 bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
@@ -234,5 +233,5 @@ const char *GetMachineAsString(parsed_pe *pe);
 const char *GetSubsystemAsString(parsed_pe *pe);
 
 // get a table or string by its data directory entry
-const void *GetDataDirectoryEntry(parsed_pe *pe, std::uint16_t dirnum);
+const void *GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum);
 } // namespace peparse

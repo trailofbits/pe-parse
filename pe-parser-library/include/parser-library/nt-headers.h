@@ -47,21 +47,6 @@ constexpr std::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
 constexpr std::uint16_t NT_OPTIONAL_64_MAGIC = 0x20B;
 constexpr std::uint16_t NT_SHORT_NAME_LEN = 8;
 constexpr std::uint16_t SYMTAB_RECORD_LEN = 18;
-constexpr std::uint16_t DIR_EXPORT = 0;
-constexpr std::uint16_t DIR_IMPORT = 1;
-constexpr std::uint16_t DIR_RESOURCE = 2;
-constexpr std::uint16_t DIR_EXCEPTION = 3;
-constexpr std::uint16_t DIR_SECURITY = 4;
-constexpr std::uint16_t DIR_BASERELOC = 5;
-constexpr std::uint16_t DIR_DEBUG = 6;
-constexpr std::uint16_t DIR_ARCHITECTURE = 7;
-constexpr std::uint16_t DIR_GLOBALPTR = 8;
-constexpr std::uint16_t DIR_TLS = 9;
-constexpr std::uint16_t DIR_LOAD_CONFIG = 10;
-constexpr std::uint16_t DIR_BOUND_IMPORT = 11;
-constexpr std::uint16_t DIR_IAT = 12;
-constexpr std::uint16_t DIR_DELAY_IMPORT = 13;
-constexpr std::uint16_t DIR_COM_DESCRIPTOR = 14;
 
 // Machine Types
 constexpr std::uint16_t IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
@@ -261,6 +246,25 @@ struct file_header {
 struct data_directory {
   std::uint32_t VirtualAddress;
   std::uint32_t Size;
+};
+
+enum data_directory_kind {
+  DIR_EXPORT = 0,
+  DIR_IMPORT = 1,
+  DIR_RESOURCE = 2,
+  DIR_EXCEPTION = 3,
+  DIR_SECURITY = 4,
+  DIR_BASERELOC = 5,
+  DIR_DEBUG = 6,
+  DIR_ARCHITECTURE = 7,
+  DIR_GLOBALPTR = 8,
+  DIR_TLS = 9,
+  DIR_LOAD_CONFIG = 10,
+  DIR_BOUND_IMPORT = 11,
+  DIR_IAT = 12,
+  DIR_DELAY_IMPORT = 13,
+  DIR_COM_DESCRIPTOR = 14,
+  DIR_RESERVED = 15,
 };
 
 struct optional_header_32 {
