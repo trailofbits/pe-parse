@@ -825,6 +825,40 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
   return true;
 }
 
+// zero extends its first argument to 32 bits and then performs a rotate left operation
+// equal to the second arguments value of the first argument’s bits
+std::uint32_t rol(std::uint32_t val, std::uint32_t num) {
+  return ((val << num ) & 0xffffffff) | (val >> (32 - num));
+}
+
+std::uint32_t calculateRichChecksum(const bounded_buffer *b,  pe_header &p) {
+
+  // First, calculate the sum of the DOS header bytes each rotated left the number of
+  // times their position relative to the start of the DOS header
+  // e.g. second byte is rotated left 2x using rol operation
+  std::uint32_t checksum = 0;
+
+  for(uint8_t i = 0; i < RICH_OFFSET; i++) {
+
+    // skip over dos e_lfanew field at offset 0x3C
+    if (i >= 0x3C && i <= 0x3F) {
+      continue;
+    }
+    checksum += rol(b->buf[i], i);
+  }
+
+  // Next, take summation of each Rich header entry by combining its ProductId and BuildNumber 
+  // into a single 32 bit number and rotating by its count.
+  for (rich_entry entry : p.rich.Entries) {
+    std::uint32_t num = static_cast<std::uint32_t>((entry.ProductId << 16) | entry.BuildNumber);
+    checksum += rol(num , entry.Count & 0x1F);
+  }
+
+  checksum += RICH_OFFSET;
+
+  return checksum;
+}
+
 bool readRichHeader(bounded_buffer *rich_buf, std::uint32_t key, rich_header &rich_hdr) {
   if (rich_buf == nullptr) {
     return false;
@@ -938,7 +972,7 @@ bool readDosHeader(bounded_buffer *file, dos_header &dos_hdr) {
   READ_WORD(file, 0, dos_hdr, e_res2[8]);
   READ_WORD(file, 0, dos_hdr, e_res2[9]);
   READ_DWORD(file, 0, dos_hdr, e_lfanew);
-  
+
   return true;
 }
 
@@ -947,14 +981,7 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
     return false;
   }
 
-  // start by reading MZ
-  // std::uint16_t tmp = 0;
-  std::uint32_t curOffset = 0;
-  // if (!readWord(file, curOffset, tmp)) {
-  //   PE_ERR(PEERR_READ);
-  //   return false;
-  // }
-
+  // read the DOS header
   readDosHeader(file, p.dos);
   
   if (p.dos.e_magic != MZ_MAGIC) {
@@ -962,9 +989,9 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
     return false;
   }
 
-  // read the offset to the NT headers
+  // get the offset to the NT headers
   std::uint32_t offset = p.dos.e_lfanew;
-  curOffset += offset;
+  std::uint32_t curOffset = offset;
 
   // read rich header
   std::uint32_t dword;
@@ -1009,6 +1036,25 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
       deleteBuffer(richBuf);
     }
 
+    // Split the DOS header into a separate buffer which
+    // starts at offset 0 and has length 0x80
+    bounded_buffer *dosBuf = splitBuffer(file, 0, RICH_OFFSET);
+    if (dosBuf == nullptr) {
+      return false;
+    }
+    // Calculate checksum
+    p.rich.Checksum = calculateRichChecksum(dosBuf, p);
+    if (p.rich.Checksum == p.rich.DecryptionKey) {
+      p.rich.isValid = true;
+    } else {
+      p.rich.isValid = false;
+    }
+    if (dosBuf != nullptr) {
+      deleteBuffer(dosBuf);
+    }
+
+
+  // Rich header not present
   } else {
     p.rich.isPresent = false;
   }

@@ -281,11 +281,15 @@ int printSecs(void *N,
 
 #define DUMP_FIELD(x)                                                   \
   std::cout << "" #x << ": 0x";                                         \
-  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.x) \
+  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.x)    \
             << "\n";
 #define DUMP_DEC_FIELD(x)                                               \
   std::cout << "" #x << ": ";                                           \
-  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.x)     \
+  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.x)    \
+            << "\n";
+#define DUMP_BOOL_FIELD(x)                                                    \
+  std::cout << "" #x << ": ";                                                 \
+  std::cout << std::boolalpha << static_cast<bool>(p->peHeader.x)    \
             << "\n";
 
 int main(int argc, char *argv[]) {
@@ -331,11 +335,12 @@ int main(int argc, char *argv[]) {
     DUMP_FIELD(dos.e_res2[9]);
     DUMP_FIELD(dos.e_lfanew);
     // Print Rich header info
+    DUMP_BOOL_FIELD(rich.isPresent);
     if(p->peHeader.rich.isPresent) {
-      std::cout << "Rich header: present\n";
+      DUMP_FIELD(rich.DecryptionKey);
+      DUMP_FIELD(rich.Checksum);
+      DUMP_BOOL_FIELD(rich.isValid);
       IterRich(p, printRich, NULL);
-    } else {
-      std::cout << "Rich header: not present\n";
     }
     // print out some things
     DUMP_FIELD(nt.Signature);

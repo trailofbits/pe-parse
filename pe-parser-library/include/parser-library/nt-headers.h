@@ -353,7 +353,9 @@ struct rich_header {
   std::vector<rich_entry> Entries;
   std::uint32_t EndSignature;
   std::uint32_t DecryptionKey;
+  std::uint32_t Checksum;
   bool isPresent;
+  bool isValid;
 };
 
 /*
