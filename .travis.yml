@@ -9,7 +9,7 @@ jobs:
           packages:
             - clang-format
       script:
-        - clang-format -i -style=file **/*.{h,cpp}
+        - find . \( -name '*.h' \) -or \( -name '*.cpp' \) | xargs clang-format -i -style=file
         - git diff --exit-code
     - stage: build
       language: cpp
