@@ -23,13 +23,10 @@ addons:
       - libicu-dev
       - clang-format
 
-stages:
-  - name: lint
-    if: os = linux
-
 jobs:
   include:
     - stage: lint
+      if: os = linux
       script:
         - clang-format -i -style=file pe-parser-library/{include,src}/**/*.{h,cpp}
         - git diff --exit-code
