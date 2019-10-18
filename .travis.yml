@@ -25,7 +25,7 @@ jobs:
       addons:
         apt:
           packages:
-            - clang-format
+            - clang-format-8
       script:
         - find . \( -name '*.h' \) -or \( -name '*.cpp' \) | xargs clang-format -i -style=file
         - git diff --exit-code
