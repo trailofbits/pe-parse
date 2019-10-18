@@ -8,10 +8,36 @@ compiler:
 - clang
 - gcc
 
-before_install:
-- ./travis.sh "$TRAVIS_OS_NAME" initialize
-script:
-- ./travis.sh "$TRAVIS_OS_NAME" build
+addons:
+  homebrew:
+    packages:
+      - cmake
+addons:
+  apt:
+    packages:
+      - cmake
+      - python2.7
+      - python-dev
+      - build-essential
+      - realpath
+      - libicu-dev
+      - clang-format
+
+stages:
+  - name: lint
+    if: os = linux
+
+jobs:
+  include:
+    - stage: lint
+      script:
+        - clang-format -i -style=file pe-parser-library/{include,src}/**/*.{h,cpp}
+        - git diff --exit-code
+    - stage: build
+      script:
+        - mkdir build && cd build
+        - cmake ..
+        - make
 
 matrix:
   exclude:
