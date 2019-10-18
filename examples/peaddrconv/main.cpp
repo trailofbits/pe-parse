@@ -1,7 +1,7 @@
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <algorithm>
 
 #include <climits>
 #include <cstring>
@@ -243,7 +243,9 @@ bool convertAddress(ParsedPeRef &pe,
                             result);
     }
 
-    default: { return false; }
+    default: {
+      return false;
+    }
   }
 }
 
@@ -262,7 +264,8 @@ int main(int argc, char *argv[]) {
   char *last_parsed_char = nullptr;
   errno = 0;
 
-  std::uint64_t address = std::strtoull(address_as_string, &last_parsed_char, 16);
+  std::uint64_t address =
+      std::strtoull(address_as_string, &last_parsed_char, 16);
   if (address == 0U && *last_parsed_char != 0) {
     std::cout << "Invalid address specified\n";
     return 1;

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <sstream>
+#include <string>
 
 #ifdef USE_ICU4C
 #include <unicode/unistr.h>
