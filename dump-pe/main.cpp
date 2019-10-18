@@ -22,10 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 #include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 
 #include <parser-library/parse.h>
 
@@ -232,8 +232,8 @@ int printRich(void *N, rich_entry r) {
 
   std::cout << std::setw(10) << "ProdId:" << std::setw(7) << r.ProductId;
   std::cout << std::setw(10) << "Build:" << std::setw(7) << r.BuildNumber;
-  std::cout << std::setw(10) << "Name:"
-            << std::setw(20) << GetRichProductName(r.ProductId, r.BuildNumber);
+  std::cout << std::setw(10) << "Name:" << std::setw(20)
+            << GetRichProductName(r.ProductId, r.BuildNumber);
   std::cout << std::setw(10) << "Count:" << std::setw(7) << r.Count << "\n";
   return 0;
 }
@@ -275,22 +275,20 @@ int printSecs(void *N,
   if (data)
     std::cout << "Sec Size: " << std::dec << data->bufLen << "\n";
   else
-    std::cout << "Sec Size: 0" << "\n";
+    std::cout << "Sec Size: 0"
+              << "\n";
   return 0;
 }
 
-#define DUMP_FIELD(x)                                                   \
-  std::cout << "" #x << ": 0x";                                         \
-  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.x)    \
-            << "\n";
-#define DUMP_DEC_FIELD(x)                                               \
-  std::cout << "" #x << ": ";                                           \
-  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.x)    \
-            << "\n";
-#define DUMP_BOOL_FIELD(x)                                                    \
-  std::cout << "" #x << ": ";                                                 \
-  std::cout << std::boolalpha << static_cast<bool>(p->peHeader.x)    \
-            << "\n";
+#define DUMP_FIELD(x)           \
+  std::cout << "" #x << ": 0x"; \
+  std::cout << std::hex << static_cast<std::uint64_t>(p->peHeader.x) << "\n";
+#define DUMP_DEC_FIELD(x)     \
+  std::cout << "" #x << ": "; \
+  std::cout << std::dec << static_cast<std::uint64_t>(p->peHeader.x) << "\n";
+#define DUMP_BOOL_FIELD(x)    \
+  std::cout << "" #x << ": "; \
+  std::cout << std::boolalpha << static_cast<bool>(p->peHeader.x) << "\n";
 
 int main(int argc, char *argv[]) {
   if (argc != 2 || (argc == 2 && std::strcmp(argv[1], "--help") == 0)) {
@@ -336,7 +334,7 @@ int main(int argc, char *argv[]) {
     DUMP_FIELD(dos.e_lfanew);
     // Print Rich header info
     DUMP_BOOL_FIELD(rich.isPresent);
-    if(p->peHeader.rich.isPresent) {
+    if (p->peHeader.rich.isPresent) {
       DUMP_FIELD(rich.DecryptionKey);
       DUMP_FIELD(rich.Checksum);
       DUMP_BOOL_FIELD(rich.isValid);
@@ -409,15 +407,20 @@ int main(int argc, char *argv[]) {
 #undef DUMP_FIELD
 #undef DUMP_DEC_FIELD
 
-    std::cout << "Imports: " << "\n";
+    std::cout << "Imports: "
+              << "\n";
     IterImpVAString(p, printImports, NULL);
-    std::cout << "Relocations: " << "\n";
+    std::cout << "Relocations: "
+              << "\n";
     IterRelocs(p, printRelocs, NULL);
-    std::cout << "Symbols (symbol table): " << "\n";
+    std::cout << "Symbols (symbol table): "
+              << "\n";
     IterSymbols(p, printSymbols, NULL);
-    std::cout << "Sections: " << "\n";
+    std::cout << "Sections: "
+              << "\n";
     IterSec(p, printSecs, NULL);
-    std::cout << "Exports: " << "\n";
+    std::cout << "Exports: "
+              << "\n";
     IterExpVA(p, printExps, NULL);
 
     // read the first 8 bytes from the entry point and print them
@@ -425,7 +428,8 @@ int main(int argc, char *argv[]) {
     if (GetEntryPoint(p, entryPoint)) {
       std::cout << "First 8 bytes from entry point (0x";
 
-      std::cout << std::hex << entryPoint << "):" << "\n";
+      std::cout << std::hex << entryPoint << "):"
+                << "\n";
       for (std::size_t i = 0; i < 8; i++) {
         std::uint8_t b;
         if (!ReadByteAtVA(p, i + entryPoint, b)) {
@@ -438,7 +442,8 @@ int main(int argc, char *argv[]) {
       std::cout << "\n";
     }
 
-    std::cout << "Resources: " << "\n";
+    std::cout << "Resources: "
+              << "\n";
     IterRsrc(p, printRsrc, NULL);
     DestructParsedPE(p);
   } else {
