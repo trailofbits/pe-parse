@@ -1,6 +1,7 @@
 jobs:
   include:
     - stage: lint
+      language: minimal
       os:
         - linux
       addons:
@@ -8,7 +9,7 @@ jobs:
           packages:
             - clang-format
       script:
-        - clang-format -i -style=file pe-parser-library/{include,src}/**/*.{h,cpp}
+        - clang-format -i -style=file **/*.{h,cpp}
         - git diff --exit-code
     - stage: build
       language: cpp
