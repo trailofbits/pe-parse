@@ -5,7 +5,17 @@ __build_stage_script: &__build_stage_script
     - mkdir build && cd build
     - cmake ..
     - make
-
+  addons:
+    apt:
+      packages:
+        - cmake
+        - python2.7
+        - python-dev
+        - build-essential
+        - realpath
+        - libicu-dev
+    homebrew:
+      - cmake
 
 jobs:
   include:
@@ -22,31 +32,9 @@ jobs:
     - <<: *__build_stage_script
       os: linux
       compiler: clang
-      addons:
-        apt:
-          packages:
-            - cmake
-            - python2.7
-            - python-dev
-            - build-essential
-            - realpath
-            - libicu-dev
     - <<: *__build_stage_script
       os: linux
       compiler: gcc
-      addons:
-        apt:
-          packages:
-            - cmake
-            - python2.7
-            - python-dev
-            - build-essential
-            - realpath
-            - libicu-dev
     - <<: *__build_stage_script
       os: osx
       compiler: clang
-      addons:
-        homebrew:
-          packages:
-            - cmake
