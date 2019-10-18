@@ -1,9 +1,12 @@
+os:
+  - linux
+  - osx
+
 jobs:
   include:
     - stage: lint
       language: minimal
-      os:
-        - linux
+      dist: bionic
       addons:
         apt:
           packages:
@@ -13,9 +16,6 @@ jobs:
         - git diff --exit-code
     - stage: build
       language: cpp
-      os:
-        - linux
-        - osx
       compiler:
         - clang
         - gcc
