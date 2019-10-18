@@ -15,7 +15,8 @@ __build_stage_script: &__build_stage_script
         - realpath
         - libicu-dev
     homebrew:
-      - cmake
+      packages:
+        - cmake
 
 jobs:
   include:
