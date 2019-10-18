@@ -1,3 +1,12 @@
+__build_stage_script: &__build_stage_script
+  stage: build
+  language: cpp
+  script:
+    - mkdir build && cd build
+    - cmake ..
+    - make
+
+
 jobs:
   include:
     - stage: lint
@@ -10,18 +19,10 @@ jobs:
       script:
         - find . \( -name '*.h' \) -or \( -name '*.cpp' \) | xargs clang-format -i -style=file
         - git diff --exit-code
-    - stage: build
-      os:
-        - linux
-        - osx
-      language: cpp
-      compiler:
-        - clang
-        - gcc
+    - <<: *__build_stage_script
+      os: linux
+      compiler: clang
       addons:
-        homebrew:
-          packages:
-            - cmake
         apt:
           packages:
             - cmake
@@ -30,7 +31,22 @@ jobs:
             - build-essential
             - realpath
             - libicu-dev
-      script:
-        - mkdir build && cd build
-        - cmake ..
-        - make
+    - <<: *__build_stage_script
+      os: linux
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - cmake
+            - python2.7
+            - python-dev
+            - build-essential
+            - realpath
+            - libicu-dev
+    - <<: *__build_stage_script
+      os: osx
+      compiler: clang
+      addons:
+        homebrew:
+          packages:
+            - cmake
