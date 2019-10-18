@@ -1,45 +1,43 @@
-language: cpp
-
-os:
-- linux
-- osx
-
-compiler:
-- clang
-- gcc
-
-addons:
-  homebrew:
-    packages:
-      - cmake
-addons:
-  apt:
-    packages:
-      - cmake
-      - python2.7
-      - python-dev
-      - build-essential
-      - realpath
-      - libicu-dev
-      - clang-format
-
 jobs:
   include:
     - stage: lint
-      if: os = linux
+      os:
+        - linux
+      addons:
+        apt:
+          packages:
+            - clang-format
       script:
         - clang-format -i -style=file pe-parser-library/{include,src}/**/*.{h,cpp}
         - git diff --exit-code
     - stage: build
+      language: cpp
+      os:
+        - linux
+        - osx
+      compiler:
+        - clang
+        - gcc
+      addons:
+        homebrew:
+          packages:
+            - cmake
+        apt:
+          packages:
+            - cmake
+            - python2.7
+            - python-dev
+            - build-essential
+            - realpath
+            - libicu-dev
+      matrix:
+        exclude:
+        - compiler: gcc
+          os: osx
       script:
         - mkdir build && cd build
         - cmake ..
         - make
-
-matrix:
-  exclude:
-  - compiler: gcc
-    os: osx
 
 env:
   global:
