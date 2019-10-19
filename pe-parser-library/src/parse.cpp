@@ -1068,53 +1068,6 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
     p.rich.isPresent = false;
   }
 
-  // read rich header
-  std::uint32_t dword;
-  std::uint32_t rich_end_signature_offset;
-  std::uint32_t xor_key;
-  bool found_rich = false;
-
-  // Start reading from RICH_OFFSET (0x80), a known Rich header offset.
-  // Note: 0x80 is based on anecdotal evidence.
-  //
-  // Iterate over the DWORDs, hence why i increments 4 bytes at a time.
-  for (std::uint32_t i = RICH_OFFSET; i < offset; i += 4) {
-    if (!readDword(file, i, dword)) {
-      PE_ERR(PEERR_READ);
-      return false;
-    }
-
-    // Found the trailing Rich signature
-    if (dword == RICH_MAGIC_END) {
-      found_rich = true;
-      rich_end_signature_offset = i;
-      break;
-    }
-  }
-
-  if (found_rich) {
-    // Get the XOR decryption key.  It is the DWORD immediately
-    // after the Rich signature.
-    if (!readDword(file, rich_end_signature_offset + 4, xor_key)) {
-      PE_ERR(PEERR_READ);
-      return false;
-    }
-
-    // Split the Rich header out into its own buffer
-    bounded_buffer *richBuf = splitBuffer(file, 0x80, rich_end_signature_offset + 4);
-    if (richBuf == nullptr) {
-      return false;
-    }
-
-    readRichHeader(richBuf, xor_key, p.rich);
-    if (richBuf != nullptr) {
-      deleteBuffer(richBuf);
-    }
-
-  } else {
-    p.rich.isPresent = false;
-  }
-
   // now, we can read out the fields of the NT headers
   bounded_buffer *ntBuf = splitBuffer(file, curOffset, file->bufLen);
 
