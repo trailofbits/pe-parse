@@ -229,11 +229,12 @@ int printSymbols(void *N,
 
 int printRich(void *N, rich_entry r) {
   static_cast<void>(N);
-
+  std::cout << std::dec;
   std::cout << std::setw(10) << "ProdId:" << std::setw(7) << r.ProductId;
   std::cout << std::setw(10) << "Build:" << std::setw(7) << r.BuildNumber;
-  std::cout << std::setw(10) << "Name:" << std::setw(20)
-            << GetRichProductName(r.ProductId, r.BuildNumber);
+  std::cout << std::setw(10) << "Name:" << std::setw(40)
+            << GetRichProductName(r.BuildNumber) << " "
+            << GetRichObjectType(r.ProductId);
   std::cout << std::setw(10) << "Count:" << std::setw(7) << r.Count << "\n";
   return 0;
 }
