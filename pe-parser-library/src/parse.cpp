@@ -2241,8 +2241,6 @@ const void *GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum) {
     return nullptr;
   }
 
-  std::cerr << "off: 0x" << std::hex << off << std::endl;
-
   std::vector<uint8_t> rawEntry(sec.sectionData->buf + off,
                                 sec.sectionData->buf + off + dir.Size);
 
