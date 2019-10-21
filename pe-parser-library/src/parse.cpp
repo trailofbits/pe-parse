@@ -2205,10 +2205,12 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
   }
 }
 
-const void *GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum) {
+bool GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum, std::vector<std::uint8_t> raw_entry) {
+  raw_entry.clear();
+
   if (pe == nullptr) {
     PE_ERR(PEERR_NONE);
-    return nullptr;
+    return false;
   }
 
   data_directory dir;
@@ -2221,30 +2223,30 @@ const void *GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum) {
     addr = dir.VirtualAddress + pe->peHeader.nt.OptionalHeader64.ImageBase;
   } else {
     PE_ERR(PEERR_MAGIC);
-    return nullptr;
+    return false;
   }
 
   if (dir.Size <= 0) {
     PE_ERR(PEERR_SIZE);
-    return nullptr;
+    return false;
   }
 
   section sec;
   if (!getSecForVA(pe->internal->secs, addr, sec)) {
     PE_ERR(PEERR_SECTVA);
-    return nullptr;
+    return false;
   }
 
   auto off = static_cast<std::uint32_t>(addr - sec.sectionBase);
   if (off + dir.Size >= sec.sectionData->bufLen) {
     PE_ERR(PEERR_SIZE);
-    return nullptr;
+    return false;
   }
 
-  std::vector<uint8_t> rawEntry(sec.sectionData->buf + off,
-                                sec.sectionData->buf + off + dir.Size);
 
-  return rawEntry.data();
+  raw_entry.assign(sec.sectionData->buf + off, sec.sectionData->buf + off + dir.Size);
+
+  return true;
 }
 
 } // namespace peparse
