@@ -2207,7 +2207,7 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
 
 bool GetDataDirectoryEntry(parsed_pe *pe,
                            data_directory_kind dirnum,
-                           std::vector<std::uint8_t> raw_entry) {
+                           std::vector<std::uint8_t> &raw_entry) {
   raw_entry.clear();
 
   if (pe == nullptr) {
