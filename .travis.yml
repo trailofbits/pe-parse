@@ -5,6 +5,9 @@ __build_stage_script: &__build_stage_script
     - mkdir build && cd build
     - cmake ..
     - make
+    - cd ../python
+    - python2 setup.py build
+    - python3 setup.py build
   addons:
     apt:
       packages:
@@ -17,6 +20,14 @@ __build_stage_script: &__build_stage_script
     homebrew:
       packages:
         - cmake
+    coverity_scan:
+      project:
+        name: "trailofbits/pe-parse"
+        description: "Principled, lightweight C/C++ PE parser"
+      notification_email: dan@trailofbits.com
+      build_command_prepend: mkdir build && cd build && cmake ..
+      build_command: make
+      branch_pattern: master
 
 jobs:
   include:
