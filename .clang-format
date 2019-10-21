@@ -2,7 +2,6 @@ AlignEscapedNewlinesLeft: true
 AllowShortFunctionsOnASingleLine: false
 BinPackArguments: false
 BinPackParameters: false
-BreakBeforeBraces: Attach
 ColumnLimit: 80
 IndentCaseLabels: true
 IndentWidth: 2

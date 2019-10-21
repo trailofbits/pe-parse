@@ -704,7 +704,8 @@ static PyObject *pepy_parsed_get_entry_point(PyObject *self, PyObject *args) {
   return ret;
 }
 
-static PyObject *pepy_parsed_get_machine_as_str(PyObject *self, PyObject *args) {
+static PyObject *pepy_parsed_get_machine_as_str(PyObject *self,
+                                                PyObject *args) {
   PyObject *ret;
   const char *str;
 
@@ -721,7 +722,8 @@ static PyObject *pepy_parsed_get_machine_as_str(PyObject *self, PyObject *args) 
   return ret;
 }
 
-static PyObject *pepy_parsed_get_subsystem_as_str(PyObject *self, PyObject *args) {
+static PyObject *pepy_parsed_get_subsystem_as_str(PyObject *self,
+                                                  PyObject *args) {
   PyObject *ret;
   const char *str;
 
@@ -1079,9 +1081,8 @@ static PyObject *pepy_parsed_get_relocations(PyObject *self, PyObject *args) {
 
 #define PEPY_PARSED_GET(ATTR, VAL)                                         \
   static PyObject *pepy_parsed_get_##ATTR(PyObject *self, void *closure) { \
-    PyObject *ret =                                                        \
-        PyLong_FromUnsignedLongLong(                                       \
-            ((pepy_parsed *) self)->pe->peHeader.nt.VAL);                  \
+    PyObject *ret = PyLong_FromUnsignedLongLong(                           \
+        ((pepy_parsed *) self)->pe->peHeader.nt.VAL);                      \
     if (!ret)                                                              \
       PyErr_SetString(PyExc_AttributeError, "Error getting attribute.");   \
     return ret;                                                            \

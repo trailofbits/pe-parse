@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include "to_string.h"
 
 #ifdef _MSC_VER
-#define __typeof__(x) std::remove_reference < decltype(x) > ::type
+#define __typeof__(x) std::remove_reference < decltype(x)> ::type
 #endif
 
 #define PE_ERR(x)               \
@@ -137,6 +137,7 @@ enum pe_err {
   PEERR_MAGIC = 9,
   PEERR_BUFFER = 10,
   PEERR_ADDRESS = 11,
+  PEERR_SIZE = 12,
 };
 
 bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
@@ -167,7 +168,8 @@ typedef struct _parsed_pe {
 // Resolve a Rich header product id / build number pair to a known
 // product name
 typedef std::pair<std::uint16_t, std::uint16_t> ProductKey;
-const std::string& GetRichProductName(std::uint16_t prodId, std::uint16_t buildNum);
+const std::string &GetRichProductName(std::uint16_t prodId,
+                                      std::uint16_t buildNum);
 
 // get parser error status as integer
 std::uint32_t GetPEErr();
@@ -230,4 +232,7 @@ const char *GetMachineAsString(parsed_pe *pe);
 
 // get subsystem as human readable string
 const char *GetSubsystemAsString(parsed_pe *pe);
+
+// get a table or string by its data directory entry
+const void *GetDataDirectoryEntry(parsed_pe *pe, data_directory_kind dirnum);
 } // namespace peparse
