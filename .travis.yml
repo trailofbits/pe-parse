@@ -25,7 +25,7 @@ __build_stage_script: &__build_stage_script
         name: "trailofbits/pe-parse"
         description: "Principled, lightweight C/C++ PE parser"
       notification_email: dan@trailofbits.com
-      build_command_prepend: mkdir build && cd build && cmake ..
+      build_command_prepend: mkdir cov_build && cd cov_build && cmake ..
       build_command: make
       branch_pattern: master
 
