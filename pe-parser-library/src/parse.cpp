@@ -941,7 +941,7 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
 
   // read rich header
   std::uint32_t dword;
-  std::uint32_t rich_end_signature_offset;
+  std::uint32_t rich_end_signature_offset = 0;
   std::uint32_t xor_key;
   bool found_rich = false;
 
