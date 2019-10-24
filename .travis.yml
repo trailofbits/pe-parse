@@ -50,6 +50,13 @@ jobs:
     - <<: *__build_stage_script
       os: osx
       compiler: clang
+    - stage: build
+      os: windows
+      language: cpp
+      script:
+        - mkdir build && cd build
+        - cmake -G "Visual Studio 15 2017 Win64" ..
+        - cmake --build .
 
 env:
   global:
