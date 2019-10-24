@@ -126,7 +126,9 @@ struct parsed_pe_internal {
 // The mapping of Rich header product id / build number pairs
 // to strings
 static const std::map<ProductKey, const std::string> ProductMap = {
-    {std::make_pair(1, 0), "Imported Functions"}};
+    {std::make_pair(static_cast<std::uint16_t>(1),
+                    static_cast<std::uint16_t>(0)),
+     "Imported Functions"}};
 
 static const std::string kUnknownProduct = "<unknown>";
 
