@@ -126,7 +126,9 @@ struct parsed_pe_internal {
 // The mapping of Rich header product id / build number pairs
 // to strings
 static const std::map<ProductKey, const std::string> ProductMap = {
-    {std::make_pair(1, 0), "Imported Functions"}};
+    {std::make_pair(static_cast<std::uint16_t>(1),
+                    static_cast<std::uint16_t>(0)),
+     "Imported Functions"}};
 
 static const std::string kUnknownProduct = "<unknown>";
 
@@ -939,7 +941,7 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
 
   // read rich header
   std::uint32_t dword;
-  std::uint32_t rich_end_signature_offset;
+  std::uint32_t rich_end_signature_offset = 0;
   std::uint32_t xor_key;
   bool found_rich = false;
 
