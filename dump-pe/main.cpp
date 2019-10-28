@@ -90,7 +90,6 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
       break;
     default:
       std::cout << "UNKNOWN";
-      break;
   }
 
   std::cout << " VA: 0x" << std::hex << relocAddr << "\n";
