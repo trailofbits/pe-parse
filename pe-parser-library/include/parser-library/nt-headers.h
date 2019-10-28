@@ -48,6 +48,7 @@ constexpr std::uint16_t NT_OPTIONAL_64_MAGIC = 0x20B;
 constexpr std::uint16_t NT_SHORT_NAME_LEN = 8;
 constexpr std::uint16_t SYMTAB_RECORD_LEN = 18;
 
+#ifndef _PEPARSE_WINDOWS_CONFLICTS
 // Machine Types
 constexpr std::uint16_t IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
 constexpr std::uint16_t IMAGE_FILE_MACHINE_ALPHA = 0x1d3;     // Alpha_AXP
@@ -209,6 +210,7 @@ constexpr std::uint8_t IMAGE_SYM_CLASS_FILE = 103;
 constexpr std::uint8_t IMAGE_SYM_CLASS_SECTION = 104;
 constexpr std::uint8_t IMAGE_SYM_CLASS_WEAK_EXTERNAL = 105;
 constexpr std::uint8_t IMAGE_SYM_CLASS_CLR_TOKEN = 107;
+#endif
 // clang-format on
 
 struct dos_header {
@@ -440,15 +442,15 @@ struct export_dir_table {
 };
 
 enum reloc_type {
-  ABSOLUTE = 0,
-  HIGH = 1,
-  LOW = 2,
-  HIGHLOW = 3,
-  HIGHADJ = 4,
-  MIPS_JMPADDR = 5,
-  MIPS_JMPADDR16 = 9,
-  IA64_IMM64 = 9,
-  DIR64 = 10
+  RELOC_ABSOLUTE = 0,
+  RELOC_HIGH = 1,
+  RELOC_LOW = 2,
+  RELOC_HIGHLOW = 3,
+  RELOC_HIGHADJ = 4,
+  RELOC_MIPS_JMPADDR = 5,
+  RELOC_MIPS_JMPADDR16 = 9,
+  RELOC_IA64_IMM64 = 9,
+  RELOC_DIR64 = 10
 };
 
 struct reloc_block {

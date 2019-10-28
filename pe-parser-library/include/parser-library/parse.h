@@ -99,6 +99,7 @@ struct resource {
   bounded_buffer *buf;
 };
 
+#ifndef _PEPARSE_WINDOWS_CONFLICTS
 // http://msdn.microsoft.com/en-us/library/ms648009(v=vs.85).aspx
 enum resource_type {
   RT_CURSOR = 1,
@@ -123,6 +124,7 @@ enum resource_type {
   RT_HTML = 23,
   RT_MANIFEST = 24
 };
+#endif
 
 enum pe_err {
   PEERR_NONE = 0,

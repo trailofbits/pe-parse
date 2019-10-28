@@ -64,28 +64,28 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
 
   std::cout << "TYPE: ";
   switch (type) {
-    case ABSOLUTE:
+    case RELOC_ABSOLUTE:
       std::cout << "ABSOLUTE";
       break;
-    case HIGH:
+    case RELOC_HIGH:
       std::cout << "HIGH";
       break;
-    case LOW:
+    case RELOC_LOW:
       std::cout << "LOW";
       break;
-    case HIGHLOW:
+    case RELOC_HIGHLOW:
       std::cout << "HIGHLOW";
       break;
-    case HIGHADJ:
+    case RELOC_HIGHADJ:
       std::cout << "HIGHADJ";
       break;
-    case MIPS_JMPADDR:
+    case RELOC_MIPS_JMPADDR:
       std::cout << "MIPS_JMPADDR";
       break;
-    case MIPS_JMPADDR16:
+    case RELOC_MIPS_JMPADDR16:
       std::cout << "MIPS_JMPADD16";
       break;
-    case DIR64:
+    case RELOC_DIR64:
       std::cout << "DIR64";
       break;
     default:
