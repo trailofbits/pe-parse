@@ -1065,7 +1065,7 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
 
 // zero extends its first argument to 32 bits and then performs a rotate left
 // operation equal to the second arguments value of the first argument’s bits
-std::uint32_t rol(std::uint32_t val, std::uint32_t num) {
+static inline std::uint32_t rol(std::uint32_t val, std::uint32_t num) {
   return ((val << num) & 0xffffffff) | (val >> (32 - num));
 }
 
