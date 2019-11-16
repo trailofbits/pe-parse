@@ -171,8 +171,8 @@ typedef struct _parsed_pe {
 // Resolve a Rich header product id / build number pair to a known
 // product name
 typedef std::pair<std::uint16_t, std::uint16_t> ProductKey;
-const std::string& GetRichObjectType(std::uint16_t prodId);
-const std::string& GetRichProductName(std::uint16_t buildNum);
+const std::string &GetRichObjectType(std::uint16_t prodId);
+const std::string &GetRichProductName(std::uint16_t buildNum);
 
 // get parser error status as integer
 std::uint32_t GetPEErr();
