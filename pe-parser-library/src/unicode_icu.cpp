@@ -26,8 +26,7 @@ THE SOFTWARE.
 #include <unicode/unistr.h>
 
 namespace peparse {
-std::string from_utf16(const UCharString &u)
-{
+std::string from_utf16(const UCharString &u) {
   icu::UnicodeString utf16_string = icu::UnicodeString(u.data(), u.length());
   std::string result;
   utf16_string.toUTF8String(result);

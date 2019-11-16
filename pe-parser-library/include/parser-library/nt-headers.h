@@ -47,22 +47,8 @@ constexpr std::uint16_t NT_OPTIONAL_32_MAGIC = 0x10B;
 constexpr std::uint16_t NT_OPTIONAL_64_MAGIC = 0x20B;
 constexpr std::uint16_t NT_SHORT_NAME_LEN = 8;
 constexpr std::uint16_t SYMTAB_RECORD_LEN = 18;
-constexpr std::uint16_t DIR_EXPORT = 0;
-constexpr std::uint16_t DIR_IMPORT = 1;
-constexpr std::uint16_t DIR_RESOURCE = 2;
-constexpr std::uint16_t DIR_EXCEPTION = 3;
-constexpr std::uint16_t DIR_SECURITY = 4;
-constexpr std::uint16_t DIR_BASERELOC = 5;
-constexpr std::uint16_t DIR_DEBUG = 6;
-constexpr std::uint16_t DIR_ARCHITECTURE = 7;
-constexpr std::uint16_t DIR_GLOBALPTR = 8;
-constexpr std::uint16_t DIR_TLS = 9;
-constexpr std::uint16_t DIR_LOAD_CONFIG = 10;
-constexpr std::uint16_t DIR_BOUND_IMPORT = 11;
-constexpr std::uint16_t DIR_IAT = 12;
-constexpr std::uint16_t DIR_DELAY_IMPORT = 13;
-constexpr std::uint16_t DIR_COM_DESCRIPTOR = 14;
 
+#ifndef _PEPARSE_WINDOWS_CONFLICTS
 // Machine Types
 constexpr std::uint16_t IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
 constexpr std::uint16_t IMAGE_FILE_MACHINE_ALPHA = 0x1d3;     // Alpha_AXP
@@ -224,6 +210,7 @@ constexpr std::uint8_t IMAGE_SYM_CLASS_FILE = 103;
 constexpr std::uint8_t IMAGE_SYM_CLASS_SECTION = 104;
 constexpr std::uint8_t IMAGE_SYM_CLASS_WEAK_EXTERNAL = 105;
 constexpr std::uint8_t IMAGE_SYM_CLASS_CLR_TOKEN = 107;
+#endif
 // clang-format on
 
 struct dos_header {
@@ -261,6 +248,25 @@ struct file_header {
 struct data_directory {
   std::uint32_t VirtualAddress;
   std::uint32_t Size;
+};
+
+enum data_directory_kind {
+  DIR_EXPORT = 0,
+  DIR_IMPORT = 1,
+  DIR_RESOURCE = 2,
+  DIR_EXCEPTION = 3,
+  DIR_SECURITY = 4,
+  DIR_BASERELOC = 5,
+  DIR_DEBUG = 6,
+  DIR_ARCHITECTURE = 7,
+  DIR_GLOBALPTR = 8,
+  DIR_TLS = 9,
+  DIR_LOAD_CONFIG = 10,
+  DIR_BOUND_IMPORT = 11,
+  DIR_IAT = 12,
+  DIR_DELAY_IMPORT = 13,
+  DIR_COM_DESCRIPTOR = 14,
+  DIR_RESERVED = 15,
 };
 
 struct optional_header_32 {
@@ -438,19 +444,116 @@ struct export_dir_table {
 };
 
 enum reloc_type {
-  ABSOLUTE = 0,
-  HIGH = 1,
-  LOW = 2,
-  HIGHLOW = 3,
-  HIGHADJ = 4,
-  MIPS_JMPADDR = 5,
-  MIPS_JMPADDR16 = 9,
-  IA64_IMM64 = 9,
-  DIR64 = 10
+  RELOC_ABSOLUTE = 0,
+  RELOC_HIGH = 1,
+  RELOC_LOW = 2,
+  RELOC_HIGHLOW = 3,
+  RELOC_HIGHADJ = 4,
+  RELOC_MIPS_JMPADDR = 5,
+  RELOC_MIPS_JMPADDR16 = 9,
+  RELOC_IA64_IMM64 = 9,
+  RELOC_DIR64 = 10
 };
 
 struct reloc_block {
   std::uint32_t PageRVA;
   std::uint32_t BlockSize;
+};
+
+struct image_load_config_code_integrity {
+  std::uint16_t Flags;
+  std::uint16_t Catalog;
+  std::uint32_t CatalogOffset;
+  std::uint32_t Reserved;
+};
+
+struct image_load_config_32 {
+  std::uint32_t Size;
+  std::uint32_t TimeDateStamp;
+  std::uint16_t MajorVersion;
+  std::uint16_t MinorVersion;
+  std::uint32_t GlobalFlagsClear;
+  std::uint32_t GlobalFlagsSet;
+  std::uint32_t CriticalSectionDefaultTimeout;
+  std::uint32_t DeCommitFreeBlockThreshold;
+  std::uint32_t DeCommitTotalFreeThreshold;
+  std::uint32_t LockPrefixTable;
+  std::uint32_t MaximumAllocationSize;
+  std::uint32_t VirtualMemoryThreshold;
+  std::uint32_t ProcessHeapFlags;
+  std::uint32_t ProcessAffinityMask;
+  std::uint16_t CSDVersion;
+  std::uint16_t DependentLoadFlags;
+  std::uint32_t EditList;
+  std::uint32_t SecurityCookie;
+  std::uint32_t SEHandlerTable;
+  std::uint32_t SEHandlerCount;
+  std::uint32_t GuardCFCheckFunctionPointer;
+  std::uint32_t GuardCFDispatchFunctionPointer;
+  std::uint32_t GuardCFFunctionTable;
+  std::uint32_t GuardCFFunctionCount;
+  std::uint32_t GuardFlags;
+  image_load_config_code_integrity CodeIntegrity;
+  std::uint32_t GuardAddressTakenIatEntryTable;
+  std::uint32_t GuardAddressTakenIatEntryCount;
+  std::uint32_t GuardLongJumpTargetTable;
+  std::uint32_t GuardLongJumpTargetCount;
+  std::uint32_t DynamicValueRelocTable;
+  std::uint32_t CHPEMetadataPointer;
+  std::uint32_t GuardRFFailureRoutine;
+  std::uint32_t GuardRFFailureRoutineFunctionPointer;
+  std::uint32_t DynamicValueRelocTableOffset;
+  std::uint16_t DynamicValueRelocTableSection;
+  std::uint16_t Reserved2;
+  std::uint32_t GuardRFVerifyStackPointerFunctionPointer;
+  std::uint32_t HotPatchTableOffset;
+  std::uint32_t Reserved3;
+  std::uint32_t EnclaveConfigurationPointer;
+  std::uint32_t VolatileMetadataPointer;
+};
+
+struct image_load_config_64 {
+  std::uint32_t Size;
+  std::uint32_t TimeDateStamp;
+  std::uint16_t MajorVersion;
+  std::uint16_t MinorVersion;
+  std::uint32_t GlobalFlagsClear;
+  std::uint32_t GlobalFlagsSet;
+  std::uint32_t CriticalSectionDefaultTimeout;
+  std::uint64_t DeCommitFreeBlockThreshold;
+  std::uint64_t DeCommitTotalFreeThreshold;
+  std::uint64_t LockPrefixTable;
+  std::uint64_t MaximumAllocationSize;
+  std::uint64_t VirtualMemoryThreshold;
+  std::uint64_t ProcessAffinityMask;
+  std::uint32_t ProcessHeapFlags;
+  std::uint16_t CSDVersion;
+  std::uint16_t DependentLoadFlags;
+  std::uint64_t EditList;
+  std::uint64_t SecurityCookie;
+  std::uint64_t SEHandlerTable;
+  std::uint64_t SEHandlerCount;
+  std::uint64_t GuardCFCheckFunctionPointer;
+  std::uint64_t GuardCFDispatchFunctionPointer;
+  std::uint64_t GuardCFFunctionTable;
+  std::uint64_t GuardCFFunctionCount;
+  std::uint32_t GuardFlags;
+  image_load_config_code_integrity CodeIntegrity;
+  std::uint64_t GuardAddressTakenIatEntryTable;
+  std::uint64_t GuardAddressTakenIatEntryCount;
+  std::uint64_t GuardLongJumpTargetTable;
+  std::uint64_t GuardLongJumpTargetCount;
+  std::uint64_t DynamicValueRelocTable;
+  std::uint64_t CHPEMetadataPointer;
+  std::uint64_t GuardRFFailureRoutine;
+  std::uint64_t GuardRFFailureRoutineFunctionPointer;
+  std::uint32_t DynamicValueRelocTableOffset;
+  std::uint16_t DynamicValueRelocTableSection;
+  std::uint16_t Reserved2;
+  std::uint64_t GuardRFVerifyStackPointerFunctionPointer;
+  std::uint32_t HotPatchTableOffset;
+  std::uint32_t Reserved3;
+  std::uint64_t EnclaveConfigurationPointer;
+  std::uint64_t VolatileMetadataPointer;
 };
 } // namespace peparse

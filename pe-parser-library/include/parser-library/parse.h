@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include "to_string.h"
 
 #ifdef _MSC_VER
-#define __typeof__(x) std::remove_reference < decltype(x) > ::type
+#define __typeof__(x) std::remove_reference < decltype(x)> ::type
 #endif
 
 #define PE_ERR(x)               \
@@ -99,6 +99,7 @@ struct resource {
   bounded_buffer *buf;
 };
 
+#ifndef _PEPARSE_WINDOWS_CONFLICTS
 // http://msdn.microsoft.com/en-us/library/ms648009(v=vs.85).aspx
 enum resource_type {
   RT_CURSOR = 1,
@@ -123,6 +124,7 @@ enum resource_type {
   RT_HTML = 23,
   RT_MANIFEST = 24
 };
+#endif
 
 enum pe_err {
   PEERR_NONE = 0,
@@ -137,6 +139,7 @@ enum pe_err {
   PEERR_MAGIC = 9,
   PEERR_BUFFER = 10,
   PEERR_ADDRESS = 11,
+  PEERR_SIZE = 12,
 };
 
 bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
@@ -232,4 +235,9 @@ const char *GetMachineAsString(parsed_pe *pe);
 
 // get subsystem as human readable string
 const char *GetSubsystemAsString(parsed_pe *pe);
+
+// get a table or string by its data directory entry
+bool GetDataDirectoryEntry(parsed_pe *pe,
+                           data_directory_kind dirnum,
+                           std::vector<std::uint8_t> &raw_entry);
 } // namespace peparse

@@ -23,6 +23,7 @@ THE SOFTWARE.
 */
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -386,6 +387,7 @@ static const char *pe_err_str[] = {
     "Bad magic",
     "Invalid buffer",
     "Invalid address",
+    "Invalid size",
 };
 
 std::uint32_t GetPEErr() {
@@ -1233,7 +1235,7 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
 
   // read rich header
   std::uint32_t dword;
-  std::uint32_t rich_end_signature_offset;
+  std::uint32_t rich_end_signature_offset = 0;
   std::uint32_t xor_key;
   bool found_rich = false;
 
@@ -2515,6 +2517,52 @@ const char *GetSubsystemAsString(parsed_pe *pe) {
     default:
       return nullptr;
   }
+}
+
+bool GetDataDirectoryEntry(parsed_pe *pe,
+                           data_directory_kind dirnum,
+                           std::vector<std::uint8_t> &raw_entry) {
+  raw_entry.clear();
+
+  if (pe == nullptr) {
+    PE_ERR(PEERR_NONE);
+    return false;
+  }
+
+  data_directory dir;
+  VA addr;
+  if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    dir = pe->peHeader.nt.OptionalHeader.DataDirectory[dirnum];
+    addr = dir.VirtualAddress + pe->peHeader.nt.OptionalHeader.ImageBase;
+  } else if (pe->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    dir = pe->peHeader.nt.OptionalHeader64.DataDirectory[dirnum];
+    addr = dir.VirtualAddress + pe->peHeader.nt.OptionalHeader64.ImageBase;
+  } else {
+    PE_ERR(PEERR_MAGIC);
+    return false;
+  }
+
+  if (dir.Size <= 0) {
+    PE_ERR(PEERR_SIZE);
+    return false;
+  }
+
+  section sec;
+  if (!getSecForVA(pe->internal->secs, addr, sec)) {
+    PE_ERR(PEERR_SECTVA);
+    return false;
+  }
+
+  auto off = static_cast<std::uint32_t>(addr - sec.sectionBase);
+  if (off + dir.Size >= sec.sectionData->bufLen) {
+    PE_ERR(PEERR_SIZE);
+    return false;
+  }
+
+  raw_entry.assign(sec.sectionData->buf + off,
+                   sec.sectionData->buf + off + dir.Size);
+
+  return true;
 }
 
 } // namespace peparse
