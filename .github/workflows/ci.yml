@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  schedule:
+    # run CI every day even if no PRs/merges occur
+    - cron:  '0 12 * * *'
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest", "macos-latest"]
+        compiler:
+        - { CC: "clang", CXX: "clang++" }
+        - { CC: "gcc", CXX: "g++" }
+        exclude:
+        - platform: macos-latest
+          compiler: { CC: "gcc", CXX: "g++" }
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build C
+      env:
+        CC: ${{ matrix.compiler.CC }}
+        CXX: ${{ matrix.compiler.CXX }}
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        make
+    - name: Build Python
+      run: |
+        cd python
+        python2 setup.py build
+        python3 setup.py build
+  test-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build C
+      run: |
+        mkdir build
+        cd build
+        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake --build .
