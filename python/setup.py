@@ -32,7 +32,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 SOURCE_FILES = [os.path.join(here, 'pepy.cpp'),
                 os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'parse.cpp')),
-                os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'buffer.cpp'))]
+                os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'buffer.cpp')),
+                os.path.abspath(os.path.join(here, '..', 'pe-parser-library', 'src', 'unicode_codecvt.cpp'))]
 
 if platform.system() == 'Windows':
   INCLUDE_DIRS = [os.path.abspath(os.path.join(os.path.dirname(sys.executable), 'include')),
