@@ -937,6 +937,14 @@ bool getSections(bounded_buffer *b,
     std::uint32_t highOff = lowOff + curSec.SizeOfRawData;
     thisSec.sectionData = splitBuffer(fileBegin, lowOff, highOff);
 
+    // GH#109: we trusted [lowOff, highOff) to be a range that yields
+    // a valid bounded_buffer, despite these being user-controllable.
+    // splitBuffer correctly handles this, but we failed to check for
+    // the nullptr it returns as a sentinel.
+    if (thisSec.sectionData == nullptr) {
+      return false;
+    }
+
     secs.push_back(thisSec);
   }
 
