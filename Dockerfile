@@ -11,6 +11,7 @@ RUN apk add --no-cache cmake icu-dev clang build-base
 
 COPY . /app/pe-parse
 WORKDIR /app/pe-parse
+ENV CC=clang CXX=clang++
 RUN mkdir build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" .. && \
