@@ -192,5 +192,6 @@ resource data entry.
 
 Authors
 =======
-pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com)
-pepy was written by Wesley Shields (wxs@atarininja.org)
+pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com).
+
+pepy was written by Wesley Shields (wxs@atarininja.org).
