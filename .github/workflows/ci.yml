@@ -17,12 +17,19 @@ jobs:
         compiler:
         - { CC: "clang", CXX: "clang++" }
         - { CC: "gcc", CXX: "g++" }
+        python:
+          - "3.6"
+          - "3.7"
+          - "3.8"
         exclude:
         - platform: macos-latest
           compiler: { CC: "gcc", CXX: "g++" }
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
     - name: Build C
       env:
         CC: ${{ matrix.compiler.CC }}
@@ -35,7 +42,6 @@ jobs:
     - name: Build Python
       run: |
         cd python
-        python2 setup.py build
         python3 setup.py build
   test-windows:
     runs-on: windows-latest
