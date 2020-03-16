@@ -28,7 +28,7 @@ import os
 import sys
 import platform
 
-here = os.path.abspath(os.path.dirname(__file__))
+here = os.path.dirname(__file__)
 pepy = os.path.join(here, "pepy")
 
 with open(os.path.join(pepy, "README.md")) as f:
@@ -39,33 +39,31 @@ with open(os.path.join(here, "VERSION")) as f:
 
 SOURCE_FILES = [
     os.path.join(pepy, "pepy.cpp"),
-    os.path.abspath(os.path.join(here, "pe-parser-library", "src", "parse.cpp")),
-    os.path.abspath(os.path.join(here, "pe-parser-library", "src", "buffer.cpp")),
-    os.path.abspath(
-        os.path.join(here, "pe-parser-library", "src", "unicode_codecvt.cpp")
-    ),
+    os.path.join(here, "pe-parser-library", "src", "parse.cpp"),
+    os.path.join(here, "pe-parser-library", "src", "buffer.cpp"),
+    os.path.join(here, "pe-parser-library", "src", "unicode_codecvt.cpp"),
 ]
 
 if platform.system() == "Windows":
     INCLUDE_DIRS = [
         os.path.abspath(os.path.join(os.path.dirname(sys.executable), "include")),
-        os.path.abspath(os.path.join(here, "pe-parser-library", "include")),
+        os.path.join(here, "pe-parser-library", "include"),
         "C:\\usr\\include",
     ]
     LIBRARY_DIRS = [
         os.path.abspath(os.path.join(os.path.dirname(sys.executable), "libs")),
         "C:\\usr\\lib",
     ]
-    COMPILE_ARGS = ["/EHsc", f"/D\"PEPARSE_VERSION=\\\"{VERSION}\\\"\""]
+    COMPILE_ARGS = ["/EHsc", f'/D"PEPARSE_VERSION=\\"{VERSION}\\""']
 else:
     INCLUDE_DIRS = [
         "/usr/local/include",
         "/opt/local/include",
         "/usr/include",
-        os.path.abspath(os.path.join(here, "pe-parser-library", "include")),
+        os.path.join(here, "pe-parser-library", "include"),
     ]
     LIBRARY_DIRS = ["/usr/lib", "/usr/local/lib"]
-    COMPILE_ARGS = ["-std=c++11", f"-DPEPARSE_VERSION=\"{VERSION}\""]
+    COMPILE_ARGS = ["-std=c++11", f'-DPEPARSE_VERSION="{VERSION}"']
 
 extension_mod = Extension(
     "pepy",
