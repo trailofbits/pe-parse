@@ -56,7 +56,7 @@ if platform.system() == "Windows":
         os.path.abspath(os.path.join(os.path.dirname(sys.executable), "libs")),
         "C:\\usr\\lib",
     ]
-    COMPILE_ARGS = ["/EHsc", f"/DPEPARSE_VERSION=\"{VERSION}\""]
+    COMPILE_ARGS = ["/EHsc", f"/DPEPARSE_VERSION='\"{VERSION}\"'"]
 else:
     INCLUDE_DIRS = [
         "/usr/local/include",
