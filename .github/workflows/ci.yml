@@ -41,7 +41,6 @@ jobs:
         make
     - name: Build pepy
       run: |
-        cd python
         python3 setup.py build
   build-windows:
     strategy:
@@ -64,5 +63,4 @@ jobs:
         cmake --build .
     - name: Build pepy
       run: |
-        cd python
         python setup.py build
