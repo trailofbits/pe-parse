@@ -4,8 +4,14 @@ pepy (pronounced p-pie) is a python binding to the pe-parse parser.
 
 pepy supports Python versions 3.6 and above.
 
-Building
-========
+The easiest way to use pepy is to install it via pip:
+
+```bash
+$ pip3 install pepy
+```
+
+## Building
+
 If you can build pe-parse and have a working python environment (headers and
 libraries) you can build pepy.
 
@@ -17,10 +23,10 @@ libraries) you can build pepy.
 **Building on Windows:** Python 3.x is typically installed as _python.exe_,
 **NOT** _python3.exe_.
 
-Using
-=====
-Parsed object
--------------
+## Using
+
+### Parsed object
+
 There are a number of objects involved in pepy. The main one is the **parsed**
 object. This object is returned by the *parse* method.
 
@@ -93,8 +99,8 @@ The `get_sections`, `get_imports`, `get_exports`, `get_relocations` and
 depends upon the method called. `get_sections` returns a list of `section`
 objects, `get_imports` returns a list of `import` objects, etc.
 
-Section Object
---------------
+### Section Object
+
 The `section` object has the following attributes:
 
 * `base`
@@ -106,31 +112,31 @@ The `section` object has the following attributes:
 * `characteristics`
 * `data`
 
-Import Object
--------------
+### Import Object
+
 The `import` object has the following attributes:
 
 * `sym`
 * `name`
 * `addr`
 
-Export Object
--------------
+### Export Object
+
 The `export` object has the following attributes:
 
 * `mod`
 * `func`
 * `addr`
 
-Relocation Object
------------------
+### Relocation Object
+
 The `relocation` object has the following attributes:
 
 * `type`
 * `addr`
 
-Resource Object
----------------
+### Resource Object
+
 The `resource` object has the following attributes:
 
 * `type_str`
@@ -191,8 +197,8 @@ In these cases you may find that `len(resource.data)` is 0 but `resource.size` i
 greater than 0. The `size` attribute is the size of the data as declared by the
 resource data entry.
 
-Authors
-=======
+## Authors
+
 pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com).
 
 pepy was written by Wesley Shields (wxs@atarininja.org).
