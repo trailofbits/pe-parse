@@ -10,7 +10,7 @@ on:
     - cron:  '0 12 * * *'
 
 jobs:
-  test:
+  build:
     strategy:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
@@ -30,7 +30,7 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python }}
-    - name: Build C
+    - name: Build peparse
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
@@ -39,17 +39,30 @@ jobs:
         cd build
         cmake ..
         make
-    - name: Build Python
+    - name: Build pepy
       run: |
         cd python
         python3 setup.py build
-  test-windows:
+  build-windows:
+    strategy:
+      matrix:
+        python:
+          - "3.6"
+          - "3.7"
+          - "3.8"
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build C
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Build peparse
       run: |
         mkdir build
         cd build
         cmake -G "Visual Studio 16 2019" -A x64 ..
         cmake --build .
+    - name: Build pepy
+      run: |
+        cd python
+        python3 setup.py build
