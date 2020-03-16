@@ -76,6 +76,7 @@ extension_mod = Extension(
 
 setup(
     name="pepy",
+    python_requires=">= 3.6",
     version=VERSION,
     description="Python bindings for pe-parse",
     long_description=README,
