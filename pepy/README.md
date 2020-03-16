@@ -83,9 +83,9 @@ import time
 import pepy
 
 p = pepy.parse("/path/to/exe")
-print "Timedatestamp: %s" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.timedatestamp))
+print("Timedatestamp: %s" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(p.timedatestamp)))
 ep = p.get_entry_point()
-print "Entry point: 0x%x" % ep
+print("Entry point: 0x%x" % ep)
 ```
 
 The `get_sections`, `get_imports`, `get_exports`, `get_relocations` and
@@ -162,27 +162,28 @@ The following code shows how to iterate through resources:
 import pepy
 
 from hashlib import md5
+import sys
 
 p = pepy.parse(sys.argv[1])
 resources = p.get_resources()
-print "Resources: (%i)" % len(resources)
+print("Resources: (%i)" % len(resources))
 for resource in resources:
-    print "[+] MD5: (%i) %s" % (len(resource.data), md5(resource.data).hexdigest())
+    print("[+] MD5: (%i) %s" % (len(resource.data), md5(resource.data).hexdigest()))
     if resource.type_str:
-        print "\tType string: %s" % resource.type_str
+        print("\tType string: %s" % resource.type_str)
     else:
-        print "\tType: %s (%s)" % (hex(resource.type), resource.type_as_str())
+        print("\tType: %s (%s)" % (hex(resource.type), resource.type_as_str()))
     if resource.name_str:
-        print "\tName string: %s" % resource.name_str
+        print("\tName string: %s" % resource.name_str)
     else:
-        print "\tName: %s" % hex(resource.name)
+        print("\tName: %s" % hex(resource.name))
     if resource.lang_str:
-        print "\tLang string: %s" % resource.lang_str
+        print("\tLang string: %s" % resource.lang_str)
     else:
-        print "\tLang: %s" % hex(resource.lang)
-    print "\tCodepage: %s" % hex(resource.codepage)
-    print "\tRVA: %s" % hex(resource.RVA)
-    print "\tSize: %s" % hex(resource.size)
+        print("\tLang: %s" % hex(resource.lang))
+    print("\tCodepage: %s" % hex(resource.codepage))
+    print("\tRVA: %s" % hex(resource.RVA))
+    print("\tSize: %s" % hex(resource.size))
 ```
 
 Note that some binaries (particularly packed) may have corrupt resource entries.
