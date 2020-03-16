@@ -29,6 +29,13 @@ import sys
 import platform
 
 here = os.path.abspath(os.path.dirname(__file__))
+toplevel = os.path.dirname(here)
+
+with open(os.path.join(here, "README.md")) as f:
+    README = f.read()
+
+with open(os.path.join(toplevel, "VERSION")) as f:
+    VERSION = f.read().strip()
 
 SOURCE_FILES = [
     os.path.join(here, "pepy.cpp"),
@@ -49,7 +56,7 @@ if platform.system() == "Windows":
         os.path.abspath(os.path.join(os.path.dirname(sys.executable), "libs")),
         "C:\\usr\\lib",
     ]
-    COMPILE_ARGS = ["/EHsc"]
+    COMPILE_ARGS = ["/EHsc", f"/DPEPARSE_VERSION=\"{VERSION}\""]
 else:
     INCLUDE_DIRS = [
         "/usr/local/include",
@@ -58,7 +65,7 @@ else:
         os.path.abspath(os.path.join(here, "..", "pe-parser-library", "include")),
     ]
     LIBRARY_DIRS = ["/usr/lib", "/usr/local/lib"]
-    COMPILE_ARGS = ["-std=c++11", "-g", "-O0"]  # Debug only
+    COMPILE_ARGS = ["-std=c++11", f"-DPEPARSE_VERSION=\"{VERSION}\""]
 
 extension_mod = Extension(
     "pepy",
@@ -69,14 +76,14 @@ extension_mod = Extension(
     library_dirs=LIBRARY_DIRS,
 )
 
-
 setup(
     name="pepy",
-    version="0.1",
-    description="python bindings for pe-parse",
+    version=VERSION,
+    description="Python bindings for pe-parse",
+    long_description=README,
+    long_description_content_type="text/markdown",
     author="Wesley Shields",
     author_email="wxs@atarininja.org",
     license="BSD",
-    long_description="Python bindings for pe-parse",
     ext_modules=[extension_mod],
 )
