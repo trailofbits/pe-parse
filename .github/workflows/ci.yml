@@ -42,6 +42,10 @@ jobs:
     - name: Build pepy
       run: |
         python3 setup.py build
+    - name: Build and test pepy sdist
+      run: |
+        python3 setup.py sdist
+        pip install --user dist/*.tar.gz
   build-windows:
     strategy:
       matrix:
