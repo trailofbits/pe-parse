@@ -23,7 +23,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 import os
 import sys
 import platform
