@@ -60,7 +60,7 @@ jobs:
         python3 -m pip install --user dist/*.tar.gz
     - name: test
       run: |
-        true
+        python3 test/test_pepy.py test/assets/example.exe
 
   pe-parse-windows:
     strategy:
@@ -95,6 +95,10 @@ jobs:
     - name: build
       run: |
         python setup.py build
+    - name: sdist and install
+      run: |
+        python setup.py sdist
+        python -m pip install --user dist/*.tar.gz
     - name: test
       run: |
-        true
+        python test/test_pepy.py test/assets/example.exe
