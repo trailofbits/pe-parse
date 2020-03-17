@@ -73,8 +73,8 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -G "Visual Studio 16 2019" -A x64 ..
-        cmake --build .
+        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake --build . --config ${{ matrix.build-type }}
     - name: test
       run: |
         .\build\dump-pe\${{ matrix.build-type }}\dump-pe.exe .\test\assets\example.exe

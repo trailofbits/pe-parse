@@ -83,10 +83,10 @@ compiler version and the output architecture:
 
 ```
 # Compile 64-bit binaries with Visual Studio 2017
-cmake -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=Release ..
+cmake -G "Visual Studio 15 2017 Win64" ..
 
 # Compile 32-bit binaries with Visual Studio 2017
-cmake -G "Visual Studio 15 2017" -DCMAKE_BUILD_TYPE=Release ..
+cmake -G "Visual Studio 15 2017" ..
 ```
 
 Visual Studio 2015 or higher is required to use codecvt, but you also have the option of using
