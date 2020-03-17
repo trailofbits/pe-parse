@@ -83,6 +83,7 @@ jobs:
           - "3.7"
           - "3.8"
     runs-on: windows-latest
+    steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
