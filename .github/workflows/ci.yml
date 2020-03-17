@@ -98,7 +98,7 @@ jobs:
     - name: sdist and install
       run: |
         python setup.py sdist
-        python -m pip install --user dist/*.tar.gz
+        python -m pip install --user .
     - name: test
       run: |
         python test/test_pepy.py test/assets/example.exe
