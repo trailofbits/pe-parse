@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
+        build-type: ["Debug", "Release"]
         compiler:
         - { CC: "clang", CXX: "clang++" }
         - { CC: "gcc", CXX: "g++" }
@@ -30,8 +31,8 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
-        make
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} ..
+        cmake --build .
     - name: test
       run: |
         true
@@ -62,6 +63,9 @@ jobs:
         true
 
   pe-parse-windows:
+    strategy:
+      matrix:
+        build-type: ["Debug", "Release"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -69,7 +73,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -G "Visual Studio 16 2019" -A x64 ..
         cmake --build .
     - name: test
       run: |
