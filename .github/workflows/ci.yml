@@ -10,27 +10,20 @@ on:
     - cron:  '0 12 * * *'
 
 jobs:
-  build:
+  pe-parse:
     strategy:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
         compiler:
         - { CC: "clang", CXX: "clang++" }
         - { CC: "gcc", CXX: "g++" }
-        python:
-          - "3.6"
-          - "3.7"
-          - "3.8"
         exclude:
         - platform: macos-latest
           compiler: { CC: "gcc", CXX: "g++" }
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Build peparse
+    - name: build
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
@@ -39,14 +32,50 @@ jobs:
         cd build
         cmake ..
         make
-    - name: Build pepy
+    - name: test
+      run: |
+        true
+
+  pepy:
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest", "macos-latest"]
+        python:
+          - "3.6"
+          - "3.7"
+          - "3.8"
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: build
       run: |
         python3 setup.py build
-    - name: Build and test pepy sdist
+    - name: sdist and install
       run: |
         python3 setup.py sdist
         python3 -m pip install --user dist/*.tar.gz
-  build-windows:
+    - name: test
+      run: |
+        true
+
+  pe-parse-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake --build .
+    - name: test
+      run: |
+        true
+
+  pepy-windows:
     strategy:
       matrix:
         python:
@@ -54,17 +83,13 @@ jobs:
           - "3.7"
           - "3.8"
     runs-on: windows-latest
-    steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python }}
-    - name: Build peparse
-      run: |
-        mkdir build
-        cd build
-        cmake -G "Visual Studio 16 2019" -A x64 ..
-        cmake --build .
-    - name: Build pepy
+    - name: build
       run: |
         python setup.py build
+    - name: test
+      run: |
+        true
