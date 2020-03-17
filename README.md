@@ -57,10 +57,10 @@ mkdir build
 cd build
 
 cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --config Release
+cmake --build .
 
 # optional
-cmake --build . --config Release --target install
+cmake --build . --target install
 ```
 
 PE files that have a Resource section with strings for the Type are encoded in UTF-16, but that
