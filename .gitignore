@@ -2,7 +2,7 @@ Makefile
 cmake_install.cmake
 dump-prog/dump-prog
 *.swp
-python/build
+build/
 .idea
 cmake-build-debug
 cmake-build-release
@@ -11,4 +11,7 @@ CMakeSettings.json
 .vs
 .vscode
 examples_build
-
+.DS_Store
+dist/
+MANIFEST
+*.egg-info/

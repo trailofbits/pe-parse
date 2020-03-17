@@ -10,10 +10,11 @@ on:
     - cron:  '0 12 * * *'
 
 jobs:
-  test:
+  pe-parse:
     strategy:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
+        build-type: ["Debug", "Release"]
         compiler:
         - { CC: "clang", CXX: "clang++" }
         - { CC: "gcc", CXX: "g++" }
@@ -23,27 +24,80 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
-    - name: Build C
+    - name: build
       env:
         CC: ${{ matrix.compiler.CC }}
         CXX: ${{ matrix.compiler.CXX }}
       run: |
         mkdir build
         cd build
-        cmake ..
-        make
-    - name: Build Python
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} ..
+        cmake --build .
+    - name: test
       run: |
-        cd python
-        python2 setup.py build
+        ./build/dump-pe/dump-pe ./test/assets/example.exe
+
+  pepy:
+    strategy:
+      matrix:
+        platform: ["ubuntu-latest", "macos-latest"]
+        python:
+          - "3.6"
+          - "3.7"
+          - "3.8"
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: build
+      run: |
         python3 setup.py build
-  test-windows:
+    - name: sdist and install
+      run: |
+        python3 setup.py sdist
+        python3 -m pip install --user dist/*.tar.gz
+    - name: test
+      run: |
+        python3 test/test_pepy.py test/assets/example.exe
+
+  pe-parse-windows:
+    strategy:
+      matrix:
+        build-type: ["Debug", "Release"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build C
+    - name: build
       run: |
         mkdir build
         cd build
         cmake -G "Visual Studio 16 2019" -A x64 ..
-        cmake --build .
+        cmake --build . --config ${{ matrix.build-type }}
+    - name: test
+      run: |
+        .\build\dump-pe\${{ matrix.build-type }}\dump-pe.exe .\test\assets\example.exe
+
+  pepy-windows:
+    strategy:
+      matrix:
+        python:
+          - "3.6"
+          - "3.7"
+          - "3.8"
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+    - name: build
+      run: |
+        python setup.py build
+    - name: install
+      run: |
+        python -m pip install --user .
+    - name: test
+      run: |
+        python test/test_pepy.py test/assets/example.exe

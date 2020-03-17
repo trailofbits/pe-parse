@@ -31,7 +31,9 @@
 
 using namespace peparse;
 
-#define PEPY_VERSION "0.3"
+/* NOTE(ww): These don't necessarily have to be the same, but currently are.
+ */
+#define PEPY_VERSION PEPARSE_VERSION
 
 /*
  * Add some definition for compatibility between python2 and python3
@@ -1384,6 +1386,8 @@ static PyObject *pepi_module_init(void) {
   PyModule_AddObject(m, "pepy_resource", (PyObject *) &pepy_resource_type);
 
   PyModule_AddStringMacro(m, PEPY_VERSION);
+  PyModule_AddStringMacro(m, PEPARSE_VERSION);
+  PyModule_AddStringConstant(m, "__version__", PEPY_VERSION);
 
   PyModule_AddIntMacro(m, MZ_MAGIC);
   PyModule_AddIntMacro(m, NT_MAGIC);

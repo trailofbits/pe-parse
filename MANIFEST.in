@@ -1,0 +1,3 @@
+include VERSION
+include pepy/README.md
+include pe-parser-library/include/parser-library/*.h
