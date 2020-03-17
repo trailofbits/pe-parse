@@ -77,7 +77,7 @@ jobs:
         cmake --build .
     - name: test
       run: |
-        ./build/dump-pe/dump-pe.exe ./test/assets/example.exe
+        .\build\dump-pe\dump-pe.exe .\test\assets\example.exe
 
   pepy-windows:
     strategy:
