@@ -95,9 +95,8 @@ jobs:
     - name: build
       run: |
         python setup.py build
-    - name: sdist and install
+    - name: install
       run: |
-        python setup.py sdist
         python -m pip install --user .
     - name: test
       run: |
