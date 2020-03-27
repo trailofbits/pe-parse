@@ -211,6 +211,7 @@ constexpr std::uint8_t IMAGE_SYM_CLASS_SECTION = 104;
 constexpr std::uint8_t IMAGE_SYM_CLASS_WEAK_EXTERNAL = 105;
 constexpr std::uint8_t IMAGE_SYM_CLASS_CLR_TOKEN = 107;
 
+// Optional header DLL characteristics
 constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA = 0x0020;
 constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE = 0x0040;
 constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY = 0x0080;
