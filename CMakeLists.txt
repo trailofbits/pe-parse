@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(pe-parse)
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
