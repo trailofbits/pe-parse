@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 project(pe-parser-library)
 
-message(STATUS "VERSION file: ${CMAKE_SOURCE_DIR}/VERSION")
+message(STATUS "VERSION file: ${PROJECT_SOURCE_DIR}/../VERSION")
 
 file(READ "${PROJECT_SOURCE_DIR}/../VERSION" PEPARSE_VERSION)
 string(STRIP "${PEPARSE_VERSION}" PEPARSE_VERSION)
