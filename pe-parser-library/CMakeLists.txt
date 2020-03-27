@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(pe-parser-library)
 
 message(STATUS "VERSION file: ${CMAKE_SOURCE_DIR}/VERSION")

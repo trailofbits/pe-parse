@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(peaddrconv)
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
