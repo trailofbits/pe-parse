@@ -2659,9 +2659,9 @@ bool GetDataDirectoryEntry(parsed_pe *pe,
    * are never mapped into memory, so its "RVA" is actually a direct
    * file offset.
    */
-  if (data_directory_kind == DIR_SECURITY) {
+  if (dirnum == DIR_SECURITY) {
     auto *buf = splitBuffer(
-        p->fileBuffer, dir.VirtualAddress, dir.VirtualAddress + dir.Size);
+        pe->fileBuffer, dir.VirtualAddress, dir.VirtualAddress + dir.Size);
     if (buf == nullptr) {
       PE_ERR(PEERR_SIZE);
       return false;
