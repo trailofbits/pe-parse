@@ -2658,6 +2658,8 @@ bool GetDataDirectoryEntry(parsed_pe *pe,
   /* NOTE(ww): DIR_SECURITY is an annoying special case: its contents
    * are never mapped into memory, so its "RVA" is actually a direct
    * file offset.
+   * See:
+   * https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#the-attribute-certificate-table-image-only
    */
   if (dirnum == DIR_SECURITY) {
     auto *buf = splitBuffer(
