@@ -2655,20 +2655,37 @@ bool GetDataDirectoryEntry(parsed_pe *pe,
     return false;
   }
 
-  section sec;
-  if (!getSecForVA(pe->internal->secs, addr, sec)) {
-    PE_ERR(PEERR_SECTVA);
-    return false;
-  }
+  /* NOTE(ww): DIR_SECURITY is an annoying special case: its contents
+   * are never mapped into memory, so its "RVA" is actually a direct
+   * file offset.
+   * See:
+   * https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#the-attribute-certificate-table-image-only
+   */
+  if (dirnum == DIR_SECURITY) {
+    auto *buf = splitBuffer(
+        pe->fileBuffer, dir.VirtualAddress, dir.VirtualAddress + dir.Size);
+    if (buf == nullptr) {
+      PE_ERR(PEERR_SIZE);
+      return false;
+    }
 
-  auto off = static_cast<std::uint32_t>(addr - sec.sectionBase);
-  if (off + dir.Size >= sec.sectionData->bufLen) {
-    PE_ERR(PEERR_SIZE);
-    return false;
-  }
+    raw_entry.assign(buf->buf, buf->buf + buf->bufLen);
+  } else {
+    section sec;
+    if (!getSecForVA(pe->internal->secs, addr, sec)) {
+      PE_ERR(PEERR_SECTVA);
+      return false;
+    }
 
-  raw_entry.assign(sec.sectionData->buf + off,
-                   sec.sectionData->buf + off + dir.Size);
+    auto off = static_cast<std::uint32_t>(addr - sec.sectionBase);
+    if (off + dir.Size >= sec.sectionData->bufLen) {
+      PE_ERR(PEERR_SIZE);
+      return false;
+    }
+
+    raw_entry.assign(sec.sectionData->buf + off,
+                     sec.sectionData->buf + off + dir.Size);
+  }
 
   return true;
 }
