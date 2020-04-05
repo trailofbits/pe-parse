@@ -2670,6 +2670,7 @@ bool GetDataDirectoryEntry(parsed_pe *pe,
     }
 
     raw_entry.assign(buf->buf, buf->buf + buf->bufLen);
+    deleteBuffer(buf);
   } else {
     section sec;
     if (!getSecForVA(pe->internal->secs, addr, sec)) {
