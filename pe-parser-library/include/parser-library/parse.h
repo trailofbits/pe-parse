@@ -194,7 +194,7 @@ typedef int (*iterRich)(void *, rich_entry);
 void IterRich(parsed_pe *pe, iterRich cb, void *cbd);
 
 // iterate over the resources
-typedef int (*iterRsrc)(void *, resource);
+typedef int (*iterRsrc)(void *, const resource *);
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd);
 
 // iterate over the imports by RVA and string

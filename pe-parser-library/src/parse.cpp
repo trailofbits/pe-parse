@@ -607,13 +607,11 @@ void IterRich(parsed_pe *pe, iterRich cb, void *cbd) {
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   parsed_pe_internal *pint = pe->internal;
 
-  for (resource r : pint->rsrcs) {
-    if (cb(cbd, r) != 0) {
+  for (const resource &r : pint->rsrcs) {
+    if (cb(cbd, &r) != 0) {
       break;
     }
   }
-
-  return;
 }
 
 bool parse_resource_id(bounded_buffer *data,
