@@ -806,10 +806,10 @@ static PyObject *pepy_data_converter(bounded_buffer *data) {
 }
 
 int section_callback(void *cbd,
-                     VA base,
-                     std::string &name,
-                     image_section_header s,
-                     bounded_buffer *data) {
+                     const VA &base,
+                     const std::string &name,
+                     const image_section_header &s,
+                     const bounded_buffer *data) {
   uint32_t buflen;
   PyObject *sect;
   PyObject *tuple;
@@ -880,7 +880,7 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
   return ret;
 }
 
-int resource_callback(void *cbd, resource r) {
+int resource_callback(void *cbd, const resource &r) {
   PyObject *rsrc;
   PyObject *tuple;
   PyObject *list = (PyObject *) cbd;
@@ -940,7 +940,7 @@ static PyObject *pepy_parsed_get_resources(PyObject *self, PyObject *args) {
 }
 
 int import_callback(void *cbd,
-                    VA addr,
+                    const VA &addr,
                     const std::string &name,
                     const std::string &sym) {
   PyObject *imp;
@@ -987,7 +987,10 @@ static PyObject *pepy_parsed_get_imports(PyObject *self, PyObject *args) {
   return ret;
 }
 
-int export_callback(void *cbd, VA addr, std::string &mod, std::string &func) {
+int export_callback(void *cbd,
+                    const VA &addr,
+                    const std::string &mod,
+                    const std::string &func) {
   PyObject *exp;
   PyObject *tuple;
   PyObject *list = (PyObject *) cbd;
@@ -1036,7 +1039,7 @@ static PyObject *pepy_parsed_get_exports(PyObject *self, PyObject *args) {
   return ret;
 }
 
-int reloc_callback(void *cbd, VA addr, reloc_type type) {
+int reloc_callback(void *cbd, const VA &addr, const reloc_type &type) {
   PyObject *reloc;
   PyObject *tuple;
   PyObject *list = (PyObject *) cbd;

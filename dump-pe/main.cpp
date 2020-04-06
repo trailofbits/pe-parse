@@ -31,7 +31,10 @@ THE SOFTWARE.
 
 using namespace peparse;
 
-int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
+int printExps(void *N,
+              const VA &funcAddr,
+              const std::string &mod,
+              const std::string &func) {
   static_cast<void>(N);
 
   auto address = static_cast<std::uint32_t>(funcAddr);
@@ -47,7 +50,7 @@ int printExps(void *N, VA funcAddr, std::string &mod, std::string &func) {
 }
 
 int printImports(void *N,
-                 VA impAddr,
+                 const VA &impAddr,
                  const std::string &modName,
                  const std::string &symName) {
   static_cast<void>(N);
@@ -59,7 +62,7 @@ int printImports(void *N,
   return 0;
 }
 
-int printRelocs(void *N, VA relocAddr, reloc_type type) {
+int printRelocs(void *N, const VA &relocAddr, const reloc_type &type) {
   static_cast<void>(N);
 
   std::cout << "TYPE: ";
@@ -99,12 +102,12 @@ int printRelocs(void *N, VA relocAddr, reloc_type type) {
 }
 
 int printSymbols(void *N,
-                 std::string &strName,
-                 uint32_t &value,
-                 int16_t &sectionNumber,
-                 uint16_t &type,
-                 uint8_t &storageClass,
-                 uint8_t &numberOfAuxSymbols) {
+                 const std::string &strName,
+                 const uint32_t &value,
+                 const int16_t &sectionNumber,
+                 const uint16_t &type,
+                 const uint8_t &storageClass,
+                 const uint8_t &numberOfAuxSymbols) {
   static_cast<void>(N);
 
   std::cout << "Symbol Name: " << strName << "\n";
@@ -227,7 +230,7 @@ int printSymbols(void *N,
   return 0;
 }
 
-int printRich(void *N, rich_entry r) {
+int printRich(void *N, const rich_entry &r) {
   static_cast<void>(N);
   std::cout << std::dec;
   std::cout << std::setw(10) << "ProdId:" << std::setw(7) << r.ProductId;
@@ -239,7 +242,7 @@ int printRich(void *N, rich_entry r) {
   return 0;
 }
 
-int printRsrc(void *N, resource r) {
+int printRsrc(void *N, const resource &r) {
   static_cast<void>(N);
 
   if (r.type_str.length())
@@ -264,10 +267,10 @@ int printRsrc(void *N, resource r) {
 }
 
 int printSecs(void *N,
-              VA secBase,
-              std::string &secName,
-              image_section_header s,
-              bounded_buffer *data) {
+              const VA &secBase,
+              const std::string &secName,
+              const image_section_header &s,
+              const bounded_buffer *data) {
   static_cast<void>(N);
   static_cast<void>(s);
 

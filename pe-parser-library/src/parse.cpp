@@ -597,7 +597,7 @@ bool getSecForVA(const std::vector<section> &secs, VA v, section &sec) {
 }
 
 void IterRich(parsed_pe *pe, iterRich cb, void *cbd) {
-  for (rich_entry r : pe->peHeader.rich.Entries) {
+  for (rich_entry &r : pe->peHeader.rich.Entries) {
     if (cb(cbd, r) != 0) {
       break;
     }
@@ -607,13 +607,11 @@ void IterRich(parsed_pe *pe, iterRich cb, void *cbd) {
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   parsed_pe_internal *pint = pe->internal;
 
-  for (resource r : pint->rsrcs) {
+  for (const resource &r : pint->rsrcs) {
     if (cb(cbd, r) != 0) {
       break;
     }
   }
-
-  return;
 }
 
 bool parse_resource_id(bounded_buffer *data,
@@ -2455,7 +2453,7 @@ void DestructParsedPE(parsed_pe *p) {
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
   std::vector<importent> &l = pe->internal->imports;
 
-  for (importent i : l) {
+  for (importent &i : l) {
     if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
       break;
     }
@@ -2468,7 +2466,7 @@ void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
   std::vector<reloc> &l = pe->internal->relocs;
 
-  for (reloc r : l) {
+  for (reloc &r : l) {
     if (cb(cbd, r.shiftedAddr, r.type) != 0) {
       break;
     }
@@ -2481,7 +2479,7 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
 void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd) {
   std::vector<symbol> &l = pe->internal->symbols;
 
-  for (symbol s : l) {
+  for (symbol &s : l) {
     if (cb(cbd,
            s.strName,
            s.value,
@@ -2500,7 +2498,7 @@ void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd) {
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
   std::vector<exportent> &l = pe->internal->exports;
 
-  for (exportent i : l) {
+  for (exportent &i : l) {
     if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
       break;
     }
@@ -2513,7 +2511,7 @@ void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd) {
   parsed_pe_internal *pint = pe->internal;
 
-  for (section s : pint->secs) {
+  for (section &s : pint->secs) {
     if (cb(cbd, s.sectionBase, s.sectionName, s.sec, s.sectionData) != 0) {
       break;
     }
