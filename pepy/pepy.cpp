@@ -880,7 +880,7 @@ static PyObject *pepy_parsed_get_sections(PyObject *self, PyObject *args) {
   return ret;
 }
 
-int resource_callback(void *cbd, resource r) {
+int resource_callback(void *cbd, const resource *r) {
   PyObject *rsrc;
   PyObject *tuple;
   PyObject *list = (PyObject *) cbd;
@@ -890,20 +890,20 @@ int resource_callback(void *cbd, resource r) {
    * section type initialization and parsed there.
    */
   tuple = Py_BuildValue("s#s#s#IIIIIIO&",
-                        r.type_str.c_str(),
-                        r.type_str.length(),
-                        r.name_str.c_str(),
-                        r.name_str.length(),
-                        r.lang_str.c_str(),
-                        r.lang_str.length(),
-                        r.type,
-                        r.name,
-                        r.lang,
-                        r.codepage,
-                        r.RVA,
-                        r.size,
+                        r->type_str.c_str(),
+                        r->type_str.length(),
+                        r->name_str.c_str(),
+                        r->name_str.length(),
+                        r->lang_str.c_str(),
+                        r->lang_str.length(),
+                        r->type,
+                        r->name,
+                        r->lang,
+                        r->codepage,
+                        r->RVA,
+                        r->size,
                         pepy_data_converter,
-                        r.buf);
+                        r->buf);
   if (!tuple)
     return 1;
 
