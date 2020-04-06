@@ -2,6 +2,7 @@ pe-parse
 ========
 
 [![Build Status](https://img.shields.io/github/workflow/status/trailofbits/pe-parse/CI/master)](https://github.com/trailofbits/pe-parse/actions?query=workflow%3ACI)
+[![LGTM Total alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/pe-parse.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/pe-parse/alerts/)
 
 pe-parse is a principled, lightweight parser for windows portable executable files.
 It was created to assist in compiled program analysis, potentially of programs of unknown origins.
