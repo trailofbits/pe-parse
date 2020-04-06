@@ -239,27 +239,27 @@ int printRich(void *N, rich_entry r) {
   return 0;
 }
 
-int printRsrc(void *N, const resource *r) {
+int printRsrc(void *N, const resource &r) {
   static_cast<void>(N);
 
-  if (r->type_str.length())
-    std::cout << "Type (string): " << r->type_str << "\n";
+  if (r.type_str.length())
+    std::cout << "Type (string): " << r.type_str << "\n";
   else
-    std::cout << "Type: 0x" << std::hex << r->type << "\n";
+    std::cout << "Type: 0x" << std::hex << r.type << "\n";
 
-  if (r->name_str.length())
-    std::cout << "Name (string): " << r->name_str << "\n";
+  if (r.name_str.length())
+    std::cout << "Name (string): " << r.name_str << "\n";
   else
-    std::cout << "Name: 0x" << std::hex << r->name << "\n";
+    std::cout << "Name: 0x" << std::hex << r.name << "\n";
 
-  if (r->lang_str.length())
-    std::cout << "Lang (string): " << r->lang_str << "\n";
+  if (r.lang_str.length())
+    std::cout << "Lang (string): " << r.lang_str << "\n";
   else
-    std::cout << "Lang: 0x" << std::hex << r->lang << "\n";
+    std::cout << "Lang: 0x" << std::hex << r.lang << "\n";
 
-  std::cout << "Codepage: 0x" << std::hex << r->codepage << "\n";
-  std::cout << "RVA: " << std::dec << r->RVA << "\n";
-  std::cout << "Size: " << std::dec << r->size << "\n";
+  std::cout << "Codepage: 0x" << std::hex << r.codepage << "\n";
+  std::cout << "RVA: " << std::dec << r.RVA << "\n";
+  std::cout << "Size: " << std::dec << r.size << "\n";
   return 0;
 }
 

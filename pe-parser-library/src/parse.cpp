@@ -608,7 +608,7 @@ void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd) {
   parsed_pe_internal *pint = pe->internal;
 
   for (const resource &r : pint->rsrcs) {
-    if (cb(cbd, &r) != 0) {
+    if (cb(cbd, r) != 0) {
       break;
     }
   }
