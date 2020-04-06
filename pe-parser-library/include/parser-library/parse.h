@@ -190,7 +190,7 @@ parsed_pe *ParsePEFromFile(const char *filePath);
 void DestructParsedPE(parsed_pe *p);
 
 // iterate over Rich header entries
-typedef int (*iterRich)(void *, rich_entry);
+typedef int (*iterRich)(void *, const rich_entry &);
 void IterRich(parsed_pe *pe, iterRich cb, void *cbd);
 
 // iterate over the resources
@@ -198,30 +198,30 @@ typedef int (*iterRsrc)(void *, const resource &);
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd);
 
 // iterate over the imports by RVA and string
-typedef int (*iterVAStr)(void *, VA, const std::string &, const std::string &);
+typedef int (*iterVAStr)(void *, const VA &, const std::string &, const std::string &);
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 
 // iterate over relocations in the PE file
-typedef int (*iterReloc)(void *, VA, reloc_type);
+typedef int (*iterReloc)(void *, const VA &, const reloc_type &);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
 // Iterate over symbols (symbol table) in the PE file
 typedef int (*iterSymbol)(void *,
-                          std::string &,
-                          std::uint32_t &,
-                          std::int16_t &,
-                          std::uint16_t &,
-                          std::uint8_t &,
-                          std::uint8_t &);
+                          const std::string &,
+                          const std::uint32_t &,
+                          const std::int16_t &,
+                          const std::uint16_t &,
+                          const std::uint8_t &,
+                          const std::uint8_t &);
 void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd);
 
 // iterate over the exports
-typedef int (*iterExp)(void *, VA, std::string &, std::string &);
+typedef int (*iterExp)(void *, const VA &, const std::string &, const std::string &);
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
 
 // iterate over sections
 typedef int (*iterSec)(
-    void *, VA secBase, std::string &, image_section_header, bounded_buffer *b);
+    void *, const VA &, const std::string &, const image_section_header &, const bounded_buffer *);
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
 // get byte at VA in PE
