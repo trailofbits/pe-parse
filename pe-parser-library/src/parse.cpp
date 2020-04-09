@@ -946,6 +946,11 @@ bool getSections(bounded_buffer *b,
     secs.push_back(thisSec);
   }
 
+  std::sort(
+      secs.begin(), secs.end(), [](const section &lhs, const section &rhs) {
+        return lhs.sec.PointerToRawData < rhs.sec.PointerToRawData;
+      });
+
   return true;
 }
 
