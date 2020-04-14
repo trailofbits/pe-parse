@@ -26,6 +26,16 @@ if (BUILD_COMMAND_LINE_TOOLS)
   add_subdirectory(dump-pe)
 endif ()
 
+# `format` target.
+file(GLOB_RECURSE PEPARSE_ALL_SOURCES *.cpp *.h)
+add_custom_target(
+  format
+  COMMAND clang-format -i -style=file ${PEPARSE_ALL_SOURCES}
+  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+  COMMENT "Auto-format the codebase with clang-format"
+  VERBATIM
+)
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build Shared: ${BUILD_SHARED_LIBS} ${BUILD_SHARED_LIBS_MESSAGE}")
 message(STATUS "Build Command Line Tools: ${BUILD_COMMAND_LINE_TOOLS}")

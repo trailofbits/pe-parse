@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include "to_string.h"
 
 #ifdef _MSC_VER
-#define __typeof__(x) std::remove_reference < decltype(x)> ::type
+#define __typeof__(x) std::remove_reference < decltype(x) > ::type
 #endif
 
 #define PE_ERR(x)               \
@@ -198,7 +198,10 @@ typedef int (*iterRsrc)(void *, const resource &);
 void IterRsrc(parsed_pe *pe, iterRsrc cb, void *cbd);
 
 // iterate over the imports by RVA and string
-typedef int (*iterVAStr)(void *, const VA &, const std::string &, const std::string &);
+typedef int (*iterVAStr)(void *,
+                         const VA &,
+                         const std::string &,
+                         const std::string &);
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 
 // iterate over relocations in the PE file
@@ -216,12 +219,18 @@ typedef int (*iterSymbol)(void *,
 void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd);
 
 // iterate over the exports
-typedef int (*iterExp)(void *, const VA &, const std::string &, const std::string &);
+typedef int (*iterExp)(void *,
+                       const VA &,
+                       const std::string &,
+                       const std::string &);
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
 
 // iterate over sections
-typedef int (*iterSec)(
-    void *, const VA &, const std::string &, const image_section_header &, const bounded_buffer *);
+typedef int (*iterSec)(void *,
+                       const VA &,
+                       const std::string &,
+                       const image_section_header &,
+                       const bounded_buffer *);
 void IterSec(parsed_pe *pe, iterSec cb, void *cbd);
 
 // get byte at VA in PE
