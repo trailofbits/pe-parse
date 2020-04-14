@@ -10,6 +10,23 @@ on:
     - cron:  '0 12 * * *'
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-9
+
+      - name: lint
+        run: |
+          mkdir build && cd build
+          cmake ..
+          cmake --build . --target format
+          cd .. && git diff --exit-code
+
   pe-parse:
     strategy:
       matrix:
