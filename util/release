@@ -26,18 +26,12 @@ done
 
 # Next, check the VERSION in version and make sure it doesn't already have a git tag.
 [[ -f ./VERSION ]] || die "Missing VERSION file; wrong directory?"
-version=$(<./VERSION)
+version=v$(<./VERSION)
 [[ -n $(git tag -l "${version}") ]] && die "git tag for ${version} already exists!"
 
 # Next, craft a tag for the current HEAD. Push both the current commit and the tag.
 git tag "${version}"
 git push
 git push origin "${version}"
-
-# Finally, build pepy and publish it to PyPI.
-# Nuke the dist/ directory before, to avoid old sdists.
-rm -rf dist/
-python3 setup.py sdist
-twine upload dist/*
 
 echo OK
