@@ -2,8 +2,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - 'ww/auto-pypi-publish'
 
 name: release
 
