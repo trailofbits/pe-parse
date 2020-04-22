@@ -17,9 +17,7 @@ function die {
 }
 
 # Fail early if we don't have the expected tools.
-for tool in git python3 twine; do
-  installed "${tool}" || die "Missing dependency: ${tool}"
-done
+installed git || die "Missing dependency: git"
 
 # Fail early if `git status` reports any untracked changes.
 [[ -n $(git status -s) ]] && die "Untracked changes in repo"

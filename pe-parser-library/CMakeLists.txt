@@ -7,15 +7,6 @@ file(READ "${PROJECT_SOURCE_DIR}/../VERSION" PEPARSE_VERSION)
 string(STRIP "${PEPARSE_VERSION}" PEPARSE_VERSION)
 add_compile_definitions(PEPARSE_VERSION="${PEPARSE_VERSION}")
 
-set(UNICODE_LIBRARY "any" CACHE STRING "Select a unicode library")
-set_property(CACHE UNICODE_LIBRARY PROPERTY STRINGS "any" "icu" "codecvt")
-
-# This variable is used twice so setting once at the top here to prevent
-# the chance they get out of sync.
-# This is the minimum "required" version but there's a good chance early
-# versions of ICU support the simple functionality needed by this project.
-set(ICU_MINIMUM_REQUIRED 55.0)
-
 # List all files explicitly; this will make IDEs happy (i.e. QtCreator, CLion, ...)
 list(APPEND PEPARSERLIB_SOURCEFILES
   include/parser-library/parse.h
@@ -26,69 +17,47 @@ list(APPEND PEPARSERLIB_SOURCEFILES
   src/parse.cpp
 )
 
-# Check for codecvt support. Likely the proper way to do this would be to
-# use CMake system inspection via methods like "try_compile" to determine
-# if the "#include <codecvt>" directive compiles successfully.
-if(CXX_STANDARD GREATER_EQUAL 17)
-  set(CODECVT_SUPPORTED OFF)
+# NOTE(ww): On Windows we use the Win32 API's built-in UTF16 conversion
+# routines; on other platforms we use codecvt. codecvt is nominally deprecated
+# in C++17 and onwards, but will probably be available for quite some time.
+# Previous versions of pe-parse used ICU when available, but this caused
+# DLL hell on Windows and wasn't worth the additional dependency.
+if(MSVC)
+  list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_winapi.cpp)
 else()
-  if (MSVC)
-    if (MSVC_VERSION LESS 1900)
-      set(CODECVT_SUPPORTED OFF)
-    else ()
-      set(CODECVT_SUPPORTED ON)
-    endif ()
-  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
-      set(CODECVT_SUPPORTED OFF)
-    else ()
-      set(CODECVT_SUPPORTED ON)
-    endif ()
-  else ()
-    find_path(CODECVT_INCLUDE_DIR NAMES "codecvt")
-    if (CODECVT_INCLUDE_DIR)
-      set(CODECVT_SUPPORTED OFF)
-    else ()
-      set(CODECVT_SUPPORTED ON)
-    endif ()
-  endif ()
-endif()
-
-if(${UNICODE_LIBRARY} MATCHES "icu")
-  find_package(ICU ${ICU_MINIMUM_REQUIRED} COMPONENTS uc REQUIRED)
-  add_definitions(-DUSE_ICU4C)
-  list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_icu.cpp)
-elseif(${UNICODE_LIBRARY} MATCHES "codecvt")
-  if(NOT CODECVT_SUPPORTED)
-    message(SEND_ERROR "codecvt header not found")
-  endif()
   list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_codecvt.cpp)
-else()
-  find_package(ICU ${ICU_MINIMUM_REQUIRED} COMPONENTS uc)
-  if(ICU_FOUND)
-    add_definitions(-DUSE_ICU4C)
-    list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_icu.cpp)
-  elseif(MSVC)
-    add_definitions(-DUSE_STRINGAPISET)
-    list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_winapi.cpp)
-  elseif(CODECVT_SUPPORTED)
-    list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_codecvt.cpp)
-  else()
-    message(SEND_ERROR "unable to find codecvt header or ICU library (hint: try installing libicu-dev)")
-  endif(ICU_FOUND)
 endif()
 
 add_library(${PROJECT_NAME} ${PEPARSERLIB_SOURCEFILES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_compile_options(${PROJECT_NAME} PRIVATE ${GLOBAL_CXXFLAGS})
-if(ICU_FOUND)
-  target_link_libraries(${PROJECT_NAME} ICU::uc)
-endif()
 
-install(TARGETS ${PROJECT_NAME}
-  RUNTIME DESTINATION "bin"
-  LIBRARY DESTINATION "lib"
-  ARCHIVE DESTINATION "lib"
+target_include_directories(
+  ${PROJECT_NAME}
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
-install(FILES "cmake/peparse-config.cmake" DESTINATION "lib/cmake/peparse")
+target_compile_options(${PROJECT_NAME} PRIVATE ${GLOBAL_CXXFLAGS})
+
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT pe-parse-config
+  RUNTIME
+    DESTINATION "bin"
+  LIBRARY
+    DESTINATION "lib"
+  ARCHIVE
+    DESTINATION "lib"
+)
+export(
+  TARGETS ${PROJECT_NAME}
+  NAMESPACE pe-parse::
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/pe-parse-config.cmake"
+)
+install(
+  EXPORT
+  pe-parse-config
+  DESTINATION "lib/cmake/pe-parse"
+  NAMESPACE pe-parse::
+  EXPORT_LINK_INTERFACE_LIBRARIES
+)
 install(DIRECTORY "include/parser-library" DESTINATION "include")

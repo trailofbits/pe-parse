@@ -103,10 +103,9 @@ the project.
 Once the library is installed, linking to it is easy! Add the following lines in your CMake project:
 
 ```
-find_package(peparse REQUIRED)
+find_package(pe-parse REQUIRED)
 
-target_link_libraries(your_target_name ${PEPARSE_LIBRARIES})
-target_include_directories(your_target_name PRIVATE ${PEPARSE_INCLUDE_DIRS})
+target_link_libraries(your_target_name pe-parse::pe-parser-library)
 ```
 
 You can see a full example in the examples/peaddrconv folder.

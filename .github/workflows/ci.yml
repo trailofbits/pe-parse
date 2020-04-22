@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir build && cd build
           cmake ..
-          cmake --build . --target format
+          cmake --build . --target peparse_format
           cd .. && git diff --exit-code
 
   pe-parse:
@@ -32,6 +32,7 @@ jobs:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
         build-type: ["Debug", "Release"]
+        build-shared: ["0", "1"]
         compiler:
         - { CC: "clang", CXX: "clang++" }
         - { CC: "gcc", CXX: "g++" }
@@ -48,7 +49,10 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} ..
+        cmake \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+          -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} \
+          ..
         cmake --build .
     - name: test
       run: |
@@ -82,7 +86,9 @@ jobs:
   pe-parse-windows:
     strategy:
       matrix:
+        build-arch: ["x64", "Win32"]
         build-type: ["Debug", "Release"]
+        build-shared: ["0", "1"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
@@ -90,11 +96,19 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake `
+          -G "Visual Studio 16 2019" `
+          -A ${{ matrix.build-arch }} `
+          -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
+          ..
         cmake --build . --config ${{ matrix.build-type }}
+    - name: install
+      run: |
+        cd build
+        cmake --build . --target install
     - name: test
       run: |
-        .\build\dump-pe\${{ matrix.build-type }}\dump-pe.exe .\test\assets\example.exe
+        .\build\bin\dump-pe.exe .\test\assets\example.exe
 
   pepy-windows:
     strategy:

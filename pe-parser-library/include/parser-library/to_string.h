@@ -3,10 +3,7 @@
 #include <sstream>
 #include <string>
 
-#if defined(USE_ICU4C)
-#include <unicode/unistr.h>
-typedef std::basic_string<UChar> UCharString;
-#elif defined(USE_STRINGAPISET)
+#if defined(_MSC_VER)
 typedef std::basic_string<wchar_t> UCharString;
 #else
 typedef std::u16string UCharString;
