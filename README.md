@@ -4,7 +4,7 @@ pe-parse
 [![Build Status](https://img.shields.io/github/workflow/status/trailofbits/pe-parse/CI/master)](https://github.com/trailofbits/pe-parse/actions?query=workflow%3ACI)
 [![LGTM Total alerts](https://img.shields.io/lgtm/alerts/g/trailofbits/pe-parse.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/trailofbits/pe-parse/alerts/)
 
-pe-parse is a principled, lightweight parser for windows portable executable files.
+pe-parse is a principled, lightweight parser for Windows portable executable files.
 It was created to assist in compiled program analysis, potentially of programs of unknown origins.
 This means that it should be resistant to malformed or maliciously crafted PE files, and it should
 support questions that analysis software would ask of an executable program container.
@@ -50,6 +50,7 @@ More information about `pepy` can be found in its [README](./pepy/README.md).
 ## Building
 
 ### Generic instructions
+
 ```
 git clone https://github.com/trailofbits/pe-parse.git
 cd pe-parse
@@ -64,39 +65,20 @@ cmake --build .
 cmake --build . --target install
 ```
 
-PE files that have a Resource section with strings for the Type are encoded in UTF-16, but that
-`std::string` expects UTF-8. Some cross-platform solution is desired.
+### Windows-specific
 
-You can let `cmake` choose one it finds in your build environment or you can choose one from the
-following options yourself and specify it with the `-DUNICODE_LIBRARY` argument when generating the
-project files with `cmake`:
-
-* `icu` (preferred) - "[ICU](http://site.icu-project.org/) is a mature, widely used set of C/C++
-and Java libraries providing Unicode and Globalization support for software applications"
-* `codecvt` - A C++ library header file
-([now deprecated](http://open-std.org/JTC1/SC22/WG21/docs/papers/2017/p0618r0.html)) supported
-by some C++ runtimes
-
-### Notes about Windows
-
-If you are building on Windows with Visual Studio, the generator option can be used to select the
-compiler version and the output architecture:
+VS 2017 and VS 2019 are supported.
 
 ```
 # Compile 64-bit binaries with Visual Studio 2017
 cmake -G "Visual Studio 15 2017 Win64" ..
 
-# Compile 32-bit binaries with Visual Studio 2017
-cmake -G "Visual Studio 15 2017" ..
+# Or, with VS 2019, use the -A flag for architecture
+cmake -G "Visual Studio 16 2019" -A Win64 ..
+
+# Pass the build type at build time
+cmake --build . --config Release
 ```
-
-Visual Studio 2015 or higher is required to use codecvt, but you also have the option of using
-[ICU](http://site.icu-project.org/). The easiest way to get started with ICU in Windows is with
-[vcpkg](https://vcpkg.readthedocs.io/): `vcpkg install icu`.
-
-Then, add the `-DCMAKE_TOOLCHAIN_FILE=C:\src\vcpkg\scripts\buildsystems\vcpkg.cmake` argument when
-generating the project files with cmake to add the appropriate library and include directories to
-the project.
 
 ## Using the library
 
@@ -105,10 +87,10 @@ Once the library is installed, linking to it is easy! Add the following lines in
 ```
 find_package(pe-parse REQUIRED)
 
-target_link_libraries(your_target_name pe-parse::pe-parser-library)
+target_link_libraries(your_target_name PRIVATE pe-parse::pe-parser-library)
 ```
 
-You can see a full example in the examples/peaddrconv folder.
+You can see a full example in the [examples/peaddrconv](examples/peaddrconv) folder.
 
 ## Authors
 
