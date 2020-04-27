@@ -31,6 +31,14 @@ the PE file. This should help in constructing a sane parser that allows for dete
 of bogus values in the PE that would result in out of bounds accesses of the input buffer.
 Once data is read from the file it is sanitized and placed in C++ STL containers of internal types.
 
+## Installation
+
+pe-parse can be installed via [vcpkg](https://github.com/microsoft/vcpkg):
+
+```bash
+$ vcpkg install pe-parse
+```
+
 pe-parse includes Python bindings via `pepy`, which can be installed via `pip`:
 
 ```bash
