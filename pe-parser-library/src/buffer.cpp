@@ -298,6 +298,28 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   return p;
 }
 
+bounded_buffer *makeBufferFromPointer(std::uint8_t *data, std::uint32_t sz) {
+  if (data == nullptr) {
+    PE_ERR(PEERR_MEM);
+    return nullptr;
+  }
+
+  bounded_buffer *p = new (std::nothrow) bounded_buffer();
+
+  if (p == nullptr) {
+    PE_ERR(PEERR_MEM);
+    return nullptr;
+  }
+
+  p->copy = true;
+  p->detail = nullptr;
+  p->buf = data;
+  p->bufLen = sz;
+  p->swapBytes = false;
+
+  return p;
+}
+
 // split buffer inclusively from from to to by offset
 bounded_buffer *
 splitBuffer(bounded_buffer *b, std::uint32_t from, std::uint32_t to) {
