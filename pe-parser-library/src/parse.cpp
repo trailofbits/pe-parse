@@ -2337,7 +2337,7 @@ bool getSymbolTable(parsed_pe *p) {
   return true;
 }
 
-parsed_pe *ParsePEFromFile(const char *filePath) {
+parsed_pe *ParsePEFromBuffer(bounded_buffer* buffer) {
   // First, create a new parsed_pe structure
   // We pass std::nothrow parameter to new so in case of failure it returns
   // nullptr instead of throwing exception std::bad_alloc.
@@ -2349,13 +2349,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   }
 
   // Make a new buffer object to hold just our file data
-  p->fileBuffer = readFileToFileBuffer(filePath);
-
-  if (p->fileBuffer == nullptr) {
-    delete p;
-    // err is set by readFileToFileBuffer
-    return nullptr;
-  }
+  p->fileBuffer = buffer;
 
   p->internal = new (std::nothrow) parsed_pe_internal();
 
@@ -2429,6 +2423,29 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   deleteBuffer(remaining);
 
   return p;
+}
+
+
+parsed_pe *ParsePEFromFile(const char *filePath) {
+    auto buffer = readFileToFileBuffer(filePath);
+
+    if (buffer == nullptr) {
+        // err is set by readFileToFileBuffer
+        return nullptr;
+    }
+
+    return ParsePEFromBuffer(buffer);
+}
+
+parsed_pe *ParsePEFromPointer(uint8_t* ptr, size_t sz) {
+    auto buffer = makeBufferFromPointer(ptr, sz);
+
+    if (buffer == nullptr) {
+        // err is set by makeBufferFromPointer
+        return nullptr;
+    }
+
+    return ParsePEFromBuffer(buffer);
 }
 
 void DestructParsedPE(parsed_pe *p) {
