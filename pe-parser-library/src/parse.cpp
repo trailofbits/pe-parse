@@ -2436,7 +2436,7 @@ parsed_pe *ParsePEFromFile(const char *filePath) {
   return ParsePEFromBuffer(buffer);
 }
 
-parsed_pe *ParsePEFromPointer(uint8_t *ptr, size_t sz) {
+parsed_pe *ParsePEFromPointer(std::uint8_t *ptr, std::uint32_t sz) {
   auto buffer = makeBufferFromPointer(ptr, sz);
 
   if (buffer == nullptr) {

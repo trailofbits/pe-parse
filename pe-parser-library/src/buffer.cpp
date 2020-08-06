@@ -298,9 +298,9 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   return p;
 }
 
-bounded_buffer *makeBufferFromPointer(uint8_t *data, size_t sz) {
-  if (sz > UINT32_MAX) {
-    PE_ERR(PEERR_SIZE);
+bounded_buffer *makeBufferFromPointer(std::uint8_t *data, std::uint32_t sz) {
+  if (data == nullptr) {
+    PE_ERR(PEERR_MEM);
     return nullptr;
   }
 
@@ -314,7 +314,7 @@ bounded_buffer *makeBufferFromPointer(uint8_t *data, size_t sz) {
   p->copy = true;
   p->detail = nullptr;
   p->buf = data;
-  p->bufLen = static_cast<uint32_t>(sz);
+  p->bufLen = sz;
   p->swapBytes = false;
 
   return p;
