@@ -2305,7 +2305,7 @@ bool getSymbolTable(parsed_pe *p) {
       }
 
     } else {
-        #ifdef PEPARSE_LIBRARY_WARNINGS
+#ifdef PEPARSE_LIBRARY_WARNINGS
           std::ios::fmtflags originalStreamFlags(std::cerr.flags());
 
           auto storageClassName = GetSymbolTableStorageClassName(sym.storageClass);
@@ -2321,12 +2321,12 @@ bool getSymbolTable(parsed_pe *p) {
           }
 
         std::cerr.flags(originalStreamFlags);
-      #endif
+#endif
       offset = nextSymbolOffset;
     }
 
     if (offset != nextSymbolOffset) {
-        #ifdef PEPARSE_LIBRARY_WARNINGS
+#ifdef PEPARSE_LIBRARY_WARNINGS
           std::ios::fmtflags originalStreamFlags(std::cerr.flags());
 
           std::cerr << "Warning: Invalid internal offset (current: 0x" << std::hex
@@ -2334,7 +2334,7 @@ bool getSymbolTable(parsed_pe *p) {
                     << ")\n";
 
           std::cerr.flags(originalStreamFlags);
-        #endif
+#endif
       offset = nextSymbolOffset;
     }
   }
