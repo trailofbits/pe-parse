@@ -27,7 +27,7 @@ THE SOFTWARE.
 #include <iostream>
 #include <sstream>
 
-#include <parser-library/parse.h>
+#include <pe-parse/parse.h>
 
 using namespace peparse;
 

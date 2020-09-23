@@ -29,9 +29,9 @@ THE SOFTWARE.
 #include <stdexcept>
 #include <vector>
 
-#include <parser-library/nt-headers.h>
-#include <parser-library/parse.h>
-#include <parser-library/to_string.h>
+#include <pe-parse/nt-headers.h>
+#include <pe-parse/parse.h>
+#include <pe-parse/to_string.h>
 
 namespace peparse {
 

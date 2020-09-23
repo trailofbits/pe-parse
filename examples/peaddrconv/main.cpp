@@ -243,9 +243,7 @@ bool convertAddress(ParsedPeRef &pe,
                             result);
     }
 
-    default: {
-      return false;
-    }
+    default: { return false; }
   }
 }
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
-project(pe-parser-library)
+project(pe-parse)
 
 message(STATUS "VERSION file: ${PROJECT_SOURCE_DIR}/../VERSION")
 
@@ -9,9 +9,9 @@ add_compile_definitions(PEPARSE_VERSION="${PEPARSE_VERSION}")
 
 # List all files explicitly; this will make IDEs happy (i.e. QtCreator, CLion, ...)
 list(APPEND PEPARSERLIB_SOURCEFILES
-  include/parser-library/parse.h
-  include/parser-library/nt-headers.h
-  include/parser-library/to_string.h
+  include/pe-parse/parse.h
+  include/pe-parse/nt-headers.h
+  include/pe-parse/to_string.h
 
   src/buffer.cpp
   src/parse.cpp
@@ -64,4 +64,4 @@ install(
   NAMESPACE pe-parse::
   EXPORT_LINK_INTERFACE_LIBRARIES
 )
-install(DIRECTORY "include/parser-library" DESTINATION "include")
+install(DIRECTORY "include/pe-parse" DESTINATION "include")

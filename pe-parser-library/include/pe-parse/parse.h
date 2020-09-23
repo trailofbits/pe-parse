@@ -32,7 +32,7 @@ THE SOFTWARE.
 #include "to_string.h"
 
 #ifdef _MSC_VER
-#define __typeof__(x) std::remove_reference<decltype(x)>::type
+#define __typeof__(x) std::remove_reference < decltype(x) > ::type
 #endif
 
 #define PE_ERR(x)               \
