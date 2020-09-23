@@ -30,6 +30,10 @@ endif()
 
 add_library(${PROJECT_NAME} ${PEPARSERLIB_SOURCEFILES})
 
+if(PEPARSE_LIBRARY_WARNINGS)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE PEPARSE_LIBRARY_WARNINGS=1)
+endif ()
+
 target_include_directories(
   ${PROJECT_NAME}
   PUBLIC

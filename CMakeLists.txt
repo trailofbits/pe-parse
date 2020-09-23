@@ -17,6 +17,8 @@ list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
 option(BUILD_COMMAND_LINE_TOOLS "Build Command Line Tools" ON)
+option(PEPARSE_LIBRARY_WARNINGS "Log pe-parse library warnings to stderr" OFF)
+
 
 if (MSVC)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)

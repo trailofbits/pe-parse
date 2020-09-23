@@ -2305,6 +2305,7 @@ bool getSymbolTable(parsed_pe *p) {
       }
 
     } else {
+#ifdef PEPARSE_LIBRARY_WARNINGS
       std::ios::fmtflags originalStreamFlags(std::cerr.flags());
 
       auto storageClassName = GetSymbolTableStorageClassName(sym.storageClass);
@@ -2313,16 +2314,19 @@ bool getSymbolTable(parsed_pe *p) {
                   << static_cast<std::uint32_t>(sym.storageClass)
                   << " at offset 0x" << std::hex << offset << "\n";
       } else {
+
         std::cerr << "Warning: Skipping auxiliary symbol of type "
                   << storageClassName << " at offset 0x" << std::hex << offset
                   << "\n";
       }
 
       std::cerr.flags(originalStreamFlags);
+#endif
       offset = nextSymbolOffset;
     }
 
     if (offset != nextSymbolOffset) {
+#ifdef PEPARSE_LIBRARY_WARNINGS
       std::ios::fmtflags originalStreamFlags(std::cerr.flags());
 
       std::cerr << "Warning: Invalid internal offset (current: 0x" << std::hex
@@ -2330,6 +2334,7 @@ bool getSymbolTable(parsed_pe *p) {
                 << ")\n";
 
       std::cerr.flags(originalStreamFlags);
+#endif
       offset = nextSymbolOffset;
     }
   }
