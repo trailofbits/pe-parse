@@ -26,7 +26,7 @@
  */
 
 #include <Python.h>
-#include <parser-library/parse.h>
+#include <pe-parse/parse.h>
 #include <structmember.h>
 
 using namespace peparse;

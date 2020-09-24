@@ -38,7 +38,7 @@ endif ()
 find_package(pe-parse REQUIRED)
 
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} pe-parse::pe-parser-library)
+target_link_libraries(${PROJECT_NAME} pe-parse::pe-parse)
 target_compile_options(${PROJECT_NAME} PRIVATE ${PEADDRCONV_CXXFLAGS})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION "bin")
