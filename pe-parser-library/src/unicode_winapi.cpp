@@ -23,7 +23,7 @@ THE SOFTWARE.
 */
 
 #include <Windows.h>
-#include <parser-library/to_string.h>
+#include <pe-parse/to_string.h>
 
 namespace peparse {
 std::string from_utf16(const UCharString &u) {
