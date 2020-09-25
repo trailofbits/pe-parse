@@ -29,10 +29,7 @@ THE SOFTWARE.
 
 #include <pe-parse/parse.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wsign-conversion"
 #include "vendor/argh.h"
-#pragma clang diagnostic pop
 
 using namespace peparse;
 
