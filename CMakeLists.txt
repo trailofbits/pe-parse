@@ -24,6 +24,10 @@ if (MSVC)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif ()
 
+file(READ "${PROJECT_SOURCE_DIR}/VERSION" PEPARSE_VERSION)
+string(STRIP "${PEPARSE_VERSION}" PEPARSE_VERSION)
+add_compile_definitions(PEPARSE_VERSION="${PEPARSE_VERSION}")
+
 add_subdirectory(pe-parser-library)
 
 if (BUILD_COMMAND_LINE_TOOLS)

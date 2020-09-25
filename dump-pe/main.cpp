@@ -29,6 +29,8 @@ THE SOFTWARE.
 
 #include <pe-parse/parse.h>
 
+#include "vendor/argh.h"
+
 using namespace peparse;
 
 int printExps(void *N,
@@ -295,20 +297,31 @@ int printSecs(void *N,
   std::cout << std::boolalpha << static_cast<bool>(p->peHeader.x) << "\n";
 
 int main(int argc, char *argv[]) {
-  if (argc != 2 || (argc == 2 && std::strcmp(argv[1], "--help") == 0)) {
+  
+  argh::parser cmdl(argv); 
+  
+  if ( cmdl[{"-h","--help"}] || cmdl[0].empty()) { 
     std::cout << "dump-pe utility from Trail of Bits\n";
     std::cout << "Repository: https://github.com/trailofbits/pe-parse\n\n";
     std::cout << "Usage:\n\tdump-pe /path/to/executable.exe\n";
     return 1;
   }
 
-  parsed_pe *p = ParsePEFromFile(argv[1]);
+  if ( cmdl[{"-v","--version"}] ) { 
+    std::cout << "dump-pe (pe-parse) version " << PEPARSE_VERSION << "\n"; 
+    return 1;
+  }
+
+  parsed_pe *p = ParsePEFromFile(cmdl[0].c_str());
+
   if (p == nullptr) {
     std::cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")"
               << "\n";
     std::cout << "Location: " << GetPEErrLoc() << "\n";
     return 1;
   }
+
+	
 
   if (p != NULL) {
     // Print DOS header
