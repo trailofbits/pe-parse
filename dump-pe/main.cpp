@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
   
   argh::parser cmdl(argv); 
   
-  if ( cmdl[{"-h","--help"}] || cmdl[0].empty()) { 
+  if ( cmdl[{"-h","--help"}] || argc <= 1) { 
     std::cout << "dump-pe utility from Trail of Bits\n";
     std::cout << "Repository: https://github.com/trailofbits/pe-parse\n\n";
     std::cout << "Usage:\n\tdump-pe /path/to/executable.exe\n";
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  parsed_pe *p = ParsePEFromFile(cmdl[0].c_str());
+  parsed_pe *p = ParsePEFromFile(cmdl[1].c_str());
 
   if (p == nullptr) {
     std::cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")"
