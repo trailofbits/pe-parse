@@ -29,8 +29,10 @@ THE SOFTWARE.
 
 #include <pe-parse/parse.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-conversion"
 #include "vendor/argh.h"
-
+#pragma clang diagnostic pop
 
 using namespace peparse;
 
@@ -298,19 +300,17 @@ int printSecs(void *N,
   std::cout << std::boolalpha << static_cast<bool>(p->peHeader.x) << "\n";
 
 int main(int argc, char *argv[]) {
-  
-  argh::parser cmdl(argv); 
-  
-  if ( cmdl[{"-h","--help"}] || argc <= 1) { 
+
+  argh::parser cmdl(argv);
+
+  if (cmdl[{"-h", "--help"}] || argc <= 1) {
     std::cout << "dump-pe utility from Trail of Bits\n";
     std::cout << "Repository: https://github.com/trailofbits/pe-parse\n\n";
     std::cout << "Usage:\n\tdump-pe /path/to/executable.exe\n";
-    return 1;
-  }
-
-  if ( cmdl[{"-v","--version"}] ) { 
-    std::cout << "dump-pe (pe-parse) version " << PEPARSE_VERSION << "\n"; 
-    return 1;
+    return 0;
+  } else if (cmdl[{"-v", "--version"}]) {
+    std::cout << "dump-pe (pe-parse) version " << PEPARSE_VERSION << "\n";
+    return 0;
   }
 
   parsed_pe *p = ParsePEFromFile(cmdl[1].c_str());
@@ -321,8 +321,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Location: " << GetPEErrLoc() << "\n";
     return 1;
   }
-
-	
 
   if (p != NULL) {
     // Print DOS header

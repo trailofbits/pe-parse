@@ -42,6 +42,7 @@ file(
         pe-parser-library/*.h
         pepy/*.cpp
         pepy/*.h
+        dump-pe/*.cpp
         examples/*.cpp
         examples/*.h
 )
