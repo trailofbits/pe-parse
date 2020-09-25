@@ -3,10 +3,6 @@ project(pe-parse)
 
 message(STATUS "VERSION file: ${PROJECT_SOURCE_DIR}/../VERSION")
 
-file(READ "${PROJECT_SOURCE_DIR}/../VERSION" PEPARSE_VERSION)
-string(STRIP "${PEPARSE_VERSION}" PEPARSE_VERSION)
-add_compile_definitions(PEPARSE_VERSION="${PEPARSE_VERSION}")
-
 # List all files explicitly; this will make IDEs happy (i.e. QtCreator, CLion, ...)
 list(APPEND PEPARSERLIB_SOURCEFILES
   include/pe-parse/parse.h
