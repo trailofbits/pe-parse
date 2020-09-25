@@ -95,7 +95,7 @@ Once the library is installed, linking to it is easy! Add the following lines in
 ```
 find_package(pe-parse REQUIRED)
 
-target_link_libraries(your_target_name PRIVATE pe-parse::pe-parser-library)
+target_link_libraries(your_target_name PRIVATE pe-parse::pe-parse)
 ```
 
 You can see a full example in the [examples/peaddrconv](examples/peaddrconv) folder.
