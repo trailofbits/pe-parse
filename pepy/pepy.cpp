@@ -35,18 +35,6 @@ using namespace peparse;
  */
 #define PEPY_VERSION PEPARSE_VERSION
 
-/*
- * Some macro only available after python 2.6
- * Needed for compatibility with python3
- */
-#ifndef PyVarObject_HEAD_INIT
-#define PyVarObject_HEAD_INIT(type, size) PyObject_HEAD_INIT(type) size,
-#endif
-
-#ifndef Py_TYPE
-#define Py_TYPE(_ob_) (((PyObject *) (_ob_))->ob_type)
-#endif
-
 /* These are used to across multiple objects. */
 #define PEPY_OBJECT_GET(OBJ, ATTR)                                          \
   static PyObject *pepy_##OBJ##_get_##ATTR(PyObject *self, void *closure) { \
