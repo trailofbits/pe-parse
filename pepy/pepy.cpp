@@ -379,7 +379,7 @@ PEPY_OBJECT_GET(section, length);
 PEPY_OBJECT_GET(section, virtaddr);
 PEPY_OBJECT_GET(section, virtsize);
 PEPY_OBJECT_GET(section, numrelocs);
-PEPY_OBJECT_GET(section, numlinenums;
+PEPY_OBJECT_GET(section, numlinenums);
 PEPY_OBJECT_GET(section, characteristics);
 PEPY_OBJECT_GET(section, data);
 
@@ -1314,7 +1314,7 @@ static PyObject *pepy_parse(PyObject *self, PyObject *args) {
 static PyMethodDef pepy_methods[] = {
     {"parse", pepy_parse, METH_VARARGS, "Parse PE from file."}, {NULL}};
 
-static PyObject *pepy_module_init(void) {
+PyMODINIT_FUNC PyInit_pepy(void) {
   PyObject *m;
 
   if (PyType_Ready(&pepy_parsed_type) < 0 ||
@@ -1428,8 +1428,4 @@ static PyObject *pepy_module_init(void) {
   PyModule_AddIntMacro(m, IMAGE_SCN_MEM_WRITE);
 
   return m;
-}
-
-PyMODINIT_FUNC PyInit_pepy(void) {
-  return pepy_module_init();
 }
