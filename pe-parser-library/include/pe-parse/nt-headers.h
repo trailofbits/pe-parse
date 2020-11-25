@@ -28,10 +28,6 @@ THE SOFTWARE.
 #include <string>
 #include <vector>
 
-#define _offset(t, f)         \
-  static_cast<std::uint32_t>( \
-      reinterpret_cast<std::ptrdiff_t>(&static_cast<t *>(nullptr)->f))
-
 // need to pack these structure definitions
 
 // some constant definitions
