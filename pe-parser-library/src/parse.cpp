@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -1177,7 +1178,17 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
 // zero extends its first argument to 32 bits and then performs a rotate left
 // operation equal to the second arguments value of the first argument’s bits
 static inline std::uint32_t rol(std::uint32_t val, std::uint32_t num) {
-  return ((val << num) & 0xffffffff) | (val >> (32 - num));
+  assert(num < 32);
+  // Disable MSVC warning for unary minus operator applied to unsigned type
+#if defined(_MSC_VER) || defined(_MSC_FULL_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146)
+#endif
+  // https://blog.regehr.org/archives/1063
+  return (val << num) | (val >> (-num & 31));
+#if defined(_MSC_VER) || defined(_MSC_FULL_VER)
+#pragma warning(pop)
+#endif
 }
 
 std::uint32_t calculateRichChecksum(const bounded_buffer *b, pe_header &p) {
@@ -1193,7 +1204,7 @@ std::uint32_t calculateRichChecksum(const bounded_buffer *b, pe_header &p) {
     if (i >= 0x3C && i <= 0x3F) {
       continue;
     }
-    checksum += rol(b->buf[i], i);
+    checksum += rol(b->buf[i], i & 0x1F);
   }
 
   // Next, take summation of each Rich header entry by combining its ProductId
