@@ -59,7 +59,7 @@ struct reloc {
   reloc_type type;
 };
 
-#define SYMBOL_NAMEoffsetof(sn) (static_cast<std::uint32_t>(sn.data >> 32))
+#define SYMBOL_NAME_OFFSET(sn) (static_cast<std::uint32_t>(sn.data >> 32))
 #define SYMBOL_TYPE_HI(x) (x.type >> 8)
 
 union symbol_name {
@@ -2032,7 +2032,7 @@ bool getSymbolTable(parsed_pe *p) {
       // table. In this case instead of name, an offset of the string in the
       // string table is provided.
 
-      uint32_t strOffset = strTableOffset + SYMBOL_NAMEoffsetof(sym.name);
+      uint32_t strOffset = strTableOffset + SYMBOL_NAME_OFFSET(sym.name);
       uint8_t ch;
       for (;;) {
         if (!readByte(p->fileBuffer, strOffset, ch)) {
