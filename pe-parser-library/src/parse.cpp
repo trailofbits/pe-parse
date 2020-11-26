@@ -1179,8 +1179,16 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
 // operation equal to the second arguments value of the first argument’s bits
 static inline std::uint32_t rol(std::uint32_t val, std::uint32_t num) {
   assert(num < 32);
+  // Disable MSVC warning for unary minus operator applied to unsigned type
+#if defined(_MSC_VER) || defined(_MSC_FULL_VER)
+#pragma warning(push)
+#pragma warning(disable : 4146)
+#endif
   // https://blog.regehr.org/archives/1063
   return (val << num) | (val >> (-num & 31));
+#if defined(_MSC_VER) || defined(_MSC_FULL_VER)
+#pragma warning(pop)
+#endif
 }
 
 std::uint32_t calculateRichChecksum(const bounded_buffer *b, pe_header &p) {
