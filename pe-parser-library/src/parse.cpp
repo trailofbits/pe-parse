@@ -671,7 +671,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
       rde = new resource_dir_entry;
     }
 
-    if (!readDword(sectionData, o + _offset(__typeof__(*rde), ID), rde->ID)) {
+    if (!readDword(sectionData, o + offsetof(__typeof__(*rde), ID), rde->ID)) {
       PE_ERR(PEERR_READ);
       if (dirent == nullptr) {
         delete rde;
@@ -679,7 +679,8 @@ bool parse_resource_table(bounded_buffer *sectionData,
       return false;
     }
 
-    if (!readDword(sectionData, o + _offset(__typeof__(*rde), RVA), rde->RVA)) {
+    if (!readDword(
+            sectionData, o + offsetof(__typeof__(*rde), RVA), rde->RVA)) {
       PE_ERR(PEERR_READ);
       if (dirent == nullptr) {
         delete rde;
@@ -760,7 +761,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
        */
 
       if (!readDword(sectionData,
-                     rde->RVA + _offset(__typeof__(rdat), RVA),
+                     rde->RVA + offsetof(__typeof__(rdat), RVA),
                      rdat.RVA)) {
         PE_ERR(PEERR_READ);
         if (dirent == nullptr) {
@@ -770,7 +771,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
       }
 
       if (!readDword(sectionData,
-                     rde->RVA + _offset(__typeof__(rdat), size),
+                     rde->RVA + offsetof(__typeof__(rdat), size),
                      rdat.size)) {
         PE_ERR(PEERR_READ);
         if (dirent == nullptr) {
@@ -780,7 +781,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
       }
 
       if (!readDword(sectionData,
-                     rde->RVA + _offset(__typeof__(rdat), codepage),
+                     rde->RVA + offsetof(__typeof__(rdat), codepage),
                      rdat.codepage)) {
         PE_ERR(PEERR_READ);
         if (dirent == nullptr) {
@@ -790,7 +791,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
       }
 
       if (!readDword(sectionData,
-                     rde->RVA + _offset(__typeof__(rdat), reserved),
+                     rde->RVA + offsetof(__typeof__(rdat), reserved),
                      rdat.reserved)) {
         PE_ERR(PEERR_READ);
         if (dirent == nullptr) {
@@ -994,15 +995,15 @@ bool readOptionalHeader(bounded_buffer *b, optional_header_32 &header) {
 
   for (std::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
     std::uint32_t c = (i * sizeof(data_directory));
-    c += _offset(optional_header_32, DataDirectory[0]);
+    c += offsetof(optional_header_32, DataDirectory[0]);
     std::uint32_t o;
 
-    o = c + _offset(data_directory, VirtualAddress);
+    o = c + offsetof(data_directory, VirtualAddress);
     if (!readDword(b, o, header.DataDirectory[i].VirtualAddress)) {
       return false;
     }
 
-    o = c + _offset(data_directory, Size);
+    o = c + offsetof(data_directory, Size);
     if (!readDword(b, o, header.DataDirectory[i].Size)) {
       return false;
     }
@@ -1049,15 +1050,15 @@ bool readOptionalHeader64(bounded_buffer *b, optional_header_64 &header) {
 
   for (std::uint32_t i = 0; i < header.NumberOfRvaAndSizes; i++) {
     std::uint32_t c = (i * sizeof(data_directory));
-    c += _offset(optional_header_64, DataDirectory[0]);
+    c += offsetof(optional_header_64, DataDirectory[0]);
     std::uint32_t o;
 
-    o = c + _offset(data_directory, VirtualAddress);
+    o = c + offsetof(data_directory, VirtualAddress);
     if (!readDword(b, o, header.DataDirectory[i].VirtualAddress)) {
       return false;
     }
 
-    o = c + _offset(data_directory, Size);
+    o = c + offsetof(data_directory, Size);
     if (!readDword(b, o, header.DataDirectory[i].Size)) {
       return false;
     }
@@ -1092,7 +1093,7 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
 
   header.Signature = pe_magic;
   bounded_buffer *fhb =
-      splitBuffer(b, _offset(nt_header_32, FileHeader), b->bufLen);
+      splitBuffer(b, offsetof(nt_header_32, FileHeader), b->bufLen);
 
   if (fhb == nullptr) {
     PE_ERR(PEERR_MEM);
@@ -1131,7 +1132,7 @@ bool readNtHeader(bounded_buffer *b, nt_header_32 &header) {
    * buffer regardless.
    */
   bounded_buffer *ohb =
-      splitBuffer(b, _offset(nt_header_32, OptionalHeader), b->bufLen);
+      splitBuffer(b, offsetof(nt_header_32, OptionalHeader), b->bufLen);
 
   if (ohb == nullptr) {
     deleteBuffer(fhb);
@@ -1489,7 +1490,7 @@ bool getExports(parsed_pe *p) {
     // get the name of this module
     std::uint32_t nameRva;
     if (!readDword(s.sectionData,
-                   rvaofft + _offset(export_dir_table, NameRVA),
+                   rvaofft + offsetof(export_dir_table, NameRVA),
                    nameRva)) {
       return false;
     }
@@ -1517,7 +1518,7 @@ bool getExports(parsed_pe *p) {
     // now, get all the named export symbols
     std::uint32_t numNames;
     if (!readDword(s.sectionData,
-                   rvaofft + _offset(export_dir_table, NumberOfNamePointers),
+                   rvaofft + offsetof(export_dir_table, NumberOfNamePointers),
                    numNames)) {
       return false;
     }
@@ -1526,7 +1527,7 @@ bool getExports(parsed_pe *p) {
       // get the names section
       std::uint32_t namesRVA;
       if (!readDword(s.sectionData,
-                     rvaofft + _offset(export_dir_table, NamePointerRVA),
+                     rvaofft + offsetof(export_dir_table, NamePointerRVA),
                      namesRVA)) {
         return false;
       }
@@ -1551,7 +1552,8 @@ bool getExports(parsed_pe *p) {
       // get the EAT section
       std::uint32_t eatRVA;
       if (!readDword(s.sectionData,
-                     rvaofft + _offset(export_dir_table, ExportAddressTableRVA),
+                     rvaofft +
+                         offsetof(export_dir_table, ExportAddressTableRVA),
                      eatRVA)) {
         return false;
       }
@@ -1575,7 +1577,7 @@ bool getExports(parsed_pe *p) {
       // get the ordinal base
       std::uint32_t ordinalBase;
       if (!readDword(s.sectionData,
-                     rvaofft + _offset(export_dir_table, OrdinalBase),
+                     rvaofft + offsetof(export_dir_table, OrdinalBase),
                      ordinalBase)) {
         return false;
       }
@@ -1583,7 +1585,7 @@ bool getExports(parsed_pe *p) {
       // get the ordinal table
       std::uint32_t ordinalTableRVA;
       if (!readDword(s.sectionData,
-                     rvaofft + _offset(export_dir_table, OrdinalTableRVA),
+                     rvaofft + offsetof(export_dir_table, OrdinalTableRVA),
                      ordinalTableRVA)) {
         return false;
       }
@@ -1726,13 +1728,13 @@ bool getRelocations(parsed_pe *p) {
       std::uint32_t blockSize;
 
       if (!readDword(d.sectionData,
-                     rvaofft + _offset(reloc_block, PageRVA),
+                     rvaofft + offsetof(reloc_block, PageRVA),
                      pageRva)) {
         return false;
       }
 
       if (!readDword(d.sectionData,
-                     rvaofft + _offset(reloc_block, BlockSize),
+                     rvaofft + offsetof(reloc_block, BlockSize),
                      blockSize)) {
         return false;
       }
