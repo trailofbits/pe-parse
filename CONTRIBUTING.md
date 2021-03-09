@@ -10,7 +10,7 @@ automatically prompted to sign it during your first PR.
 
 ## General contribution guidelines
 
-* Your changes should be valid C++11
+* Your changes should be valid C++17
 * Your changes should work across all major compiler vendors (GCC, Clang, MSVC) and all
 major operating systems (Linux, macOS, Windows)
 * Your changes should be auto-formatted with `clang-format -style=file`

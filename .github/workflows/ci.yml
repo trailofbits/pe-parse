@@ -11,7 +11,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
 
@@ -30,7 +30,7 @@ jobs:
   pe-parse:
     strategy:
       matrix:
-        platform: ["ubuntu-latest", "macos-latest"]
+        platform: ["ubuntu-18.04", "macos-latest"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
         compiler:
@@ -42,6 +42,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
     - name: build
       env:
         CC: ${{ matrix.compiler.CC }}
@@ -52,16 +54,20 @@ jobs:
         cmake \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} \
+          -DPEPARSE_ENABLE_TESTING=ON \
           ..
         cmake --build .
     - name: test
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
       run: |
-        ./build/dump-pe/dump-pe ./test/assets/example.exe
+        cd build && ctest -V
+        ./dump-pe/dump-pe ../tests/assets/example.exe
 
   pepy:
     strategy:
       matrix:
-        platform: ["ubuntu-latest", "macos-latest"]
+        platform: ["ubuntu-18.04", "macos-latest"]
         python:
           - "3.6"
           - "3.7"
@@ -81,7 +87,7 @@ jobs:
         python3 -m pip install --user dist/*.tar.gz
     - name: test
       run: |
-        python3 test/test_pepy.py test/assets/example.exe
+        python3 tests/test_pepy.py tests/assets/example.exe
 
   pe-parse-windows:
     strategy:
@@ -92,6 +98,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
     - name: build
       run: |
         mkdir build
@@ -100,15 +108,20 @@ jobs:
           -G "Visual Studio 16 2019" `
           -A ${{ matrix.build-arch }} `
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
+          -DPEPARSE_ENABLE_TESTING=ON `
           ..
         cmake --build . --config ${{ matrix.build-type }}
     - name: install
       run: |
         cd build
-        cmake --build . --target install
+        cmake --build . --config ${{ matrix.build-type }} --target install
     - name: test
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
       run: |
-        .\build\bin\dump-pe.exe .\test\assets\example.exe
+        cd build
+        ctest -V
+        .\bin\dump-pe.exe ..\tests\assets\example.exe
 
   pepy-windows:
     strategy:
@@ -131,4 +144,4 @@ jobs:
         python -m pip install --user .
     - name: test
       run: |
-        python test/test_pepy.py test/assets/example.exe
+        python tests/test_pepy.py tests/assets/example.exe
