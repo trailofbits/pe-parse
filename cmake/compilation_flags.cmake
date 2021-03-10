@@ -2,6 +2,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include("cmake/sanitizers.cmake")
+process_sanitizer(PEPARSE)
+
 if (MSVC)
   list(APPEND DEFAULT_CXX_FLAGS /W4 /analyze)
 
