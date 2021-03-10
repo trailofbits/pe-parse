@@ -13,6 +13,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 include(cmake/compilation_flags.cmake)
+# Greater c++17 filesystem compatibility (like with experimental)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+find_package(Filesystem COMPONENTS Experimental Final REQUIRED)
 list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
 option(BUILD_SHARED_LIBS "Build Shared Libraries" ON)
@@ -45,6 +48,8 @@ file(
         dump-pe/*.cpp
         examples/*.cpp
         examples/*.h
+        tests/*.cpp
+        tests/*.h
 )
 add_custom_target(
   peparse_format
@@ -58,3 +63,9 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build Shared: ${BUILD_SHARED_LIBS} ${BUILD_SHARED_LIBS_MESSAGE}")
 message(STATUS "Build Command Line Tools: ${BUILD_COMMAND_LINE_TOOLS}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+
+option(PEPARSE_ENABLE_TESTING "Enable building tests" OFF)
+if (PEPARSE_ENABLE_TESTING)
+  enable_testing()
+  add_subdirectory(tests)
+endif()

@@ -88,6 +88,12 @@ cmake -G "Visual Studio 16 2019" -A Win64 ..
 cmake --build . --config Release
 ```
 
+## Testing
+
+You can build the (catch2-based) tests by adding `-DPEPARSE_ENABLE_TESTING=ON` during CMake configuration. Build, and then run with `ctest` or `cmake --build . --target test`.
+
+To run the full test suite with the [Corkami test suite](https://github.com/corkami/pocs/tree/master/PE), you must clone the submodule with `git submodule update --init`.
+
 ## Using the library
 
 Once the library is installed, linking to it is easy! Add the following lines in your CMake project:
