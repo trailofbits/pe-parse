@@ -112,11 +112,12 @@ bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out) {
     return false;
   }
 
-  std::uint16_t *tmp = reinterpret_cast<std::uint16_t *>(b->buf + offset);
+  std::uint16_t tmp;
+  memcpy(&tmp, (b->buf + offset), sizeof(std::uint16_t));
   if (b->swapBytes) {
-    out = byteSwapUint16(*tmp);
+    out = byteSwapUint16(tmp);
   } else {
-    out = *tmp;
+    out = tmp;
   }
 
   return true;
@@ -133,11 +134,12 @@ bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out) {
     return false;
   }
 
-  std::uint32_t *tmp = reinterpret_cast<std::uint32_t *>(b->buf + offset);
+  std::uint32_t tmp;
+  memcpy(&tmp, (b->buf + offset), sizeof(std::uint32_t));
   if (b->swapBytes) {
-    out = byteSwapUint32(*tmp);
+    out = byteSwapUint32(tmp);
   } else {
-    out = *tmp;
+    out = tmp;
   }
 
   return true;
@@ -154,11 +156,12 @@ bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
     return false;
   }
 
-  std::uint64_t *tmp = reinterpret_cast<std::uint64_t *>(b->buf + offset);
+  std::uint64_t tmp;
+  memcpy(&tmp, (b->buf + offset), sizeof(std::uint64_t));
   if (b->swapBytes) {
-    out = byteSwapUint64(*tmp);
+    out = byteSwapUint64(tmp);
   } else {
-    out = *tmp;
+    out = tmp;
   }
 
   return true;
