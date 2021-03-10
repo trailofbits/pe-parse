@@ -178,16 +178,16 @@ bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out) {
     return false;
   }
 
-  char16_t *tmp = nullptr;
+  char16_t tmp;
   if (b->swapBytes) {
     std::uint8_t tmpBuf[2];
     tmpBuf[0] = *(b->buf + offset + 1);
     tmpBuf[1] = *(b->buf + offset);
-    tmp = reinterpret_cast<char16_t *>(tmpBuf);
+    memcpy(&tmp, tmpBuf, sizeof(std::uint16_t));
   } else {
-    tmp = reinterpret_cast<char16_t *>(b->buf + offset);
+    memcpy(&tmp, (b->buf + offset), sizeof(std::uint16_t));
   }
-  out = *tmp;
+  out = tmp;
 
   return true;
 }
