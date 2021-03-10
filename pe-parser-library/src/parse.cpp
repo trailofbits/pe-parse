@@ -2381,8 +2381,8 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   // get header information
   bounded_buffer *remaining = nullptr;
   if (!getHeader(p->fileBuffer, p->peHeader, remaining)) {
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    deleteBuffer(remaining);
+    DestructParsedPE(p);
     // err is set by getHeader
     return nullptr;
   }
@@ -2390,16 +2390,14 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   bounded_buffer *file = p->fileBuffer;
   if (!getSections(remaining, file, p->peHeader.nt, p->internal->secs)) {
     deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    DestructParsedPE(p);
     PE_ERR(PEERR_SECT);
     return nullptr;
   }
 
   if (!getResources(remaining, file, p->internal->secs, p->internal->rsrcs)) {
     deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    DestructParsedPE(p);
     PE_ERR(PEERR_RESC);
     return nullptr;
   }
@@ -2407,8 +2405,7 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   // Get exports
   if (!getExports(p)) {
     deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    DestructParsedPE(p);
     PE_ERR(PEERR_MAGIC);
     return nullptr;
   }
@@ -2416,8 +2413,7 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   // Get relocations, if exist
   if (!getRelocations(p)) {
     deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    DestructParsedPE(p);
     PE_ERR(PEERR_MAGIC);
     return nullptr;
   }
@@ -2425,16 +2421,14 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   // Get imports
   if (!getImports(p)) {
     deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    DestructParsedPE(p);
     return nullptr;
   }
 
   // Get symbol table
   if (!getSymbolTable(p)) {
     deleteBuffer(remaining);
-    deleteBuffer(p->fileBuffer);
-    delete p;
+    DestructParsedPE(p);
     return nullptr;
   }
 
