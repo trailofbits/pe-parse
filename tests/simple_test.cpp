@@ -2,7 +2,7 @@
 
 #include <catch2/catch.hpp>
 
-#include "filesystem.h"
+#include "filesystem_compat.h"
 
 namespace peparse {
 

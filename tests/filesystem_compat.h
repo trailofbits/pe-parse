@@ -1,3 +1,6 @@
+// This header is for C++17 filesystem compatibility for different versions of
+// compilers and c++ standard libraries header placement
+
 #if !defined(__has_include)
 // Assume experimental if compiler doesn't have __has_include
 #include <experimental/filesystem>

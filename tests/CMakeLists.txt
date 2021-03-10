@@ -24,7 +24,7 @@ add_executable(tests
   simple_test.cpp
   corkami_test.cpp
 
-  filesystem.h
+  filesystem_compat.h
   )
 target_compile_definitions(tests PRIVATE ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 target_link_libraries(tests PRIVATE std::filesystem ${PROJECT_NAME} Catch2::Catch2)

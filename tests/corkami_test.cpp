@@ -5,7 +5,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "filesystem.h"
+#include "filesystem_compat.h"
 
 // Whether the corkami testset has been downloaded
 // Path to corkami PEs
