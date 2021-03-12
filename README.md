@@ -108,5 +108,8 @@ You can see a full example in the [examples/peaddrconv](examples/peaddrconv) fol
 
 ## Authors
 
-pe-parse was designed and implemented by Andrew Ruef (andrew@trailofbits.com), with significant
-contributions from [Wesley Shields](https://github.com/wxsBSD).
+pe-parse was designed and implemented by [Andrew Ruef](https://github.com/awruef),
+with significant contributions from [Wesley Shields](https://github.com/wxsBSD).
+
+pe-parse is currently maintained by [Eric Kilmer](https://github.com/ekilmer)
+and [William Woodruff](https://github.com/woodruffw).
