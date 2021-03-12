@@ -51,10 +51,15 @@ jobs:
       run: |
         mkdir build
         cd build
+        # Only build with sanitizers on Debug
+        if [[ "${{ matrix.build-type }}" == "Debug" ]]; then
+          SAN_FLAG="-DPEPARSE_USE_SANITIZER=Address,Undefined"
+        fi
         cmake \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} \
           -DPEPARSE_ENABLE_TESTING=ON \
+          ${SAN_FLAG} \
           ..
         cmake --build .
     - name: test
