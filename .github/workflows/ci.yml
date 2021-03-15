@@ -44,6 +44,10 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'true'
+    - name: Enable ASan+UBSan Sanitizers
+      if: matrix.build-type == 'Debug'
+      run: |
+        echo "SANITIZER_FLAG=-DPEPARSE_USE_SANITIZER=Address,Undefined" >> $GITHUB_ENV
     - name: build
       env:
         CC: ${{ matrix.compiler.CC }}
@@ -51,15 +55,11 @@ jobs:
       run: |
         mkdir build
         cd build
-        # Only build with sanitizers on Debug
-        if [[ "${{ matrix.build-type }}" == "Debug" ]]; then
-          SAN_FLAG="-DPEPARSE_USE_SANITIZER=Address,Undefined"
-        fi
         cmake \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} \
           -DPEPARSE_ENABLE_TESTING=ON \
-          ${SAN_FLAG} \
+          ${SANITIZER_FLAG} \
           ..
         cmake --build .
     - name: test
