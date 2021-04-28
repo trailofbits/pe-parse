@@ -107,7 +107,7 @@ bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out) {
     return false;
   }
 
-  if (offset + 1 >= b->bufLen) {
+  if (static_cast<std::uint64_t>(offset) + 1 >= b->bufLen) {
     PE_ERR(PEERR_ADDRESS);
     return false;
   }
@@ -129,7 +129,7 @@ bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out) {
     return false;
   }
 
-  if (offset + 3 >= b->bufLen) {
+  if (static_cast<std::uint64_t>(offset) + 3 >= b->bufLen) {
     PE_ERR(PEERR_ADDRESS);
     return false;
   }
@@ -151,7 +151,7 @@ bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
     return false;
   }
 
-  if (offset + 7 >= b->bufLen) {
+  if (static_cast<std::uint64_t>(offset) + 7 >= b->bufLen) {
     PE_ERR(PEERR_ADDRESS);
     return false;
   }
@@ -173,7 +173,7 @@ bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out) {
     return false;
   }
 
-  if (offset + 1 >= b->bufLen) {
+  if (static_cast<std::uint64_t>(offset) + 1 >= b->bufLen) {
     PE_ERR(PEERR_ADDRESS);
     return false;
   }
