@@ -23,6 +23,7 @@ add_executable(tests
   test_main.cpp
   simple_test.cpp
   corkami_test.cpp
+  pr_153_test.cpp
 
   filesystem_compat.h
   )
