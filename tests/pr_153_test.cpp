@@ -10,8 +10,8 @@ TEST_CASE("malformed PE (GH#153) does not parse", "[pr_153]") {
   auto *p = ParsePEFromFile(path.string().c_str());
 
   // pr_153.exe should not parse, and should return an error indicating
-  // that an invalid memory address was requested.
+  // that the magic was invalid (masking the underlying PEERR_ADDRESS error).
   REQUIRE(p == nullptr);
-  REQUIRE(GetPEErr() == PEERR_ADDRESS);
+  REQUIRE(GetPEErr() == PEERR_MAGIC);
 }
 } // namespace peparse
