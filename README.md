@@ -23,7 +23,7 @@ pe-parse supports these use cases via a minimal API that provides methods for
 
 The interface is defined in `parser-library/parse.h`.
 
-The program in `dump-prog/dump.cpp` is an example of using the parser-library API to dump
+The program in `dump-pe/main.cpp` is an example of using the parser-library API to dump
 information about a PE file.
 
 Internally, the parser-library uses a bounded buffer abstraction to access information stored in
