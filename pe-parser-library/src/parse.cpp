@@ -43,12 +43,6 @@ struct section {
   image_section_header sec;
 };
 
-struct importent {
-  VA addr;
-  std::string symbolName;
-  std::string moduleName;
-};
-
 struct exportent {
   VA addr;
   std::string symbolName;
@@ -118,7 +112,7 @@ struct symbol {
 struct parsed_pe_internal {
   std::vector<section> secs;
   std::vector<resource> rsrcs;
-  std::vector<importent> imports;
+  std::vector<importdirent> imports;
   std::vector<reloc> relocs;
   std::vector<exportent> exports;
   std::vector<symbol> symbols;
@@ -584,7 +578,7 @@ static bool readCString(const bounded_buffer &buffer,
 }
 
 bool getSecForVA(const std::vector<section> &secs, VA v, section &sec) {
-  for (section s : secs) {
+  for (const section &s : secs) {
     std::uint64_t low = s.sectionBase;
     std::uint64_t high = low + s.sec.Misc.VirtualSize;
 
@@ -1790,229 +1784,262 @@ bool getRelocations(parsed_pe *p) {
   return true;
 }
 
-bool getImports(parsed_pe *p) {
-  data_directory importDir;
-  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-    importDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_IMPORT];
-  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-    importDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_IMPORT];
-  } else {
-    return false;
-  }
+bool getImportLookupEntries(std::vector<importlookupent> &importLookupEntries,
+                            const section &importSection,
+                            const std::vector<section> &sections,
+                            uint64_t imageBase,
+                            uint32_t importTableRVA,
+                            uint16_t ntMagic,
+                            const std::string &modName) {
 
-  if (importDir.Size != 0) {
-    // get section for the RVA in importDir
-    section c;
-    VA addr;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      addr = importDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      addr =
-          importDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      return false;
-    }
+  std::uint32_t offInTable = 0;
+  auto imporTableSectionOff = static_cast<std::uint32_t>(
+      (imageBase + importTableRVA) - importSection.sectionBase);
+  do {
+    std::uint8_t ordinalBit = 0;
+    std::uint16_t ordinalValue = 0;
 
-    if (!getSecForVA(p->internal->secs, addr, c)) {
-      return false;
-    }
+    // This also doubles as HintRVA when used with non-ordinal imports
+    std::uint64_t importLookupEntry = 0;
+    if (ntMagic == NT_OPTIONAL_32_MAGIC) {
+      std::uint32_t tmpImportLookupEntry = 0;
+      if (!readDword(importSection.sectionData,
+                     imporTableSectionOff,
+                     tmpImportLookupEntry)) {
+        return false;
+      }
 
-    // get import directory from this section
-    auto offt = static_cast<std::uint32_t>(addr - c.sectionBase);
-
-    import_dir_entry emptyEnt;
-    memset(&emptyEnt, 0, sizeof(import_dir_entry));
-
-    do {
-      // read each directory entry out
-      import_dir_entry curEnt = emptyEnt;
-
-      READ_DWORD(c.sectionData, offt, curEnt, LookupTableRVA);
-      READ_DWORD(c.sectionData, offt, curEnt, TimeStamp);
-      READ_DWORD(c.sectionData, offt, curEnt, ForwarderChain);
-      READ_DWORD(c.sectionData, offt, curEnt, NameRVA);
-      READ_DWORD(c.sectionData, offt, curEnt, AddressRVA);
-
-      // are all the fields in curEnt null? then we break
-      if (curEnt.LookupTableRVA == 0 && curEnt.NameRVA == 0 &&
-          curEnt.AddressRVA == 0) {
+      if (tmpImportLookupEntry == 0) {
         break;
       }
 
-      // then, try and get the name of this particular module...
-      VA name;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        name = curEnt.NameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
+      ordinalBit = (tmpImportLookupEntry >> 31);
+      ordinalValue = (tmpImportLookupEntry & 0xFFFF);
+      importLookupEntry = tmpImportLookupEntry;
+    } else {
+      if (!readQword(importSection.sectionData,
+                     imporTableSectionOff,
+                     importLookupEntry)) {
         return false;
       }
 
-      section nameSec;
-      if (!getSecForVA(p->internal->secs, name, nameSec)) {
-        return false;
+      if (importLookupEntry == 0) {
+        break;
       }
 
-      auto nameOff = static_cast<std::uint32_t>(name - nameSec.sectionBase);
-      std::string modName;
-      if (!readCString(*nameSec.sectionData, nameOff, modName)) {
-        return false;
+      ordinalBit = (importLookupEntry >> 63);
+      ordinalValue = (importLookupEntry & 0xFFFF);
+    }
+
+    // import by name
+    if (ordinalBit == 0) {
+      // Verify that bits from 62-31 are 0, if not break
+      if ((importLookupEntry & 0x7FFFFFFF80000000) != 0) {
+        break;
       }
 
-      // clang-format off
-      std::transform(
-        modName.begin(),
-        modName.end(),
-        modName.begin(),
+      auto hintVA = importLookupEntry + imageBase;
+      std::string symName;
+      section symNameSec;
 
-        [](char chr) -> char {
-          return static_cast<char>(::toupper(chr));
-        }
-      );
-      // clang-format on
+      std::uint16_t hint = 0;
 
-      // then, try and get all of the sub-symbols
-      VA lookupVA = 0;
-      if (curEnt.LookupTableRVA != 0) {
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          lookupVA =
-              curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          lookupVA =
-              curEnt.LookupTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
+      /* Sometimes the functions in the table are already bound as an
+        optimization, so the HintRVA is not a relative address,
+        but a full virtual address where the function will be. This means that
+        there should be no name table and no section at hintVA
+        (importLookupEntry + imageBase). Instead of exiting with a failure, we
+        simply skip searching for the name and add an entry with the provided
+        RVA. */
+      if (getSecForVA(sections, hintVA, symNameSec)) {
+
+        std::uint32_t nameTableEntryOff =
+            static_cast<std::uint32_t>(hintVA - symNameSec.sectionBase);
+
+        if (!readWord(symNameSec.sectionData, nameTableEntryOff, hint)) {
           return false;
         }
-      } else if (curEnt.AddressRVA != 0) {
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          lookupVA =
-              curEnt.AddressRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          lookupVA =
-              curEnt.AddressRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
+
+        nameTableEntryOff += sizeof(std::uint16_t);
+
+        if (!readCString(*symNameSec.sectionData, nameTableEntryOff, symName)) {
           return false;
         }
       }
 
-      section lookupSec;
-      if (lookupVA == 0 ||
-          !getSecForVA(p->internal->secs, lookupVA, lookupSec)) {
-        return false;
+      VA entAddr = offInTable + importTableRVA + imageBase;
+
+      importLookupEntries.push_back(
+          {entAddr, importLookupEntry, hint, std::move(symName)});
+    } else {
+      // import by ordinal
+
+      // Verify that bits from 62-15 are 0, if not break
+      if ((importLookupEntry & 0x7FFFFFFFFFFF8000) != 0) {
+        break;
       }
 
-      auto lookupOff =
-          static_cast<std::uint32_t>(lookupVA - lookupSec.sectionBase);
-      std::uint32_t offInTable = 0;
-      do {
-        VA valVA = 0;
-        std::uint8_t ord = 0;
-        std::uint16_t oval = 0;
-        std::uint32_t val32 = 0;
-        std::uint64_t val64 = 0;
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          if (!readDword(lookupSec.sectionData, lookupOff, val32)) {
-            return false;
-          }
-          if (val32 == 0) {
-            break;
-          }
-          ord = (val32 >> 31);
-          oval = (val32 & ~0xFFFF0000);
-          valVA = val32 + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          if (!readQword(lookupSec.sectionData, lookupOff, val64)) {
-            return false;
-          }
-          if (val64 == 0) {
-            break;
-          }
-          ord = (val64 >> 63);
-          oval = (val64 & ~0xFFFF0000);
-          valVA = val64 + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          return false;
-        }
+      /* TODO: This is not something that exists in the binary. It might be
+         preferable to just extract the data available, and then on the layer
+         that pretty prints the data, have the symbol be composed in a similar
+         way. */
+      std::string symName = "ORDINAL_" + modName + "_" +
+                            to_string<std::uint32_t>(ordinalValue, std::dec);
 
-        if (ord == 0) {
-          // import by name
-          std::string symName;
-          section symNameSec;
+      VA entAddr = offInTable + importTableRVA + imageBase;
 
-          if (!getSecForVA(p->internal->secs, valVA, symNameSec)) {
-            return false;
-          }
+      importLookupEntries.push_back(
+          {entAddr, importLookupEntry, 0, std::move(symName)});
+    }
 
-          std::uint32_t nameOffset =
-              static_cast<std::uint32_t>(valVA - symNameSec.sectionBase) +
-              sizeof(std::uint16_t);
-          do {
-            std::uint8_t chr;
-            if (!readByte(symNameSec.sectionData, nameOffset, chr)) {
-              return false;
-            }
+    if (ntMagic == NT_OPTIONAL_32_MAGIC) {
+      imporTableSectionOff += sizeof(std::uint32_t);
+      offInTable += sizeof(std::uint32_t);
+    } else {
+      imporTableSectionOff += sizeof(std::uint64_t);
+      offInTable += sizeof(std::uint64_t);
+    }
+  } while (true);
 
-            if (chr == 0) {
-              break;
-            }
+  return true;
+}
 
-            symName.push_back(static_cast<char>(chr));
-            nameOffset++;
-          } while (true);
-
-          // okay now we know the pair... add it
-          importent ent;
-
-          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA +
-                       p->peHeader.nt.OptionalHeader.ImageBase;
-          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA +
-                       p->peHeader.nt.OptionalHeader64.ImageBase;
-          } else {
-            return false;
-          }
-
-          ent.symbolName = symName;
-          ent.moduleName = modName;
-          p->internal->imports.push_back(ent);
-        } else {
-          std::string symName = "ORDINAL_" + modName + "_" +
-                                to_string<std::uint32_t>(oval, std::dec);
-
-          importent ent;
-
-          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA +
-                       p->peHeader.nt.OptionalHeader.ImageBase;
-          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-            ent.addr = offInTable + curEnt.AddressRVA +
-                       p->peHeader.nt.OptionalHeader64.ImageBase;
-          } else {
-            return false;
-          }
-
-          ent.symbolName = symName;
-          ent.moduleName = modName;
-
-          p->internal->imports.push_back(ent);
-        }
-
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          lookupOff += sizeof(std::uint32_t);
-          offInTable += sizeof(std::uint32_t);
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          lookupOff += sizeof(std::uint64_t);
-          offInTable += sizeof(std::uint64_t);
-        } else {
-          return false;
-        }
-      } while (true);
-
-      offt += sizeof(import_dir_entry);
-    } while (true);
+bool getImports(parsed_pe *p) {
+  if (p->peHeader.nt.OptionalMagic != NT_OPTIONAL_32_MAGIC &&
+      p->peHeader.nt.OptionalMagic != NT_OPTIONAL_64_MAGIC) {
+    return false;
   }
+
+  data_directory importDir;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    importDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_IMPORT];
+  } else {
+    importDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_IMPORT];
+  }
+
+  // No imports, return early
+  if (importDir.Size == 0) {
+    return true;
+  }
+
+  VA imageBase;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    imageBase = p->peHeader.nt.OptionalHeader.ImageBase;
+  } else {
+    imageBase = p->peHeader.nt.OptionalHeader64.ImageBase;
+  }
+
+  VA importDirSecAddr = importDir.VirtualAddress + imageBase;
+
+  // get section for the RVA in importDir
+  section importDirSec;
+  if (!getSecForVA(p->internal->secs, importDirSecAddr, importDirSec)) {
+    PE_ERR(PEERR_SECTVA);
+    return false;
+  }
+
+  // get import directory from this section
+  auto offt =
+      static_cast<std::uint32_t>(importDirSecAddr - importDirSec.sectionBase);
+
+  do {
+    {
+      // read each directory entry out
+      import_dir_entry rawDirEntry;
+
+      READ_DWORD(importDirSec.sectionData, offt, rawDirEntry, LookupTableRVA);
+      READ_DWORD(importDirSec.sectionData, offt, rawDirEntry, TimeStamp);
+      READ_DWORD(importDirSec.sectionData, offt, rawDirEntry, ForwarderChain);
+      READ_DWORD(importDirSec.sectionData, offt, rawDirEntry, NameRVA);
+      READ_DWORD(importDirSec.sectionData, offt, rawDirEntry, AddressRVA);
+
+      // are all the fields in rawDirEntry null? then we break
+      if (rawDirEntry.LookupTableRVA == 0 && rawDirEntry.NameRVA == 0 &&
+          rawDirEntry.AddressRVA == 0) {
+        break;
+      }
+
+      p->internal->imports.push_back({rawDirEntry, {}, {}, {}});
+    }
+    importdirent &curDirEnt = p->internal->imports.back();
+    import_dir_entry &curRawDirEnt = curDirEnt.importDirEntry;
+
+    // AddressRva/First Thunk should never be 0 if this is not the end
+    if (curRawDirEnt.AddressRVA == 0) {
+      return false;
+    }
+
+    // then, try and get the name of this particular module...
+    VA name = curRawDirEnt.NameRVA + imageBase;
+
+    section nameSec;
+    if (!getSecForVA(p->internal->secs, name, nameSec)) {
+      PE_ERR(PEERR_SECTVA);
+      return false;
+    }
+
+    auto nameOff = static_cast<std::uint32_t>(name - nameSec.sectionBase);
+    if (!readCString(*nameSec.sectionData, nameOff, curDirEnt.moduleName)) {
+      return false;
+    }
+
+    // clang-format off
+    std::transform(
+      curDirEnt.moduleName.begin(),
+      curDirEnt.moduleName.end(),
+      curDirEnt.moduleName.begin(),
+
+      [](char chr) -> char {
+        return static_cast<char>(::toupper(chr));
+      }
+    );
+    // clang-format on
+
+    // then, try and get all of the sub-symbols
+    VA lookupTableVA = curRawDirEnt.LookupTableRVA + imageBase;
+    VA addressTableVA = curRawDirEnt.AddressRVA + imageBase;
+
+    section addressTableSec;
+    if (!getSecForVA(p->internal->secs, addressTableVA, addressTableSec)) {
+      PE_ERR(PEERR_SECTVA);
+      return false;
+    }
+
+    if (!getImportLookupEntries(curDirEnt.importAddressEntries,
+                                addressTableSec,
+                                p->internal->secs,
+                                imageBase,
+                                curRawDirEnt.AddressRVA,
+                                p->peHeader.nt.OptionalMagic,
+                                curDirEnt.moduleName)) {
+      return false;
+    }
+
+    /* The array of values the Original First Thunk, or Lookup Table,
+       points to can be different from the First Thunk, or Address Table.
+       If it's not 0 or equal to the First Thunk,
+       we're going to read its values. */
+    if (curRawDirEnt.LookupTableRVA != 0 && lookupTableVA != addressTableVA) {
+      section lookupTableSec;
+
+      if (!getSecForVA(p->internal->secs, lookupTableVA, lookupTableSec)) {
+        PE_ERR(PEERR_SECTVA);
+        return false;
+      }
+
+      if (!getImportLookupEntries(curDirEnt.importLookupEntries,
+                                  lookupTableSec,
+                                  p->internal->secs,
+                                  imageBase,
+                                  curRawDirEnt.LookupTableRVA,
+                                  p->peHeader.nt.OptionalMagic,
+                                  curDirEnt.moduleName)) {
+        return false;
+      }
+    }
+
+    offt += sizeof(import_dir_entry);
+  } while (true);
 
   return true;
 }
@@ -2484,15 +2511,31 @@ void DestructParsedPE(parsed_pe *p) {
 
 // iterate over the imports by VA and string
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd) {
-  std::vector<importent> &l = pe->internal->imports;
+  auto imports = pe->internal->imports;
 
-  for (importent &i : l) {
-    if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
-      break;
+  for (const auto &import_dir_entry : imports) {
+    for (const auto &import_lookup_entry :
+         import_dir_entry.importLookupEntries) {
+      if (cb(cbd,
+             import_lookup_entry.addr,
+             import_dir_entry.moduleName,
+             import_lookup_entry.symbolName) != 0) {
+        break;
+      }
     }
   }
 
   return;
+}
+
+void IterImpEnt(const parsed_pe *pe, iterImpEnt cb, void *cbd) {
+  auto &imports = pe->internal->imports;
+
+  for (const auto &import_dir : imports) {
+    if (cb(cbd, import_dir) != 0) {
+      break;
+    }
+  }
 }
 
 // iterate over relocations in the PE file

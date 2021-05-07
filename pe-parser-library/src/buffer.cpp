@@ -84,7 +84,9 @@ struct buffer_detail {
 #endif
 };
 
-bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out) {
+bool readByte(const bounded_buffer *b,
+              std::uint32_t offset,
+              std::uint8_t &out) {
   if (b == nullptr) {
     PE_ERR(PEERR_BUFFER);
     return false;
@@ -101,7 +103,9 @@ bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out) {
   return true;
 }
 
-bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out) {
+bool readWord(const bounded_buffer *b,
+              std::uint32_t offset,
+              std::uint16_t &out) {
   if (b == nullptr) {
     PE_ERR(PEERR_BUFFER);
     return false;
@@ -123,7 +127,9 @@ bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out) {
   return true;
 }
 
-bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out) {
+bool readDword(const bounded_buffer *b,
+               std::uint32_t offset,
+               std::uint32_t &out) {
   if (b == nullptr) {
     PE_ERR(PEERR_BUFFER);
     return false;
@@ -145,7 +151,9 @@ bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out) {
   return true;
 }
 
-bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
+bool readQword(const bounded_buffer *b,
+               std::uint32_t offset,
+               std::uint64_t &out) {
   if (b == nullptr) {
     PE_ERR(PEERR_BUFFER);
     return false;
@@ -167,7 +175,7 @@ bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out) {
   return true;
 }
 
-bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out) {
+bool readChar16(const bounded_buffer *b, std::uint32_t offset, char16_t &out) {
   if (b == nullptr) {
     PE_ERR(PEERR_BUFFER);
     return false;

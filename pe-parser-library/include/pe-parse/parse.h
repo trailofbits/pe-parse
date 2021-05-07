@@ -142,11 +142,13 @@ enum pe_err {
   PEERR_SIZE = 12,
 };
 
-bool readByte(bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
-bool readWord(bounded_buffer *b, std::uint32_t offset, std::uint16_t &out);
-bool readDword(bounded_buffer *b, std::uint32_t offset, std::uint32_t &out);
-bool readQword(bounded_buffer *b, std::uint32_t offset, std::uint64_t &out);
-bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out);
+// clang-format off
+bool readByte(const bounded_buffer *b, std::uint32_t offset, std::uint8_t &out);
+bool readWord(const bounded_buffer *b, std::uint32_t offset, std::uint16_t &out);
+bool readDword(const bounded_buffer *b, std::uint32_t offset, std::uint32_t &out);
+bool readQword(const bounded_buffer *b, std::uint32_t offset, std::uint64_t &out);
+bool readChar16(const bounded_buffer *b, std::uint32_t offset, char16_t &out);
+// clang-format on
 
 bounded_buffer *readFileToFileBuffer(const char *filePath);
 bounded_buffer *makeBufferFromPointer(std::uint8_t *data, std::uint32_t sz);
@@ -168,6 +170,19 @@ typedef struct _parsed_pe {
   parsed_pe_internal *internal;
   pe_header peHeader;
 } parsed_pe;
+struct importlookupent {
+  VA addr;
+  uint64_t importEntry;
+  uint16_t hint;
+  std::string symbolName;
+};
+
+struct importdirent {
+  import_dir_entry importDirEntry;
+  std::string moduleName;
+  std::vector<importlookupent> importLookupEntries;
+  std::vector<importlookupent> importAddressEntries;
+};
 
 // Resolve a Rich header product id / build number pair to a known
 // product name
@@ -207,6 +222,10 @@ typedef int (*iterVAStr)(void *,
                          const std::string &,
                          const std::string &);
 void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
+
+// iterate over the imports
+using iterImpEnt = int (*)(void *, const importdirent &);
+void IterImpEnt(const parsed_pe *pe, iterImpEnt cb, void *cbd);
 
 // iterate over relocations in the PE file
 typedef int (*iterReloc)(void *, const VA &, const reloc_type &);

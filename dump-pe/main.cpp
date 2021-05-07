@@ -51,16 +51,59 @@ int printExps(void *N,
   return 0;
 }
 
-int printImports(void *N,
-                 const VA &impAddr,
-                 const std::string &modName,
-                 const std::string &symName) {
-  static_cast<void>(N);
+void printImportEntry(const importlookupent &addressEntry, int highBitOff) {
+  auto ord = static_cast<std::uint8_t>(addressEntry.importEntry >> highBitOff);
 
-  auto address = static_cast<std::uint32_t>(impAddr);
+  std::cout << std::setw(17) << "Address: " << std::setw(10) << std::showbase
+            << std::hex << addressEntry.addr;
 
-  std::cout << "0x" << std::hex << address << " " << modName << "!" << symName;
-  std::cout << "\n";
+  if (ord == 0) {
+    std::cout << " HintRVA: " << std::setw(10) << std::showbase << std::hex
+              << (addressEntry.importEntry & 0x7FFFFFFF);
+    std::cout << " Hint: " << std::setw(6) << std::showbase << std::hex
+              << addressEntry.hint;
+  } else {
+    uint16_t ordVal = (addressEntry.importEntry & 0xFFFF);
+    std::cout << " Ordinal: " << std::setw(6) << std::showbase << std::hex
+              << ordVal;
+  }
+
+  std::cout << " Name: " << addressEntry.symbolName << "\n";
+}
+
+int printImports(void *data, const importdirent &dirEntry) {
+  auto ntMagic = *reinterpret_cast<std::uint16_t *>(data);
+  auto highBitOff = ntMagic == NT_OPTIONAL_32_MAGIC ? 31 : 63;
+
+  std::cout << std::setw(15) << "ModuleName: " << dirEntry.moduleName << "\n";
+  std::cout << std::setw(21) << "LookupTableRVA: " << std::showbase << std::hex
+            << dirEntry.importDirEntry.LookupTableRVA << "\n";
+  std::cout << std::setw(16) << "TimeStamp: " << std::showbase << std::hex
+            << dirEntry.importDirEntry.TimeStamp << "\n";
+  std::cout << std::setw(20) << "ForwaderChain: " << std::showbase << std::hex
+            << dirEntry.importDirEntry.ForwarderChain << "\n";
+  std::cout << std::setw(14) << "NameRVA: " << std::showbase << std::hex
+            << dirEntry.importDirEntry.NameRVA << "\n";
+  std::cout << std::setw(17) << "AddressRVA: " << std::showbase << std::hex
+            << dirEntry.importDirEntry.AddressRVA << "\n";
+
+  std::cout << std::setw(22) << "ImportAddressTable:"
+            << "\n";
+
+  for (const auto &addressEntry : dirEntry.importAddressEntries) {
+    printImportEntry(addressEntry, highBitOff);
+  }
+
+  if (dirEntry.importDirEntry.LookupTableRVA != 0 &&
+      dirEntry.importDirEntry.LookupTableRVA !=
+          dirEntry.importDirEntry.AddressRVA) {
+    std::cout << std::setw(21) << "ImportLookupTable:"
+              << "\n";
+    for (const auto &lookupEntry : dirEntry.importLookupEntries) {
+      printImportEntry(lookupEntry, highBitOff);
+    }
+  }
+
   return 0;
 }
 
@@ -428,7 +471,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Imports: "
               << "\n";
-    IterImpVAString(p, printImports, NULL);
+    IterImpEnt(p, printImports, &p->peHeader.nt.OptionalMagic);
     std::cout << "Relocations: "
               << "\n";
     IterRelocs(p, printRelocs, NULL);
