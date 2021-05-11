@@ -6,7 +6,13 @@ include("cmake/sanitizers.cmake")
 process_sanitizer(PEPARSE)
 
 if (MSVC)
-  list(APPEND DEFAULT_CXX_FLAGS /W4 /analyze)
+  option(PEPARSE_ENABLE_MSVC_ANALYZE "Adds or removes the /analyze switch to the compilation")
+
+  if(PEPARSE_ENABLE_MSVC_ANALYZE)
+    list(APPEND DEFAULT_CXX_FLAGS /analyze)
+  endif()
+
+  list(APPEND DEFAULT_CXX_FLAGS /W4)
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     list(APPEND DEFAULT_CXX_FLAGS /Zi)
