@@ -44,6 +44,11 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: 'true'
+    # https://github.com/actions/virtual-environments/issues/3376
+    - name: Workaround GHA Issue with GCC 11
+      if: matrix.compiler.CC == 'clang' && matrix.platform == 'ubuntu-18.04'
+      run: |
+        sudo apt remove libgcc-11-dev gcc-11
     - name: Enable ASan+UBSan Sanitizers
       if: matrix.build-type == 'Debug'
       run: |
