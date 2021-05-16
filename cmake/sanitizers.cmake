@@ -76,7 +76,8 @@ endmacro()
 macro(process_sanitizer prefix)
 
   # Add options for the project to use sanitizers
-  option(${prefix}_USE_SANITIZER "Enable building with sanitizer support. Options are: Address, HWAddress, Memory, MemoryWithOrigins, Undefined, Thread, DataFlow, Leak, 'Address,Undefined'" false)
+  set(${prefix}_USE_SANITIZER "false" CACHE STRING "Enable building with sanitizer support.")
+  set_property(CACHE ${prefix}_USE_SANITIZER PROPERTY STRINGS Address HWAddress Memory MemoryWithOrigins Undefined Thread DataFlow Leak "Address,Undefined")
   if (UNIX)
     option(${prefix}_OPTIMIZE_SANITIZED_BUILDS "Optimize builds that use sanitization" false)
     option(${prefix}_BLACKLIST_FILE "Path to blacklist file for sanitizers" "")
