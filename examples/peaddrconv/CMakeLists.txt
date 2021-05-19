@@ -35,7 +35,9 @@ else ()
   endif ()
 endif ()
 
-find_package(pe-parse REQUIRED)
+if (NOT TARGET pe-parse::pe-parse)
+  find_package(pe-parse REQUIRED)
+endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} pe-parse::pe-parse)

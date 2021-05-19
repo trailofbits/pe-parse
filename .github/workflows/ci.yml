@@ -64,6 +64,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} \
           -DPEPARSE_ENABLE_TESTING=ON \
+          -DPEPARSE_ENABLE_EXAMPLES=ON \
           ${SANITIZER_FLAG} \
           ..
         cmake --build .
@@ -119,6 +120,7 @@ jobs:
           -A ${{ matrix.build-arch }} `
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
           -DPEPARSE_ENABLE_TESTING=ON `
+          -DPEPARSE_ENABLE_EXAMPLES=ON `
           ..
         cmake --build . --config ${{ matrix.build-type }}
     - name: install

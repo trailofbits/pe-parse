@@ -53,11 +53,12 @@ bool convertAddress(ParsedPeRef &pe,
     std::uintptr_t highest_offset;
   };
 
-  auto L_getSectionAddressLimits = [](void *N,
-                                      peparse::VA secBase,
-                                      std::string &secName,
-                                      peparse::image_section_header s,
-                                      peparse::bounded_buffer *data) -> int {
+  auto L_getSectionAddressLimits =
+      [](void *N,
+         const peparse::VA &secBase,
+         const std::string &secName,
+         const peparse::image_section_header &s,
+         const peparse::bounded_buffer *data) -> int {
     static_cast<void>(secBase);
     static_cast<void>(secName);
     static_cast<void>(data);
@@ -113,10 +114,10 @@ bool convertAddress(ParsedPeRef &pe,
         };
 
         auto L_inspectSection = [](void *N,
-                                   peparse::VA secBase,
-                                   std::string &secName,
-                                   peparse::image_section_header s,
-                                   peparse::bounded_buffer *data) -> int {
+                                   const peparse::VA &secBase,
+                                   const std::string &secName,
+                                   const peparse::image_section_header &s,
+                                   const peparse::bounded_buffer *data) -> int {
           static_cast<void>(secBase);
           static_cast<void>(secName);
           static_cast<void>(data);
@@ -186,10 +187,10 @@ bool convertAddress(ParsedPeRef &pe,
         };
 
         auto L_inspectSection = [](void *N,
-                                   peparse::VA secBase,
-                                   std::string &secName,
-                                   peparse::image_section_header s,
-                                   peparse::bounded_buffer *data) -> int {
+                                   const peparse::VA &secBase,
+                                   const std::string &secName,
+                                   const peparse::image_section_header &s,
+                                   const peparse::bounded_buffer *data) -> int {
           static_cast<void>(secBase);
           static_cast<void>(secName);
           static_cast<void>(data);

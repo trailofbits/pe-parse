@@ -94,6 +94,10 @@ You can build the (catch2-based) tests by adding `-DPEPARSE_ENABLE_TESTING=ON` d
 
 To run the full test suite with the [Corkami test suite](https://github.com/corkami/pocs/tree/master/PE), you must clone the submodule with `git submodule update --init`.
 
+## Examples
+
+You can build the included examples by adding `-DPEPARSE_ENABLE_EXAMPLES=ON` during CMake configuration.
+
 ## Building with Sanitizers
 
 If you are familiar with C++ sanitizers and any specific development environment requirements for them (compiler, instrumented standard library, etc.), you can choose to compile with any of the following sanitizers: `Address`, `HWAddress`, `Undefined`, `Memory`, `MemoryWithOrigins`, `Leak`, `Address,Undefined`.
