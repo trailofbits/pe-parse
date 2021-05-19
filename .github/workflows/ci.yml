@@ -68,6 +68,7 @@ jobs:
           ${SANITIZER_FLAG} \
           ..
         cmake --build .
+        cmake --build . --target peaddrconv
     - name: test
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
@@ -123,6 +124,7 @@ jobs:
           -DPEPARSE_ENABLE_EXAMPLES=ON `
           ..
         cmake --build . --config ${{ matrix.build-type }}
+        cmake --build . --config ${{ matrix.build-type }} --target peaddrconv
     - name: install
       run: |
         cd build
