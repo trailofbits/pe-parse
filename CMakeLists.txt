@@ -67,7 +67,7 @@ message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 option(PEPARSE_ENABLE_EXAMPLES "Enable building examples" OFF)
 if (PEPARSE_ENABLE_EXAMPLES)
   message(STATUS "Building Examples")
-  add_subdirectory(examples EXCLUDE_FROM_ALL)
+  add_subdirectory(examples)
 endif()
 
 option(PEPARSE_ENABLE_TESTING "Enable building tests" OFF)

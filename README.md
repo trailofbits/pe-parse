@@ -96,11 +96,7 @@ To run the full test suite with the [Corkami test suite](https://github.com/cork
 
 ## Examples
 
-You can build the included examples by adding `-DPEPARSE_ENABLE_EXAMPLES=ON` during CMake configuration and then by (explicitly) running the `peaddrconv` build target:
-
-```bash
-cmake --build . --target peaddrconv
-```
+You can build the included examples by adding `-DPEPARSE_ENABLE_EXAMPLES=ON` during CMake configuration.
 
 ## Building with Sanitizers
 
