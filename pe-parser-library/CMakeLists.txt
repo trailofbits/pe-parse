@@ -25,6 +25,7 @@ else()
 endif()
 
 add_library(${PROJECT_NAME} ${PEPARSERLIB_SOURCEFILES})
+add_library(pe-parse::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 if(PEPARSE_LIBRARY_WARNINGS)
 	target_compile_definitions(${PROJECT_NAME} PRIVATE PEPARSE_LIBRARY_WARNINGS=1)

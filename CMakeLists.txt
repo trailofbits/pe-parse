@@ -64,6 +64,12 @@ message(STATUS "Build Shared: ${BUILD_SHARED_LIBS} ${BUILD_SHARED_LIBS_MESSAGE}"
 message(STATUS "Build Command Line Tools: ${BUILD_COMMAND_LINE_TOOLS}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
+option(PEPARSE_ENABLE_EXAMPLES "Enable building examples" OFF)
+if (PEPARSE_ENABLE_EXAMPLES)
+  message(STATUS "Building Examples")
+  add_subdirectory(examples)
+endif()
+
 option(PEPARSE_ENABLE_TESTING "Enable building tests" OFF)
 if (PEPARSE_ENABLE_TESTING)
   enable_testing()
