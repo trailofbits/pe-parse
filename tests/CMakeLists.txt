@@ -28,8 +28,14 @@ add_executable(tests
   filesystem_compat.h
   )
 target_compile_definitions(tests PRIVATE ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
-target_link_libraries(tests PRIVATE std::filesystem ${PROJECT_NAME} Catch2::Catch2)
 target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(tests PRIVATE std::filesystem ${PROJECT_NAME} Catch2::Catch2)
+# ASAN on Windows messes with exception handlers, and Catch2 doesn't account
+# for this. A workaround is to disable SEH on Windows with ASAN
+# https://github.com/catchorg/Catch2/issues/898#issuecomment-841733322
+if (WIN32 AND PEPARSE_USE_SANITIZER STREQUAL "Address")
+  target_compile_definitions(tests PUBLIC CATCH_CONFIG_NO_WINDOWS_SEH)
+endif()
 
 if (EXISTS "${CORKAMI_PE_PATH}")
   target_compile_definitions(tests PRIVATE CORKAMI_PE_PATH="${CORKAMI_PE_PATH}")
