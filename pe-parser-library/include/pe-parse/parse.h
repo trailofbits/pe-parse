@@ -229,6 +229,14 @@ typedef int (*iterExp)(void *,
                        const std::string &);
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
 
+typedef int (*iterExpFull)(void *,
+                           const VA &,
+                           std::uint16_t,
+                           const std::string &,
+                           const std::string &,
+                           const std::string &);
+void IterExpFull(parsed_pe *pe, iterExpFull cb, void *cbd);
+
 // iterate over sections
 typedef int (*iterSec)(void *,
                        const VA &,

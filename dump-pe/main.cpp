@@ -24,6 +24,7 @@ THE SOFTWARE.
 
 #include <cstring>
 #include <iomanip>
+#include <ios>
 #include <iostream>
 #include <sstream>
 
@@ -35,19 +36,34 @@ using namespace peparse;
 
 int printExps(void *N,
               const VA &funcAddr,
+              std::uint16_t ordinal,
               const std::string &mod,
-              const std::string &func) {
+              const std::string &func,
+              const std::string &fwd) {
   static_cast<void>(N);
 
   auto address = static_cast<std::uint32_t>(funcAddr);
 
-  std::cout << "EXP: ";
+  // save default formatting
+  std::ios initial(nullptr);
+  initial.copyfmt(std::cout);
+
+  std::cout << "EXP #";
+  std::cout << ordinal;
+  std::cout << ": ";
   std::cout << mod;
   std::cout << "!";
   std::cout << func;
-  std::cout << ": 0x";
-  std::cout << std::hex << address;
+  std::cout << ": ";
+  if (!fwd.empty()) {
+    std::cout << fwd;
+  } else {
+    std::cout << std::showbase << std::hex << address;
+  }
   std::cout << "\n";
+
+  // restore default formatting
+  std::cout.copyfmt(initial);
   return 0;
 }
 
@@ -440,7 +456,7 @@ int main(int argc, char *argv[]) {
     IterSec(p, printSecs, NULL);
     std::cout << "Exports: "
               << "\n";
-    IterExpVA(p, printExps, NULL);
+    IterExpFull(p, printExps, NULL);
 
     // read the first 8 bytes from the entry point and print them
     VA entryPoint;
