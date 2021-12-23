@@ -2548,6 +2548,9 @@ void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
   std::vector<exportent> &l = pe->internal->exports;
 
   for (exportent &i : l) {
+    if (i.addr == 0) {
+      continue;
+    }
     if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
       break;
     }
