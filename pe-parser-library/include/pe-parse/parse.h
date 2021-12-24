@@ -222,12 +222,24 @@ typedef int (*iterSymbol)(void *,
                           const std::uint8_t &);
 void IterSymbols(parsed_pe *pe, iterSymbol cb, void *cbd);
 
-// iterate over the exports
+// iterate over the exports, except forwarded exports
 typedef int (*iterExp)(void *,
                        const VA &,
                        const std::string &,
                        const std::string &);
 void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd);
+
+// iterate over the exports, including forwarded exports
+// export ordinal is also provided as the third argument.
+// VA will be zero if the current export is forwarded,
+// in this case, the last argument (forward string) will be non-empty
+typedef int (*iterExpFull)(void *,
+                           const VA &,
+                           std::uint16_t,
+                           const std::string &,
+                           const std::string &,
+                           const std::string &);
+void IterExpFull(parsed_pe *pe, iterExpFull cb, void *cbd);
 
 // iterate over sections
 typedef int (*iterSec)(void *,

@@ -51,8 +51,10 @@ struct importent {
 
 struct exportent {
   VA addr;
+  std::uint16_t ordinal;
   std::string symbolName;
   std::string moduleName;
+  std::string forwardName;
 };
 
 struct reloc {
@@ -1670,23 +1672,37 @@ bool getExports(parsed_pe *p) {
             ((symRVA >= exportDir.VirtualAddress) &&
              (symRVA < exportDir.VirtualAddress + exportDir.Size));
 
+        VA symVA;
+        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+          symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
+        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+          symVA = symRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
+        } else {
+          return false;
+        }
+
+        exportent a;
+        a.ordinal = ordinal;
+        a.symbolName = symName;
+        a.moduleName = modName;
+
         if (!isForwarded) {
-          VA symVA;
-          if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-            symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-          } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-            symVA = symRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-          } else {
+          a.addr = symVA;
+          a.forwardName.clear();
+        } else {
+          section fwdSec;
+          if (!getSecForVA(p->internal->secs, symVA, fwdSec)) {
             return false;
           }
+          auto fwdOff = static_cast<std::uint32_t>(symVA - fwdSec.sectionBase);
 
-          exportent a;
-
-          a.addr = symVA;
-          a.symbolName = symName;
-          a.moduleName = modName;
-          p->internal->exports.push_back(a);
+          a.addr = 0;
+          if (!readCString(*fwdSec.sectionData, fwdOff, a.forwardName)) {
+            return false;
+          }
         }
+
+        p->internal->exports.push_back(a);
       }
     }
   }
@@ -2532,7 +2548,24 @@ void IterExpVA(parsed_pe *pe, iterExp cb, void *cbd) {
   std::vector<exportent> &l = pe->internal->exports;
 
   for (exportent &i : l) {
+    if (i.addr == 0) {
+      continue;
+    }
     if (cb(cbd, i.addr, i.moduleName, i.symbolName) != 0) {
+      break;
+    }
+  }
+
+  return;
+}
+
+// iterate over the exports with full information
+void IterExpFull(parsed_pe *pe, iterExpFull cb, void *cbd) {
+  std::vector<exportent> &l = pe->internal->exports;
+
+  for (exportent &i : l) {
+    if (cb(cbd, i.addr, i.ordinal, i.moduleName, i.symbolName, i.forwardName) !=
+        0) {
       break;
     }
   }
