@@ -106,7 +106,7 @@ jobs:
         build-arch: ["x64", "Win32"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v2
       with:
