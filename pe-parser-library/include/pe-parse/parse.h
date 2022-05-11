@@ -40,28 +40,28 @@ THE SOFTWARE.
   err_loc.assign(__func__);     \
   err_loc += ":" + to_string<std::uint32_t>(__LINE__, std::dec);
 
-#define READ_WORD(b, o, inst, member)                                      \
-  if (!readWord(b, o + offsetof(__typeof__(inst), member), inst.member)) { \
-    PE_ERR(PEERR_READ);                                                    \
-    return false;                                                          \
+#define READ_WORD(b, o, inst, member)                                                             \
+  if (!readWord(b, o + static_cast<uint32_t>(offsetof(__typeof__(inst), member)), inst.member)) { \
+    PE_ERR(PEERR_READ);                                                                           \
+    return false;                                                                                 \
   }
 
-#define READ_DWORD(b, o, inst, member)                                      \
-  if (!readDword(b, o + offsetof(__typeof__(inst), member), inst.member)) { \
-    PE_ERR(PEERR_READ);                                                     \
-    return false;                                                           \
+#define READ_DWORD(b, o, inst, member)                                                             \
+  if (!readDword(b, o + static_cast<uint32_t>(offsetof(__typeof__(inst), member)), inst.member)) { \
+    PE_ERR(PEERR_READ);                                                                            \
+    return false;                                                                                  \
   }
 
-#define READ_QWORD(b, o, inst, member)                                      \
-  if (!readQword(b, o + offsetof(__typeof__(inst), member), inst.member)) { \
-    PE_ERR(PEERR_READ);                                                     \
-    return false;                                                           \
+#define READ_QWORD(b, o, inst, member)                                                             \
+  if (!readQword(b, o + static_cast<uint32_t>(offsetof(__typeof__(inst), member)), inst.member)) { \
+    PE_ERR(PEERR_READ);                                                                            \
+    return false;                                                                                  \
   }
 
-#define READ_BYTE(b, o, inst, member)                                      \
-  if (!readByte(b, o + offsetof(__typeof__(inst), member), inst.member)) { \
-    PE_ERR(PEERR_READ);                                                    \
-    return false;                                                          \
+#define READ_BYTE(b, o, inst, member)                                                             \
+  if (!readByte(b, o + static_cast<uint32_t>(offsetof(__typeof__(inst), member)), inst.member)) { \
+    PE_ERR(PEERR_READ);                                                                           \
+    return false;                                                                                 \
   }
 
 #define TEST_MACHINE_CHARACTERISTICS(h, m, ch) \
