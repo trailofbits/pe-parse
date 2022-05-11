@@ -1777,7 +1777,7 @@ bool getRelocations(parsed_pe *p) {
         // Mask out the type and assign
         type = entry >> 12;
         // Mask out the offset and assign
-        offset = entry & ((uint16_t) ~0xf000);
+        offset = entry & static_cast<std::uint16_t>(~0xf000);
 
         // Produce the VA of the relocation
         VA relocVA;
