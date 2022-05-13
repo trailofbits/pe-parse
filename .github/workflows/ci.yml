@@ -87,7 +87,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: build
       run: |
-        python -m pip install build wheel
+        python -m pip install build wheel setuptools
         python -m build
     - name: test distributions
       run: |
@@ -159,7 +159,7 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: build
       run: |
-        python -m pip install build wheel
+        python -m pip install --upgrade build wheel setuptools
         python -m build
     - name: install
       run: |
