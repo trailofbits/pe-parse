@@ -2,7 +2,7 @@ pepy
 ====
 pepy (pronounced p-pie) is a python binding to the pe-parse parser.
 
-pepy supports Python versions 3.6 and above.
+pepy supports Python versions 3.7 and above.
 
 The easiest way to use pepy is to install it via pip:
 
