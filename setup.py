@@ -76,7 +76,7 @@ else:
 
 extension_mod = Extension(
     "pepy",
-    define_macros=[("PEPARSE_VERSION", f'"{VERSION}"')],
+    define_macros=[("PEPARSE_VERSION", f'\\"{VERSION}\\"')],
     sources=SOURCE_FILES,
     extra_compile_args=COMPILE_ARGS,
     language="c++",
