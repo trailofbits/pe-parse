@@ -7,13 +7,13 @@ on:
   pull_request:
   schedule:
     # run CI every day even if no PRs/merges occur
-    - cron:  '0 12 * * *'
+    - cron: '0 12 * * *'
 
 jobs:
   lint:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: deps
         run: |
@@ -30,7 +30,7 @@ jobs:
   pe-parse:
     strategy:
       matrix:
-        platform: ["ubuntu-18.04", "macos-latest"]
+        platform: ["ubuntu-latest", "macos-latest"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
         compiler:
@@ -41,14 +41,9 @@ jobs:
           compiler: { CC: "gcc", CXX: "g++" }
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: 'true'
-    # https://github.com/actions/virtual-environments/issues/3376
-    - name: Workaround GHA Issue with GCC 11
-      if: matrix.compiler.CC == 'clang' && matrix.platform == 'ubuntu-18.04'
-      run: |
-        sudo apt remove libgcc-11-dev gcc-11
     - name: Enable ASan+UBSan Sanitizers
       if: matrix.build-type == 'Debug'
       run: |
@@ -78,27 +73,32 @@ jobs:
   pepy:
     strategy:
       matrix:
-        platform: ["ubuntu-18.04", "macos-latest"]
+        platform: ["ubuntu-latest", "macos-latest"]
         python:
-          - "3.6"
           - "3.7"
           - "3.8"
+          - "3.9"
+          - "3.10"
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python }}
     - name: build
       run: |
-        python3 setup.py build
-    - name: sdist and install
+        python -m pip install build wheel setuptools
+        python -m build
+    - name: test distributions
       run: |
-        python3 setup.py sdist
-        python3 -m pip install --user dist/*.tar.gz
-    - name: test
-      run: |
-        python3 tests/test_pepy.py tests/assets/example.exe
+        for dist in dist/*; do
+          python -m venv test-env
+
+          ./test-env/bin/python -m pip install "${dist}"
+          ./test-env/bin/python tests/test_pepy.py tests/assets/example.exe
+
+          rm -rf test-env
+        done
 
   pe-parse-windows:
     strategy:
@@ -108,7 +108,7 @@ jobs:
         build-shared: ["0", "1"]
     runs-on: windows-2019
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: 'true'
     - name: Enable ASan Sanitizers
@@ -147,18 +147,20 @@ jobs:
     strategy:
       matrix:
         python:
-          - "3.6"
           - "3.7"
           - "3.8"
+          - "3.9"
+          - "3.10"
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python }}
     - name: build
       run: |
-        python setup.py build
+        python -m pip install --upgrade build wheel setuptools
+        python -m build
     - name: install
       run: |
         python -m pip install --user .
