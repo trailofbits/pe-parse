@@ -89,7 +89,7 @@ extension_mod = Extension(
 setup(
     name="pepy",
     url="https://github.com/trailofbits/pe-parse",
-    python_requires=">= 3.6",
+    python_requires=">=3.7",
     version=VERSION,
     description="Python bindings for pe-parse",
     long_description=README,
