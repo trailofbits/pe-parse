@@ -60,10 +60,7 @@ if platform.system() == "Windows":
         os.path.abspath(os.path.join(os.path.dirname(sys.executable), "libs")),
         "C:\\usr\\lib",
     ]
-    COMPILE_ARGS = [
-        "/EHsc",
-        f'/D"PEPARSE_VERSION=\\"{VERSION}\\""',
-    ]
+    COMPILE_ARGS = ["/EHsc"]
 else:
     SOURCE_FILES.append(
         os.path.join(here, "pe-parser-library", "src", "unicode_codecvt.cpp")
@@ -75,10 +72,11 @@ else:
         os.path.join(here, "pe-parser-library", "include"),
     ]
     LIBRARY_DIRS += ["/usr/lib", "/usr/local/lib"]
-    COMPILE_ARGS = ["-std=c++11", f'-DPEPARSE_VERSION="{VERSION}"']
+    COMPILE_ARGS = ["-std=c++17"]
 
 extension_mod = Extension(
     "pepy",
+    define_macros=[("PEPARSE_VERSION", f'"{VERSION}"')],
     sources=SOURCE_FILES,
     extra_compile_args=COMPILE_ARGS,
     language="c++",
