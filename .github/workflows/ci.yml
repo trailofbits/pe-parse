@@ -7,7 +7,7 @@ on:
   pull_request:
   schedule:
     # run CI every day even if no PRs/merges occur
-    - cron:  '0 12 * * *'
+    - cron: '0 12 * * *'
 
 jobs:
   lint:
@@ -147,9 +147,10 @@ jobs:
     strategy:
       matrix:
         python:
-          - "3.6"
           - "3.7"
           - "3.8"
+          - "3.9"
+          - "3.10"
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
@@ -158,7 +159,8 @@ jobs:
         python-version: ${{ matrix.python }}
     - name: build
       run: |
-        python setup.py build
+        python -m pip install build wheel
+        python -m build
     - name: install
       run: |
         python -m pip install --user .
