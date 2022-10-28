@@ -1879,8 +1879,7 @@ bool getDebugDir(parsed_pe *p) {
             curEnt.AddressOfRawData + p->peHeader.nt.OptionalHeader.ImageBase;
       } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
         rawData =
-            curEnt.AddressOfRawData +
-                  p->peHeader.nt.OptionalHeader64.ImageBase;
+            curEnt.AddressOfRawData + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
         return false;
       }
@@ -1904,7 +1903,6 @@ bool getDebugDir(parsed_pe *p) {
       p->internal->debugdirs.push_back(ent);
 
       rvaofft += sizeof(debug_dir_entry);
-
     }
   }
 
