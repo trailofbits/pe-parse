@@ -64,7 +64,7 @@ struct reloc {
 
 struct debugent {
   std::uint32_t type;
-  bounded_buffer data;
+  bounded_buffer *data;
 };
 
 #define SYMBOL_NAME_OFFSET(sn) (static_cast<std::uint32_t>(sn.data >> 32))
@@ -1896,7 +1896,7 @@ bool getDebugDir(parsed_pe *p) {
 
       auto dataofft = static_cast<std::uint32_t>(rawData - dataSec.sectionBase);
       ent.type = curEnt.Type;
-      ent.data = *makeBufferFromPointer(
+      ent.data = makeBufferFromPointer(
           reinterpret_cast<std::uint8_t *>(dataSec.sectionData->buf + dataofft),
           curEnt.SizeOfData);
 
@@ -2603,6 +2603,12 @@ void DestructParsedPE(parsed_pe *p) {
     }
   }
 
+  for (debugent d : p->internal->debugdirs) {
+    if (d.data != nullptr) {
+      deleteBuffer(d.data);
+    }
+  }
+
   delete p->internal;
   delete p;
   return;
@@ -2638,7 +2644,7 @@ void IterDebugs(parsed_pe *pe, iterDebug cb, void *cbd) {
   std::vector<debugent> &l = pe->internal->debugdirs;
 
   for (debugent &d : l) {
-    if (cb(cbd, d.type, &d.data) != 0) {
+    if (cb(cbd, d.type, d.data) != 0) {
       break;
     }
   }
