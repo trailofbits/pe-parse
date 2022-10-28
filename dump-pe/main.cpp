@@ -119,6 +119,19 @@ int printRelocs(void *N, const VA &relocAddr, const reloc_type &type) {
   return 0;
 }
 
+int printDebugs(void *N, const std::uint32_t &type, const bounded_buffer *data) {
+  static_cast<void>(N);
+
+  std::cout << "Debug Directory Type: " << std::dec << type << "\n";
+  std::cout << "Debug Directory Data: ";
+  for (uint32_t i = 0; i < data->bufLen; i++) {
+    std::cout << " 0x" << std::hex << static_cast<int>(data->buf[i]);
+  }
+  std::cout << "\n";
+
+  return 0;
+}
+
 int printSymbols(void *N,
                  const std::string &strName,
                  const uint32_t &value,
@@ -449,6 +462,9 @@ int main(int argc, char *argv[]) {
               << "\n";
     IterRelocs(p, printRelocs, NULL);
     std::cout << "Symbols (symbol table): "
+              << "\n";
+    IterDebugs(p, printDebugs, NULL);
+    std::cout << "Debug Directories: "
               << "\n";
     IterSymbols(p, printSymbols, NULL);
     std::cout << "Sections: "

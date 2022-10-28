@@ -62,6 +62,11 @@ struct reloc {
   reloc_type type;
 };
 
+struct debugent {
+  std::uint32_t type;
+  bounded_buffer data;
+};
+
 #define SYMBOL_NAME_OFFSET(sn) (static_cast<std::uint32_t>(sn.data >> 32))
 #define SYMBOL_TYPE_HI(x) (x.type >> 8)
 
@@ -124,6 +129,7 @@ struct parsed_pe_internal {
   std::vector<reloc> relocs;
   std::vector<exportent> exports;
   std::vector<symbol> symbols;
+  std::vector<debugent> debugdirs;
 };
 
 // String representation of Rich header object types
@@ -1806,6 +1812,105 @@ bool getRelocations(parsed_pe *p) {
   return true;
 }
 
+bool getDebugDir(parsed_pe *p) {
+  data_directory debugDir;
+  if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+    debugDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_DEBUG];
+  } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+    debugDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_DEBUG];
+  } else {
+    return false;
+  }
+
+  if (debugDir.Size != 0) {
+    section d;
+    VA vaAddr;
+    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+      vaAddr =
+          debugDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
+    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+      vaAddr =
+          debugDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
+    } else {
+      return false;
+    }
+
+    auto numOfDebugEnts = debugDir.Size / sizeof(debug_dir_entry);
+
+    //
+    // this will return the rdata section, where the debug directories are
+    //
+    if (!getSecForVA(p->internal->secs, vaAddr, d)) {
+      return false;
+    }
+
+    //
+    // get debug directory from this section
+    //
+    auto rvaofft = static_cast<std::uint32_t>(vaAddr - d.sectionBase);
+
+    debug_dir_entry emptyEnt;
+    memset(&emptyEnt, 0, sizeof(debug_dir_entry));
+
+    for (int i = 0; i < numOfDebugEnts; i++) {
+      debug_dir_entry curEnt = emptyEnt;
+
+      READ_DWORD(d.sectionData, rvaofft, curEnt, Characteristics);
+      READ_DWORD(d.sectionData, rvaofft, curEnt, TimeStamp);
+      READ_WORD(d.sectionData, rvaofft, curEnt, MajorVersion);
+      READ_WORD(d.sectionData, rvaofft, curEnt, MinorVersion);
+      READ_DWORD(d.sectionData, rvaofft, curEnt, Type);
+      READ_DWORD(d.sectionData, rvaofft, curEnt, SizeOfData);
+      READ_DWORD(d.sectionData, rvaofft, curEnt, AddressOfRawData);
+      READ_DWORD(d.sectionData, rvaofft, curEnt, PointerToRawData);
+
+      // are all the fields in curEnt null? then we break
+      if (curEnt.SizeOfData == 0 && curEnt.AddressOfRawData == 0 &&
+          curEnt.PointerToRawData == 0) {
+        break;
+      }
+
+      //
+      // Get the address of the data
+      //
+      VA rawData;
+      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
+        rawData =
+            curEnt.AddressOfRawData + p->peHeader.nt.OptionalHeader.ImageBase;
+      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
+        rawData =
+            curEnt.AddressOfRawData +
+                  p->peHeader.nt.OptionalHeader64.ImageBase;
+      } else {
+        return false;
+      }
+
+      //
+      // Get the section for the data
+      //
+      section dataSec;
+      if (!getSecForVA(p->internal->secs, rawData, dataSec)) {
+        return false;
+      }
+
+      debugent ent;
+
+      auto dataofft = static_cast<std::uint32_t>(rawData - dataSec.sectionBase);
+      ent.type = curEnt.Type;
+      ent.data = *makeBufferFromPointer(
+          reinterpret_cast<std::uint8_t *>(dataSec.sectionData->buf + dataofft),
+          curEnt.SizeOfData);
+
+      p->internal->debugdirs.push_back(ent);
+
+      rvaofft += sizeof(debug_dir_entry);
+
+    }
+  }
+
+  return true;
+}
+
 bool getImports(parsed_pe *p) {
   data_directory importDir;
   if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
@@ -2434,6 +2539,13 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
     return nullptr;
   }
 
+  if (!getDebugDir(p)) {
+    deleteBuffer(remaining);
+    DestructParsedPE(p);
+    PE_ERR(PEERR_MAGIC);
+    return nullptr;
+  }
+
   // Get imports
   if (!getImports(p)) {
     deleteBuffer(remaining);
@@ -2522,6 +2634,16 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
   }
 
   return;
+}
+
+void IterDebugs(parsed_pe *pe, iterDebug cb, void *cbd) {
+  std::vector<debugent> &l = pe->internal->debugdirs;
+
+  for (debugent &d : l) {
+    if (cb(cbd, d.type, &d.data) != 0) {
+      break;
+    }
+  }
 }
 
 // Iterate over symbols (symbol table) in the PE file
