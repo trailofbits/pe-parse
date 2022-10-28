@@ -1835,7 +1835,7 @@ bool getDebugDir(parsed_pe *p) {
       return false;
     }
 
-    auto numOfDebugEnts = debugDir.Size / sizeof(debug_dir_entry);
+    uint32_t numOfDebugEnts = debugDir.Size / sizeof(debug_dir_entry);
 
     //
     // this will return the rdata section, where the debug directories are
@@ -1852,7 +1852,7 @@ bool getDebugDir(parsed_pe *p) {
     debug_dir_entry emptyEnt;
     memset(&emptyEnt, 0, sizeof(debug_dir_entry));
 
-    for (int i = 0; i < numOfDebugEnts; i++) {
+    for (uint32_t i = 0; i < numOfDebugEnts; i++) {
       debug_dir_entry curEnt = emptyEnt;
 
       READ_DWORD(d.sectionData, rvaofft, curEnt, Characteristics);

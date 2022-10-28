@@ -122,7 +122,67 @@ int printRelocs(void *N, const VA &relocAddr, const reloc_type &type) {
 int printDebugs(void *N, const std::uint32_t &type, const bounded_buffer *data) {
   static_cast<void>(N);
 
-  std::cout << "Debug Directory Type: " << std::dec << type << "\n";
+  std::cout << "Debug Directory Type: ";
+  switch (type) {
+  case 0:
+    std::cout << "IMAGE_DEBUG_TYPE_UNKNOWN";
+    break;
+  case 1:
+    std::cout << "IMAGE_DEBUG_TYPE_COFF";
+    break;
+  case 2:
+    std::cout << "IMAGE_DEBUG_TYPE_CODEVIEW";
+    break;
+  case 3:
+    std::cout << "IMAGE_DEBUG_TYPE_FPO";
+    break;
+  case 4:
+    std::cout << "IMAGE_DEBUG_TYPE_MISC";
+    break;
+  case 5:
+    std::cout << "IMAGE_DEBUG_TYPE_EXCEPTION";
+    break;
+  case 6:
+    std::cout << "IMAGE_DEBUG_TYPE_FIXUP";
+    break;
+  case 7:
+    std::cout << "IMAGE_DEBUG_TYPE_OMAP_TO_SRC";
+    break;
+  case 8:
+    std::cout << "IMAGE_DEBUG_TYPE_OMAP_FROM_SRC";
+    break;
+  case 9:
+    std::cout << "IMAGE_DEBUG_TYPE_BORLAND";
+    break;
+  case 10:
+    std::cout << "IMAGE_DEBUG_TYPE_RESERVED10";
+    break;
+  case 11:
+    std::cout << "IMAGE_DEBUG_TYPE_CLSID";
+    break;
+  case 12:
+    std::cout << "IMAGE_DEBUG_TYPE_VC_FEATURE";
+    break;
+  case 13:
+    std::cout << "IMAGE_DEBUG_TYPE_POGO";
+    break;
+  case 14:
+    std::cout << "IMAGE_DEBUG_TYPE_ILTCG";
+    break;
+  case 15:
+    std::cout << "IMAGE_DEBUG_TYPE_MPX";
+    break;
+  case 16:
+    std::cout << "IMAGE_DEBUG_TYPE_REPRO";
+    break;
+  case 20:
+    std::cout << "IMAGE_DEBUG_TYPE_EX_DLLCHARACTERISTICS";
+    break;
+  default:
+    std::cout << "INVALID";
+    break;
+  }
+  std::cout << "\n";
   std::cout << "Debug Directory Data: ";
   for (uint32_t i = 0; i < data->bufLen; i++) {
     std::cout << " 0x" << std::hex << static_cast<int>(data->buf[i]);
