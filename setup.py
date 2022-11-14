@@ -23,10 +23,11 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-from setuptools import setup, Extension
 import os
-import sys
 import platform
+import sys
+
+from setuptools import Extension, setup
 
 here = os.path.dirname(__file__)
 pepy = os.path.join(here, "pepy")
@@ -87,7 +88,7 @@ extension_mod = Extension(
 setup(
     name="pepy",
     url="https://github.com/trailofbits/pe-parse",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     version=VERSION,
     description="Python bindings for pe-parse",
     long_description=README,
