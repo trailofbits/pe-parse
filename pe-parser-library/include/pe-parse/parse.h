@@ -222,6 +222,10 @@ void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 typedef int (*iterReloc)(void *, const VA &, const reloc_type &);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
 
+// iterate over debug directories in the PE file
+typedef int (*iterDebug)(void *, const std::uint32_t &, const bounded_buffer *);
+void IterDebugs(parsed_pe *pe, iterDebug cb, void *cbd);
+
 // Iterate over symbols (symbol table) in the PE file
 typedef int (*iterSymbol)(void *,
                           const std::string &,

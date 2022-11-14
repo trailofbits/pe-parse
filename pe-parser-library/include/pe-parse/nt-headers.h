@@ -452,6 +452,17 @@ struct export_dir_table {
   std::uint32_t OrdinalTableRVA;
 };
 
+struct debug_dir_entry {
+  std::uint32_t Characteristics;
+  std::uint32_t TimeStamp;
+  std::uint16_t MajorVersion;
+  std::uint16_t MinorVersion;
+  std::uint32_t Type;
+  std::uint32_t SizeOfData;
+  std::uint32_t AddressOfRawData;
+  std::uint32_t PointerToRawData;
+};
+
 enum reloc_type {
   RELOC_ABSOLUTE = 0,
   RELOC_HIGH = 1,
