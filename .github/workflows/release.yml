@@ -1,7 +1,7 @@
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types:
+      - published
 
 name: release
 
@@ -11,21 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-python@v1
+
+    - uses: actions/setup-python@v4
       with:
-        python-version: 3.8
-    - name: create release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: ${{ contains(github.ref, 'pre') || contains(github.ref, 'rc') }}
+        python-version: "3.x"
+
     - name: sdist
       run: python3 setup.py sdist
+
     - name: publish
       uses: pypa/gh-action-pypi-publish@master
       with:
