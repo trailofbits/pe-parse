@@ -219,6 +219,9 @@ constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_APPCONTAINER = 0x1000;
 constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_WDM_DRIVER = 0x2000;
 constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000;
 constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE = 0x8000;
+
+// Extended DLL characteristics
+constexpr std::uint16_t IMAGE_DLLCHARACTERISTICS_EX_CET_COMPAT = 0x0001;
 #endif
 // clang-format on
 
