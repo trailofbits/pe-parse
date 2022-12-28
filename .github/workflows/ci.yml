@@ -18,7 +18,7 @@ jobs:
       - name: deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format-9
+          sudo apt-get install -y clang-format
 
       - name: lint
         run: |
