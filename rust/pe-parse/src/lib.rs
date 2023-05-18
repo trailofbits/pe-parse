@@ -67,49 +67,26 @@ pub unsafe extern "C" fn pe_new_from_parts<'data>(
 ///
 /// * `pe` must point to a valid `PeFile`
 #[no_mangle]
-pub unsafe extern "C" fn pe_destroy<'data>(pe: *mut PeFile<'data>) {
+pub unsafe extern "C" fn pe_destroy(pe: *mut PeFile<'_>) {
     drop(Box::from_raw(pe))
 }
 
-/// An opaque container for a Rich header.
-pub struct RichHeader<'data>(pe::RichHeaderInfo<'data>);
-
-/// Retrieve the Rich header from the given `PeFile`, if present.
-///
-/// Returns `null` if the file doesn't contain a Rich header.
-///
-/// Must be freed using `pe_destroy_rich_header`.
+/// Returns whether or not this `PeFile` contains a Rich header.
 ///
 /// # Safety
 ///
-/// * `pe` must be a valid `PeFile`
-/// * `pe` must outlive the returned `RichHeader`
+/// * `pe` must point to a valid `PeFile`
 #[no_mangle]
-pub unsafe extern "C" fn pe_get_rich_header<'data>(
-    pe: *const PeFile<'data>,
-) -> *mut RichHeader<'data> {
+pub unsafe extern "C" fn pe_has_rich_header(pe: *const PeFile<'_>) -> bool {
     let pe = &*pe;
 
-    match pe.rich_header_info() {
-        Some(rich) => Box::into_raw(Box::new(RichHeader(rich))),
-        None => std::ptr::null_mut(),
-    }
-}
-
-/// Destroy the given `RichHeader`.
-///
-/// # Safety
-///
-/// * `rich` must point to a valid `RichHeader`
-#[no_mangle]
-pub unsafe extern "C" fn pe_destroy_rich_header<'data>(rich: *mut RichHeader<'data>) {
-    drop(Box::from_raw(rich))
+    pe.rich_header_info().is_some()
 }
 
 type RichEntryCallback = unsafe extern "C" fn(u32, u32, *mut c_void) -> bool;
 
-/// Yield each entry in the given `RichHeader` to a callback. Callbacks have
-/// the following signature:
+/// Yield each entry in the given `PeFile`'s Rich header to a callback.
+/// Callbacks have the following signature:
 ///
 /// ```c
 /// bool handle_rich_entry(uint32_t comp_id, uint32_t count, void* userdata);
@@ -121,18 +98,24 @@ type RichEntryCallback = unsafe extern "C" fn(u32, u32, *mut c_void) -> bool;
 /// Callbacks can return `true` to continue the surrounding iteration,
 /// or `false` to terminate it.
 ///
+/// If the given `PeFile` has no Rich header, the callback is not invoked.
+///
 /// # Safety
 ///
-/// * `rich` must point to a valid `RichHeader`
+/// * `pe` must point to a valid `PeFile`
 #[no_mangle]
-pub unsafe extern "C" fn pe_iter_rich_header<'data>(
-    rich: *const RichHeader<'data>,
+pub unsafe extern "C" fn pe_iter_rich_header(
+    pe: *const PeFile<'_>,
     callback: RichEntryCallback,
     userdata: *mut c_void,
 ) {
-    let rich = &*rich;
+    let pe = &*pe;
 
-    for entry in rich.0.unmasked_entries() {
+    for entry in pe
+        .rich_header_info()
+        .iter()
+        .flat_map(|rich| rich.unmasked_entries())
+    {
         if !callback(entry.comp_id, entry.count, userdata) {
             break;
         }
