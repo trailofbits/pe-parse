@@ -11,5 +11,5 @@ crate-type = ["cdylib", "staticlib"]
 libc = "0.2"
 object = { version = "0.31.1", features = ["read_core", "pe"] }
 
-[dev-dependencies]
+[build-dependencies]
 cbindgen = "0.24"
