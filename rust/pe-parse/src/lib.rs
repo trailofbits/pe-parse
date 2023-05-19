@@ -96,9 +96,9 @@ pub unsafe extern "C" fn pe_destroy(pe: *mut PeFile<'_>) {
 /// * `pe` must point to a valid `PeFile`
 /// * The returned pointer must not outlive `pe`
 #[no_mangle]
-pub unsafe extern "C" fn pe_get_dos_header<'data>(
-    pe: *const PeFile<'data>,
-) -> &'data object::pe::ImageDosHeader {
+pub unsafe extern "C" fn pe_get_dos_header(
+    pe: *const PeFile<'_>,
+) -> &object::pe::ImageDosHeader {
     let pe = &*pe;
     pe.dos_header()
 }
@@ -111,9 +111,9 @@ pub unsafe extern "C" fn pe_get_dos_header<'data>(
 /// * `pe` must point to a valid `PeFile`
 /// * The returned pointer must not outlive `pe`
 #[no_mangle]
-pub unsafe extern "C" fn pe_get_coff_header<'data>(
-    pe: *const PeFile<'data>,
-) -> &'data object::pe::ImageFileHeader {
+pub unsafe extern "C" fn pe_get_coff_header(
+    pe: *const PeFile<'_>,
+) -> &object::pe::ImageFileHeader {
     let pe = &*pe;
 
     pe.image_header()
