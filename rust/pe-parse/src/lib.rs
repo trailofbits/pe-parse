@@ -14,11 +14,28 @@ pub enum PeFile<'data> {
     Pe64(pe::PeFile64<'data>),
 }
 
+macro_rules! both {
+    ($self:ident, $func_name:ident) => {
+        match $self {
+            PeFile::Pe32(pe) => pe.$func_name(),
+            PeFile::Pe64(pe) => pe.$func_name(),
+        }
+    };
+}
+
 impl PeFile<'_> {
     fn rich_header_info(&self) -> Option<pe::RichHeaderInfo<'_>> {
+        both!(self, rich_header_info)
+    }
+
+    fn dos_header(&self) -> &'_ object::pe::ImageDosHeader {
+        both!(self, dos_header)
+    }
+
+    fn image_header(&self) -> &'_ object::pe::ImageFileHeader {
         match self {
-            PeFile::Pe32(pe) => pe.rich_header_info(),
-            PeFile::Pe64(pe) => pe.rich_header_info(),
+            PeFile::Pe32(pe) => &pe.nt_headers().file_header,
+            PeFile::Pe64(pe) => &pe.nt_headers().file_header,
         }
     }
 }
@@ -71,6 +88,37 @@ pub unsafe extern "C" fn pe_destroy(pe: *mut PeFile<'_>) {
     drop(Box::from_raw(pe))
 }
 
+/// Returns a **borrowed** pointer to an `ImageDosHeader` representing this PE file's DOS
+/// header.
+///
+/// # Safety
+///
+/// * `pe` must point to a valid `PeFile`
+/// * The returned pointer must not outlive `pe`
+#[no_mangle]
+pub unsafe extern "C" fn pe_get_dos_header<'data>(
+    pe: *const PeFile<'data>,
+) -> &'data object::pe::ImageDosHeader {
+    let pe = &*pe;
+    pe.dos_header()
+}
+
+/// Returns a **borrowed** pointer to an `ImageFileHeader` representing this PE file's COFF
+/// header.
+///
+/// # Safety
+///
+/// * `pe` must point to a valid `PeFile`
+/// * The returned pointer must not outlive `pe`
+#[no_mangle]
+pub unsafe extern "C" fn pe_get_coff_header<'data>(
+    pe: *const PeFile<'data>,
+) -> &'data object::pe::ImageFileHeader {
+    let pe = &*pe;
+
+    pe.image_header()
+}
+
 /// Returns whether or not this `PeFile` contains a Rich header.
 ///
 /// # Safety
@@ -121,3 +169,12 @@ pub unsafe extern "C" fn pe_iter_rich_header(
         }
     }
 }
+
+// TODO: APIs for:
+// Iterating over all resources
+// Iterating over all imports
+// Iterating over all relocations
+// Iterating over all debug directories
+// Iterating over all symbols
+// Iterating over all exports
+// Iterating over all sections
