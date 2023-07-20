@@ -732,7 +732,7 @@ bool parse_resource_table(bounded_buffer *sectionData,
         }
       }
     } else {
-      /* .rsrc can accomodate up to 2**31 levels, but Windows only uses 3 by
+      /* .rsrc can accommodate up to 2**31 levels, but Windows only uses 3 by
        * convention. As such, any depth above 3 indicates potentially unchecked
        * recursion. See:
        * https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#the-rsrc-section
