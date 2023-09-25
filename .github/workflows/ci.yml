@@ -75,10 +75,10 @@ jobs:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
         python:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v4
@@ -147,10 +147,10 @@ jobs:
     strategy:
       matrix:
         python:
-          - "3.7"
           - "3.8"
           - "3.9"
           - "3.10"
+          - "3.11"
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
