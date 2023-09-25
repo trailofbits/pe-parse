@@ -477,15 +477,15 @@ enum reloc_type {
   RELOC_HIGHLOW = 3,
   RELOC_HIGHADJ = 4,
   RELOC_MIPS_JMPADDR = 5, // only valid on MIPS
-  RELOC_ARM_MOV32 = 5, // only valid on ARM/Thumb
+  RELOC_ARM_MOV32 = 5,    // only valid on ARM/Thumb
   RELOC_RISCV_HIGH20 = 5, // only valid on RISC-V
   RELOC_RESERVED = 6,
-  RELOC_THUMB_MOV32 = 7, // only valid on Thumb
-  RELOC_RISCV_LOW32I = 7, // only valid on RISC-V
-  RELOC_RISCV_LOW12S = 8, // only valid on RISC-V
+  RELOC_THUMB_MOV32 = 7,         // only valid on Thumb
+  RELOC_RISCV_LOW32I = 7,        // only valid on RISC-V
+  RELOC_RISCV_LOW12S = 8,        // only valid on RISC-V
   RELOC_LOONGARCH32_MARK_LA = 8, // only valid on LoongArch 32
   RELOC_LOONGARCH64_MARK_LA = 8, // only valid on LoongArch 64
-  RELOC_MIPS_JMPADDR16 = 9, // only valid on MIPS
+  RELOC_MIPS_JMPADDR16 = 9,      // only valid on MIPS
   RELOC_IA64_IMM64 = 9,
   RELOC_DIR64 = 10
 };
