@@ -115,7 +115,7 @@ jobs:
       if: matrix.build-type == 'Debug' && matrix.build-arch == 'x64'
       run: |
         echo "SANITIZER_FLAG=-DPEPARSE_USE_SANITIZER=Address" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
-    - uses: ilammy/msvc-dev-cmd@v1.12.1
+    - uses: ilammy/msvc-dev-cmd@v1.13.0
       with:
         arch: ${{ matrix.build-arch }}
     - name: build
