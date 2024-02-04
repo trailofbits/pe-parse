@@ -192,7 +192,7 @@ bool readChar16(bounded_buffer *b, std::uint32_t offset, char16_t &out) {
   return true;
 }
 
-bounded_buffer *readFileToFileBuffer(const char *filePath) {
+bounded_buffer *readFileToFileBuffer(const char *filePath, bool LargeFile) {
 #ifdef _WIN32
   HANDLE h = CreateFileA(filePath,
                          GENERIC_READ,
@@ -253,9 +253,30 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
   }
 
   p->detail->sec = hMap;
+  
+  LPVOID ptr = nullptr;
+  
+  if (!LargeFile) {
+    ptr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+  } else {
+    ptr = VirtualAlloc(NULL, fileSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    if (ptr == INVALID_HANDLE_VALUE) {
+      CloseHandle(h);
+      CloseHandle(ptr);
+      return nullptr;
+    }
 
-  LPVOID ptr = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+    const bool bFileRead = ReadFile(h, ptr, fileSize, nullptr, nullptr);
+    if(!bFileRead) {
+      CloseHandle(h);
+      if (ptr != nullptr) {
+        CloseHandle(ptr);
+      }
 
+      return nullptr;
+    }
+
+  }
   if (ptr == nullptr) {
     PE_ERR(PEERR_MEM);
     return nullptr;

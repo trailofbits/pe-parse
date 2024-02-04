@@ -2563,8 +2563,8 @@ parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   return p;
 }
 
-parsed_pe *ParsePEFromFile(const char *filePath) {
-  auto buffer = readFileToFileBuffer(filePath);
+parsed_pe *ParsePEFromFile(const char *filePath, bool LargeFile) {
+  auto buffer = readFileToFileBuffer(filePath, LargeFile);
 
   if (buffer == nullptr) {
     // err is set by readFileToFileBuffer
