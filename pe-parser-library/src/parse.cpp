@@ -1881,7 +1881,7 @@ bool getDebugDir(parsed_pe *p) {
         rawData =
             curEnt.AddressOfRawData + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
-        return false;
+        break;
       }
 
       //
@@ -1889,12 +1889,15 @@ bool getDebugDir(parsed_pe *p) {
       //
       section dataSec;
       if (!getSecForVA(p->internal->secs, rawData, dataSec)) {
-        return false;
+        break;
       }
 
       debugent ent;
 
       auto dataofft = static_cast<std::uint32_t>(rawData - dataSec.sectionBase);
+      if (dataofft + curEnt.SizeOfData > dataSec.sectionData->bufLen) {
+        break;
+      }
       ent.type = curEnt.Type;
       ent.data = makeBufferFromPointer(
           reinterpret_cast<std::uint8_t *>(dataSec.sectionData->buf + dataofft),
