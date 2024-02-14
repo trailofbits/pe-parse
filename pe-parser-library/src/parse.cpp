@@ -1881,7 +1881,9 @@ bool getDebugDir(parsed_pe *p) {
         rawData =
             curEnt.AddressOfRawData + p->peHeader.nt.OptionalHeader64.ImageBase;
       } else {
-        return false;
+        // Unrecognized optional header type. We can't process debug entries.
+        // Debug entries themselves are optional, so skip them.
+        break;
       }
 
       //
@@ -1889,12 +1891,20 @@ bool getDebugDir(parsed_pe *p) {
       //
       section dataSec;
       if (!getSecForVA(p->internal->secs, rawData, dataSec)) {
-        return false;
+        // The debug entry points to non-existing data. This means it is
+        // malformed. Skip it and the rest. They are not necessary for parsing
+        // the binary, and binaries do have malformed debug entries sometimes.
+        break;
       }
 
       debugent ent;
 
       auto dataofft = static_cast<std::uint32_t>(rawData - dataSec.sectionBase);
+      if (dataofft + curEnt.SizeOfData > dataSec.sectionData->bufLen) {
+        // The debug entry data stretches outside the containing section. It is
+        // malformed. Skip it and the rest, similar to the above.
+        break;
+      }
       ent.type = curEnt.Type;
       ent.data = makeBufferFromPointer(
           reinterpret_cast<std::uint8_t *>(dataSec.sectionData->buf + dataofft),
