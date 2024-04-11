@@ -202,6 +202,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
                          FILE_ATTRIBUTE_NORMAL,
                          nullptr);
   if (h == INVALID_HANDLE_VALUE) {
+    PE_ERR(PEERR_OPEN);
     return nullptr;
   }
 
@@ -209,6 +210,7 @@ bounded_buffer *readFileToFileBuffer(const char *filePath) {
 
   if (fileSize == INVALID_FILE_SIZE) {
     CloseHandle(h);
+    PE_ERR(PEERR_OPEN);
     return nullptr;
   }
 
