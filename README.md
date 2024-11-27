@@ -1,5 +1,4 @@
-pe-parse
-========
+# pe-parse
 
 [![CI](https://github.com/trailofbits/pe-parse/actions/workflows/ci.yml/badge.svg)](https://github.com/trailofbits/pe-parse/actions/workflows/ci.yml)
 
@@ -29,6 +28,11 @@ Internally, the parser-library uses a bounded buffer abstraction to access infor
 the PE file. This should help in constructing a sane parser that allows for detection of the use
 of bogus values in the PE that would result in out of bounds accesses of the input buffer.
 Once data is read from the file it is sanitized and placed in C++ STL containers of internal types.
+
+> [!WARNING]
+> pe-parse's error handling is not thread safe. If you want to perform PE
+> writes/parses in multiple threads, you **must** independently synchronize
+> your operations.
 
 ## Installation
 

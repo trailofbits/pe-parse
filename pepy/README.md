@@ -1,5 +1,5 @@
-pepy
-====
+# pepy
+
 pepy (pronounced p-pie) is a python binding to the pe-parse parser.
 
 pepy supports Python versions 3.6 and above.
