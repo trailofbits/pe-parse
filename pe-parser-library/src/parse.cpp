@@ -62,6 +62,13 @@ struct reloc {
   reloc_type type;
 };
 
+struct coff_reloc {
+  VA addr;
+  std::uint32_t sectionTableIndex;
+  std::uint32_t symbolTableIndex;
+  reloc_type type;
+};
+
 struct debugent {
   std::uint32_t type;
   bounded_buffer *data;
@@ -127,6 +134,7 @@ struct parsed_pe_internal {
   std::vector<resource> rsrcs;
   std::vector<importent> imports;
   std::vector<reloc> relocs;
+  std::vector<coff_reloc> coff_relocs;
   std::vector<exportent> exports;
   std::vector<symbol> symbols;
   std::vector<debugent> debugdirs;
@@ -1716,6 +1724,38 @@ bool getExports(parsed_pe *p) {
   return true;
 }
 
+bool getCOFFRelocations(parsed_pe *p) {
+  const std::vector<section> &secs = p->internal->secs;
+  std::uint32_t n_secs = secs.size();
+  for (std::uint32_t sec_idx = 0; sec_idx < n_secs; sec_idx++) {
+    std::uint32_t relocs_offset = secs[sec_idx].sec.PointerToRelocations;
+    for (std::uint32_t rel_idx = 0; rel_idx < secs[sec_idx].sec.NumberOfRelocations; rel_idx++) {
+      std::uint32_t addr;
+      std::uint32_t sym_idx;
+      std::uint16_t rel_type;
+      if (!readDword(p->fileBuffer, relocs_offset, addr)) {
+        return false;
+      }
+      if (!readDword(p->fileBuffer, relocs_offset + 4, sym_idx)) {
+        return false;
+      }
+      if (!readWord(p->fileBuffer, relocs_offset + 8, rel_type)) {
+        return false;
+      }
+
+      coff_reloc rel;
+      rel.addr = addr;
+      rel.sectionTableIndex = sec_idx;
+      rel.symbolTableIndex = sym_idx;
+      rel.type = static_cast<reloc_type>(rel_type);
+      p->internal->coff_relocs.push_back(rel);
+
+      relocs_offset += 10;
+    }
+  }
+  return true;
+}
+
 bool getRelocations(parsed_pe *p) {
   data_directory relocDir;
   if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
@@ -2484,6 +2524,94 @@ bool getSymbolTable(parsed_pe *p) {
   return true;
 }
 
+parsed_pe *ParseCOFFFromBuffer(bounded_buffer *buffer) {
+  // First, create a new parsed_pe structure
+  // We pass std::nothrow parameter to new so in case of failure it returns
+  // nullptr instead of throwing exception std::bad_alloc.
+  parsed_pe *p = new (std::nothrow) parsed_pe();
+
+  if (p == nullptr) {
+    PE_ERR(PEERR_MEM);
+    return nullptr;
+  }
+
+  // Make a new buffer object to hold just our file data
+  p->fileBuffer = buffer;
+
+  p->internal = new (std::nothrow) parsed_pe_internal();
+
+  if (p->internal == nullptr) {
+    deleteBuffer(p->fileBuffer);
+    delete p;
+    PE_ERR(PEERR_MEM);
+    return nullptr;
+  }
+
+  // This is an object file. Set ImageBase to 0
+  p->peHeader.nt.OptionalHeader.ImageBase = 0;
+  p->peHeader.nt.OptionalHeader64.ImageBase = 0;
+  // Set signature to 0 to indicate that this is not a complete PE file
+  p->peHeader.dos.e_magic = 0;
+  p->peHeader.nt.Signature = 0;
+
+  // get header information
+  bounded_buffer *remaining = nullptr;
+  if (!readFileHeader(p->fileBuffer, p->peHeader.nt.FileHeader)) {
+    DestructParsedPE(p);
+    return nullptr;
+  }
+  std::uint32_t rem_size = sizeof(p->peHeader.nt.FileHeader) + p->peHeader.nt.FileHeader.SizeOfOptionalHeader;
+  remaining = splitBuffer(p->fileBuffer, rem_size, p->fileBuffer->bufLen);
+
+  if (!getSections(remaining, p->fileBuffer, p->peHeader.nt, p->internal->secs)) {
+    deleteBuffer(remaining);
+    DestructParsedPE(p);
+    PE_ERR(PEERR_SECT);
+    return nullptr;
+  }
+
+  // Get relocations, if exist
+  if (!getCOFFRelocations(p)) {
+    deleteBuffer(remaining);
+    DestructParsedPE(p);
+    PE_ERR(PEERR_MAGIC);
+    return nullptr;
+  }
+
+  // Get symbol table
+  if (!getSymbolTable(p)) {
+    deleteBuffer(remaining);
+    DestructParsedPE(p);
+    return nullptr;
+  }
+
+  deleteBuffer(remaining);
+
+  return p;
+}
+
+parsed_pe *ParseCOFFFromFile(const char *filePath) {
+  auto buffer = readFileToFileBuffer(filePath);
+
+  if (buffer == nullptr) {
+    // err is set by readFileToFileBuffer
+    return nullptr;
+  }
+
+  return ParseCOFFFromBuffer(buffer);
+}
+
+parsed_pe *ParseCOFFFromPointer(std::uint8_t *ptr, std::uint32_t sz) {
+  auto buffer = makeBufferFromPointer(ptr, sz);
+
+  if (buffer == nullptr) {
+    // err is set by makeBufferFromPointer
+    return nullptr;
+  }
+
+  return ParseCOFFFromBuffer(buffer);
+}
+
 parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer) {
   // First, create a new parsed_pe structure
   // We pass std::nothrow parameter to new so in case of failure it returns
@@ -2643,6 +2771,19 @@ void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd) {
 
   for (reloc &r : l) {
     if (cb(cbd, r.shiftedAddr, r.type) != 0) {
+      break;
+    }
+  }
+
+  return;
+}
+
+// iterate over relocations in the COFF file
+void IterCOFFRelocs(parsed_pe *pe, iterCOFFReloc cb, void *cbd) {
+  std::vector<coff_reloc> &l = pe->internal->coff_relocs;
+
+  for (coff_reloc &r : l) {
+    if (cb(cbd, r.addr, r.sectionTableIndex, r.symbolTableIndex, r.type) != 0) {
       break;
     }
   }
