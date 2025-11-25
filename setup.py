@@ -64,7 +64,7 @@ if platform.system() == "Windows":
     COMPILE_ARGS = ["/EHsc"]
 else:
     SOURCE_FILES.append(
-        os.path.join(here, "pe-parser-library", "src", "unicode_codecvt.cpp")
+        os.path.join(here, "pe-parser-library", "src", "unicode_libicu.cpp")
     )
     INCLUDE_DIRS += [
         "/usr/local/include",
