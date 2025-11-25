@@ -19,7 +19,7 @@ jobs:
       - name: deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang-format
+          sudo apt-get install -y clang-format libicu-dev
 
       - name: lint
         run: |
@@ -45,6 +45,19 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: 'true'
+    - name: Install ICU (Ubuntu)
+      if: matrix.platform == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libicu-dev
+    - name: Install ICU (macOS)
+      if: matrix.platform == 'macos-latest'
+      run: |
+        brew install icu4c
+    - name: Set ICU_ROOT for macOS
+      if: matrix.platform == 'macos-latest'
+      run: |
+        echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
     - name: Enable ASan+UBSan Sanitizers
       if: matrix.build-type == 'Debug'
       run: |
@@ -86,6 +99,16 @@ jobs:
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
+    - name: Install ICU (Ubuntu)
+      if: matrix.platform == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libicu-dev
+    - name: Install ICU (macOS)
+      if: matrix.platform == 'macos-latest'
+      run: |
+        brew install icu4c
+        echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
     - name: build
       run: |
         python -m pip install build wheel setuptools
