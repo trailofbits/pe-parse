@@ -52,6 +52,16 @@ More information about `pepy` can be found in its [README](./pepy/README.md).
 
 ## Dependencies
 
+### ICU
+
+ICU is required on non-Windows platforms (Linux, macOS). **You do not need ICU on Windows.**
+
+- ICU library (International Components for Unicode)
+  - Debian/Ubuntu: `sudo apt-get install libicu-dev`
+  - RedHat/Fedora: `sudo dnf install libicu-devel`
+  - macOS: `brew install icu4c`
+  - vcpkg: `vcpkg install icu`
+
 ### CMake
   * Debian/Ubuntu: `sudo apt-get install cmake`
   * RedHat/Fedora: `sudo yum install cmake`
@@ -89,6 +99,17 @@ cmake -G "Visual Studio 16 2019" -A Win64 ..
 
 # Pass the build type at build time
 cmake --build . --config Release
+```
+
+### MacOS-specific
+
+When ICU is installed via brew it will not be in the usual library path, so you will need to set the `ICU_ROOT` environment variable to the location where ICU is installed when running cmake.
+
+The path is usually `/opt/homebrew/opt/icu4c@version`, where `version` is the version number of ICU you have installed.
+
+```
+ICU_ROOT=/opt/homebrew/opt/icu4c@123 cmake -DCMAKE_BUILD_TYPE=Release ..
+ICU_ROOT=/opt/homebrew/opt/icu4c@123 cmake --build .
 ```
 
 ## Testing

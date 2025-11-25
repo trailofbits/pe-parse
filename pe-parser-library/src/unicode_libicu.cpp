@@ -22,15 +22,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <codecvt>
-#include <locale>
+#include <unicode/ustring.h>
+#include <unicode/utypes.h>
 #include <pe-parse/to_string.h>
 
 namespace peparse {
-// See
-// https://stackoverflow.com/questions/38688417/utf-conversion-functions-in-c11
 std::string from_utf16(const UCharString &u) {
-  std::wstring_convert<std::codecvt_utf8<char16_t>, char16_t> convert;
-  return convert.to_bytes(u);
+  if (u.empty()) {
+    return std::string();
+  }
+  
+  const UChar* src = reinterpret_cast<const UChar*>(u.data());
+  int32_t srcLength = static_cast<int32_t>(u.size());
+
+  // First pass: determine required buffer size
+  UErrorCode status = U_ZERO_ERROR;
+  int32_t destLength = 0;
+  u_strToUTF8(nullptr, 0, &destLength, src, srcLength, &status);
+
+  if (status != U_BUFFER_OVERFLOW_ERROR && U_FAILURE(status)) {
+    return std::string();  // Return empty on error (matches current behavior)
+  }
+
+  // Second pass: perform actual conversion
+  std::string result(static_cast<std::size_t>(destLength), '\0');
+  status = U_ZERO_ERROR;
+  u_strToUTF8(&result[0], destLength, nullptr, src, srcLength, &status);
+
+  if (U_FAILURE(status)) {
+    return std::string();
+  }
+
+  return result;
 }
 } // namespace peparse
