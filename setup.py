@@ -47,6 +47,7 @@ SOURCE_FILES = [
 
 INCLUDE_DIRS = []
 LIBRARY_DIRS = []
+LIBRARIES = []
 
 if platform.system() == "Windows":
     SOURCE_FILES.append(
@@ -73,7 +74,15 @@ else:
         os.path.join(here, "pe-parser-library", "include"),
     ]
     LIBRARY_DIRS += ["/usr/lib", "/usr/local/lib"]
+    LIBRARIES += ["icuuc"]
     COMPILE_ARGS = ["-std=c++17"]
+
+    # Add Homebrew ICU paths on macOS if ICU_ROOT is set
+    if platform.system() == "Darwin":
+        icu_root = os.environ.get("ICU_ROOT")
+        if icu_root:
+            INCLUDE_DIRS.insert(0, os.path.join(icu_root, "include"))
+            LIBRARY_DIRS.insert(0, os.path.join(icu_root, "lib"))
 
 extension_mod = Extension(
     "pepy",
@@ -83,6 +92,7 @@ extension_mod = Extension(
     language="c++",
     include_dirs=INCLUDE_DIRS,
     library_dirs=LIBRARY_DIRS,
+    libraries=LIBRARIES,
 )
 
 setup(
