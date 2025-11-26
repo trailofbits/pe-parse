@@ -42,20 +42,18 @@ using namespace peparse;
     return ((pepy_##OBJ *) self)->ATTR;                                     \
   }
 
-#define OBJECTGETTER(OBJ, ATTR, DOC) \
-  {(char *) #ATTR,                   \
-   (getter) pepy_##OBJ##_get_##ATTR, \
-   (setter) pepy_attr_not_writable,  \
-   (char *) #DOC,                    \
-   NULL}
+#define OBJECTGETTER(OBJ, ATTR, DOC)                         \
+  {                                                          \
+    (char *) #ATTR, (getter) pepy_##OBJ##_get_##ATTR,        \
+        (setter) pepy_attr_not_writable, (char *) #DOC, NULL \
+  }
 
 /* 'OPTIONAL' references the fact that these are from the Optional Header */
-#define OBJECTGETTER_OPTIONAL(ATTR, DOC)     \
-  {(char *) #ATTR,                           \
-   (getter) pepy_parsed_get_optional_##ATTR, \
-   (setter) pepy_attr_not_writable,          \
-   (char *) #DOC,                            \
-   NULL}
+#define OBJECTGETTER_OPTIONAL(ATTR, DOC)                      \
+  {                                                           \
+    (char *) #ATTR, (getter) pepy_parsed_get_optional_##ATTR, \
+        (setter) pepy_attr_not_writable, (char *) #DOC, NULL  \
+  }
 
 static PyObject *pepy_error;
 
