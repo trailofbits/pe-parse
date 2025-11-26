@@ -22,17 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include <pe-parse/to_string.h>
 #include <unicode/ustring.h>
 #include <unicode/utypes.h>
-#include <pe-parse/to_string.h>
 
 namespace peparse {
 std::string from_utf16(const UCharString &u) {
   if (u.empty()) {
     return std::string();
   }
-  
-  const UChar* src = reinterpret_cast<const UChar*>(u.data());
+
+  const UChar *src = reinterpret_cast<const UChar *>(u.data());
   int32_t srcLength = static_cast<int32_t>(u.size());
 
   // First pass: determine required buffer size
@@ -41,7 +41,7 @@ std::string from_utf16(const UCharString &u) {
   u_strToUTF8(nullptr, 0, &destLength, src, srcLength, &status);
 
   if (status != U_BUFFER_OVERFLOW_ERROR && U_FAILURE(status)) {
-    return std::string();  // Return empty on error (matches current behavior)
+    return std::string(); // Return empty on error (matches current behavior)
   }
 
   // Second pass: perform actual conversion
