@@ -133,7 +133,7 @@ jobs:
         build-arch: ["x64", "Win32"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v6
       with:
@@ -150,7 +150,7 @@ jobs:
         mkdir build
         cd build
         cmake `
-          -G "Visual Studio 16 2019" `
+          -G "Visual Studio 17 2022" `
           -A ${{ matrix.build-arch }} `
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
           -DPEPARSE_ENABLE_TESTING=ON `
