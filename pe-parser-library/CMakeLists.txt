@@ -14,14 +14,13 @@ list(APPEND PEPARSERLIB_SOURCEFILES
 )
 
 # NOTE(ww): On Windows we use the Win32 API's built-in UTF16 conversion
-# routines; on other platforms we use codecvt. codecvt is nominally deprecated
-# in C++17 and onwards, but will probably be available for quite some time.
-# Previous versions of pe-parse used ICU when available, but this caused
-# DLL hell on Windows and wasn't worth the additional dependency.
+# routines; on other platforms we use ICU (International Components for Unicode).
+# Previous versions used codecvt, which was deprecated in C++17.
 if(MSVC)
   list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_winapi.cpp)
 else()
-  list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_codecvt.cpp)
+  find_package(ICU COMPONENTS uc REQUIRED)
+  list(APPEND PEPARSERLIB_SOURCEFILES src/unicode_libicu.cpp)
 endif()
 
 add_library(${PROJECT_NAME} ${PEPARSERLIB_SOURCEFILES})
@@ -38,6 +37,11 @@ target_include_directories(
   $<INSTALL_INTERFACE:include>
 )
 target_compile_options(${PROJECT_NAME} PRIVATE ${GLOBAL_CXXFLAGS})
+
+# Link ICU on non-Windows platforms
+if(NOT MSVC)
+  target_link_libraries(${PROJECT_NAME} PRIVATE ICU::uc)
+endif()
 
 install(
   TARGETS ${PROJECT_NAME}
