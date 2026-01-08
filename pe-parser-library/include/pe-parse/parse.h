@@ -194,11 +194,17 @@ std::string GetPEErrString();
 // get parser error location as string
 std::string GetPEErrLoc();
 
-// get a PE parse context from a file
+// get a PE parse context from a file (.exe/.dll)
 parsed_pe *ParsePEFromFile(const char *filePath);
 
 parsed_pe *ParsePEFromPointer(std::uint8_t *buffer, std::uint32_t sz);
 parsed_pe *ParsePEFromBuffer(bounded_buffer *buffer);
+
+// get a PE parse context from a file (.obj/.o)
+parsed_pe *ParseCOFFFromFile(const char *filePath);
+
+parsed_pe *ParseCOFFFromPointer(std::uint8_t *buffer, std::uint32_t sz);
+parsed_pe *ParseCOFFFromBuffer(bounded_buffer *buffer);
 
 // destruct a PE context
 void DestructParsedPE(parsed_pe *p);
@@ -221,6 +227,14 @@ void IterImpVAString(parsed_pe *pe, iterVAStr cb, void *cbd);
 // iterate over relocations in the PE file
 typedef int (*iterReloc)(void *, const VA &, const reloc_type &);
 void IterRelocs(parsed_pe *pe, iterReloc cb, void *cbd);
+
+// iterate over relocations in the COFF file
+typedef int (*iterCOFFReloc)(void *,
+                             const VA &,
+                             const std::uint32_t &,
+                             const std::uint32_t &,
+                             const reloc_type &);
+void IterCOFFRelocs(parsed_pe *pe, iterCOFFReloc cb, void *cbd);
 
 // iterate over debug directories in the PE file
 typedef int (*iterDebug)(void *, const std::uint32_t &, const bounded_buffer *);

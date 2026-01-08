@@ -404,6 +404,10 @@ int main(int argc, char *argv[]) {
   parsed_pe *p = ParsePEFromFile(cmdl[1].c_str());
 
   if (p == nullptr) {
+    p = ParseCOFFFromFile(cmdl[1].c_str());
+  }
+
+  if (p == nullptr) {
     std::cout << "Error: " << GetPEErr() << " (" << GetPEErrString() << ")"
               << "\n";
     std::cout << "Location: " << GetPEErrLoc() << "\n";
