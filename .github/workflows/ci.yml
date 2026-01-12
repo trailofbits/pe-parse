@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - libicu-test
   pull_request:
   schedule:
     # run CI every day even if no PRs/merges occur
@@ -91,10 +90,11 @@ jobs:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
         python:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v6
@@ -132,7 +132,7 @@ jobs:
         build-arch: ["x64", "Win32"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v6
       with:
@@ -149,7 +149,7 @@ jobs:
         mkdir build
         cd build
         cmake `
-          -G "Visual Studio 16 2019" `
+          -G "Visual Studio 17 2022" `
           -A ${{ matrix.build-arch }} `
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
           -DPEPARSE_ENABLE_TESTING=ON `
@@ -173,10 +173,11 @@ jobs:
     strategy:
       matrix:
         python:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v6

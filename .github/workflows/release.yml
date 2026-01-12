@@ -17,7 +17,9 @@ jobs:
         python-version: "3.x"
 
     - name: sdist
-      run: python3 setup.py sdist
+      run: |
+        python -m pip install build
+        python -m build --sdist
 
     - name: publish
       uses: pypa/gh-action-pypi-publish@release/v1
