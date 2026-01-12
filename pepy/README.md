@@ -2,7 +2,7 @@
 
 pepy (pronounced p-pie) is a python binding to the pe-parse parser.
 
-pepy supports Python versions 3.6 and above.
+pepy supports Python versions 3.10 and above.
 
 The easiest way to use pepy is to install it via pip:
 
@@ -16,9 +16,9 @@ If you can build pe-parse and have a working python environment (headers and
 libraries) you can build pepy.
 
 1. Build pepy:
-  * `python3 setup.py build`
+  * `pip install build && python3 -m build`
 2. Install pepy:
-  * `python3 setup.py install`
+  * `pip install .`
 
 **Building on Windows:** Python 3.x is typically installed as _python.exe_,
 **NOT** _python3.exe_.

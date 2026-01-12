@@ -32,10 +32,6 @@ from setuptools import Extension, setup
 here = os.path.dirname(__file__)
 pepy = os.path.join(here, "pepy")
 
-
-with open(os.path.join(pepy, "README.md")) as f:
-    README = f.read()
-
 with open(os.path.join(here, "VERSION")) as f:
     VERSION = f.read().strip()
 
@@ -95,16 +91,5 @@ extension_mod = Extension(
     libraries=LIBRARIES,
 )
 
-setup(
-    name="pepy",
-    url="https://github.com/trailofbits/pe-parse",
-    python_requires=">=3.10",
-    version=VERSION,
-    description="Python bindings for pe-parse",
-    long_description=README,
-    long_description_content_type="text/markdown",
-    author="Wesley Shields",
-    author_email="wxs@atarininja.org",
-    license="BSD",
-    ext_modules=[extension_mod],
-)
+# All metadata now comes from pyproject.toml
+setup(ext_modules=[extension_mod])
