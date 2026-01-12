@@ -154,4 +154,4 @@ pe-parse was designed and implemented by [Andrew Ruef](https://github.com/awruef
 with significant contributions from [Wesley Shields](https://github.com/wxsBSD).
 
 pe-parse is currently maintained by [Eric Kilmer](https://github.com/ekilmer)
-and [William Woodruff](https://github.com/woodruffw).
+and [Graham Sutherland](https://github.com/gsutherland-trailofbits).
