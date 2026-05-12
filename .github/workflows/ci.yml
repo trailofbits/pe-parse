@@ -159,12 +159,20 @@ jobs:
       run: |
         cd build
         cmake --build . --config ${{ matrix.build-type }} --target install
+    # ctest launches /fsanitize=address binaries that depend on
+    # clang_rt.asan_dynamic-x86_64.dll, which only sits on PATH inside a VS
+    # developer prompt. Source vcvars so ctest can find it; otherwise the
+    # tests fail to launch with STATUS_DLL_NOT_FOUND (0xc0000135).
     - name: test
+      shell: cmd
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
-        cd build
-        ctest -V
+        "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -version "[17.0,18.0)" -property installationPath > "%RUNNER_TEMP%\vsinstall.txt" || exit /b 1
+        set /p VSINSTALL=<"%RUNNER_TEMP%\vsinstall.txt"
+        call "%VSINSTALL%\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.build-arch == 'Win32' && 'x86' || 'x64' }} || exit /b 1
+        cd build || exit /b 1
+        ctest -V || exit /b 1
         .\bin\dump-pe.exe ..\tests\assets\example.exe
 
   pepy-windows:
