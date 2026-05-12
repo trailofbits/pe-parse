@@ -14,7 +14,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: deps
         run: |
@@ -44,7 +44,7 @@ jobs:
           compiler: { CC: "gcc", CXX: "g++" }
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: 'true'
     - name: Install ICU (Ubuntu)
@@ -91,14 +91,15 @@ jobs:
       matrix:
         platform: ["ubuntu-latest", "macos-latest"]
         python:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python }}
     - name: Install ICU (Ubuntu)
@@ -132,24 +133,21 @@ jobs:
         build-arch: ["x64", "Win32"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
-    runs-on: windows-2019
+    runs-on: windows-2025
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: 'true'
     - name: Enable ASan Sanitizers
       if: matrix.build-type == 'Debug' && matrix.build-arch == 'x64'
       run: |
         echo "SANITIZER_FLAG=-DPEPARSE_USE_SANITIZER=Address" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
-    - uses: ilammy/msvc-dev-cmd@v1.13.0
-      with:
-        arch: ${{ matrix.build-arch }}
     - name: build
       run: |
         mkdir build
         cd build
         cmake `
-          -G "Visual Studio 16 2019" `
+          -G "Visual Studio 17 2022" `
           -A ${{ matrix.build-arch }} `
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
           -DPEPARSE_ENABLE_TESTING=ON `
@@ -173,14 +171,15 @@ jobs:
     strategy:
       matrix:
         python:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python }}
     - name: build
