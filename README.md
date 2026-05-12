@@ -88,7 +88,7 @@ cmake --build . --target install
 
 ### Windows-specific
 
-VS 2017, VS 2019, and VS 2022 are supported.
+VS 2017, VS 2019, VS 2022, and VS 2026 are supported.
 
 ```
 # Compile 64-bit binaries with Visual Studio 2017
@@ -99,6 +99,9 @@ cmake -G "Visual Studio 16 2019" -A Win64 ..
 
 # Or, with VS 2022
 cmake -G "Visual Studio 17 2022" -A Win64 ..
+
+# Or, with VS 2026
+cmake -G "Visual Studio 18 2026" -A Win64 ..
 
 # Pass the build type at build time
 cmake --build . --config Release
