@@ -29,6 +29,7 @@ add_executable(tests
   )
 target_compile_definitions(tests PRIVATE ASSETS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets")
 target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_features(tests PUBLIC cxx_std_17)
 target_link_libraries(tests PRIVATE ${PROJECT_NAME} Catch2::Catch2)
 # ASAN on Windows messes with exception handlers, and Catch2 doesn't account
 # for this. A workaround is to disable SEH on Windows with ASAN
