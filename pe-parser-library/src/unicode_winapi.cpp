@@ -41,13 +41,13 @@ std::string from_utf16(const UCharString &u) {
     return result;
   }
 
-  result.reserve(size);
+  result.resize(size);
   WideCharToMultiByte(CP_UTF8,
                       0,
                       u.data(),
                       static_cast<int>(u.size()),
                       &result[0],
-                      static_cast<int>(result.capacity()),
+                      static_cast<int>(result.size()),
                       nullptr,
                       nullptr);
 

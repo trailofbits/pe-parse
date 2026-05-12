@@ -13,7 +13,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: deps
         run: |
@@ -43,7 +43,7 @@ jobs:
           compiler: { CC: "gcc", CXX: "g++" }
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: 'true'
     - name: Install ICU (Ubuntu)
@@ -97,8 +97,8 @@ jobs:
           - "3.14"
     runs-on: ${{ matrix.platform }}
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python }}
     - name: Install ICU (Ubuntu)
@@ -132,24 +132,21 @@ jobs:
         build-arch: ["x64", "Win32"]
         build-type: ["Debug", "Release"]
         build-shared: ["0", "1"]
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         submodules: 'true'
     - name: Enable ASan Sanitizers
       if: matrix.build-type == 'Debug' && matrix.build-arch == 'x64'
       run: |
         echo "SANITIZER_FLAG=-DPEPARSE_USE_SANITIZER=Address" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
-    - uses: ilammy/msvc-dev-cmd@v1.13.0
-      with:
-        arch: ${{ matrix.build-arch }}
     - name: build
       run: |
         mkdir build
         cd build
         cmake `
-          -G "Visual Studio 17 2022" `
+          -G "Visual Studio 18 2026" `
           -A ${{ matrix.build-arch }} `
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
           -DPEPARSE_ENABLE_TESTING=ON `
@@ -161,12 +158,20 @@ jobs:
       run: |
         cd build
         cmake --build . --config ${{ matrix.build-type }} --target install
+    # ctest launches /fsanitize=address binaries that depend on
+    # clang_rt.asan_dynamic-x86_64.dll, which only sits on PATH inside a VS
+    # developer prompt. Source vcvars so ctest can find it; otherwise the
+    # tests fail to launch with STATUS_DLL_NOT_FOUND (0xc0000135).
     - name: test
+      shell: cmd
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
-        cd build
-        ctest -V
+        "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -version "[18.0,19.0)" -property installationPath > "%RUNNER_TEMP%\vsinstall.txt" || exit /b 1
+        set /p VSINSTALL=<"%RUNNER_TEMP%\vsinstall.txt"
+        call "%VSINSTALL%\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.build-arch == 'Win32' && 'x86' || 'x64' }} || exit /b 1
+        cd build || exit /b 1
+        ctest -V || exit /b 1
         .\bin\dump-pe.exe ..\tests\assets\example.exe
 
   pepy-windows:
@@ -180,8 +185,8 @@ jobs:
           - "3.14"
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python }}
     - name: build
