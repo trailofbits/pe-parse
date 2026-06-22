@@ -9,11 +9,16 @@ on:
     # run CI every day even if no PRs/merges occur
     - cron: '0 12 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: deps
         run: |
@@ -45,6 +50,7 @@ jobs:
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
+        persist-credentials: false
         submodules: 'true'
     - name: Install ICU (Ubuntu)
       if: matrix.platform == 'ubuntu-latest'
@@ -58,11 +64,11 @@ jobs:
     - name: Set ICU_ROOT for macOS
       if: matrix.platform == 'macos-latest'
       run: |
-        echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
+        echo "ICU_ROOT=$(brew --prefix icu4c)" >> "$GITHUB_ENV"
     - name: Enable ASan+UBSan Sanitizers
       if: matrix.build-type == 'Debug'
       run: |
-        echo "SANITIZER_FLAG=-DPEPARSE_USE_SANITIZER=Address,Undefined" >> $GITHUB_ENV
+        echo "SANITIZER_FLAG=-DPEPARSE_USE_SANITIZER=Address,Undefined" >> "$GITHUB_ENV"
     - name: build
       env:
         CC: ${{ matrix.compiler.CC }}
@@ -70,13 +76,16 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake \
-          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} \
-          -DPEPARSE_ENABLE_TESTING=ON \
-          -DPEPARSE_ENABLE_EXAMPLES=ON \
-          ${SANITIZER_FLAG} \
-          ..
+        cmake_args=(
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+          -DBUILD_SHARED_LIBS=${{ matrix.build-shared }}
+          -DPEPARSE_ENABLE_TESTING=ON
+          -DPEPARSE_ENABLE_EXAMPLES=ON
+        )
+        if [ -n "${SANITIZER_FLAG:-}" ]; then
+          cmake_args+=("${SANITIZER_FLAG}")
+        fi
+        cmake "${cmake_args[@]}" ..
         cmake --build .
     - name: test
       env:
@@ -98,6 +107,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python }}
@@ -110,7 +121,7 @@ jobs:
       if: matrix.platform == 'macos-latest'
       run: |
         brew install icu4c
-        echo "ICU_ROOT=$(brew --prefix icu4c)" >> $GITHUB_ENV
+        echo "ICU_ROOT=$(brew --prefix icu4c)" >> "$GITHUB_ENV"
     - name: build
       run: |
         python -m pip install build wheel setuptools
@@ -136,6 +147,7 @@ jobs:
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
+        persist-credentials: false
         submodules: 'true'
     - name: Enable ASan Sanitizers
       if: matrix.build-type == 'Debug' && matrix.build-arch == 'x64'
@@ -163,7 +175,7 @@ jobs:
     # developer prompt. Source vcvars so ctest can find it; otherwise the
     # tests fail to launch with STATUS_DLL_NOT_FOUND (0xc0000135).
     - name: test
-      shell: cmd
+      shell: cmd # zizmor: ignore[misfeature] vcvarsall.bat must run under cmd to expose the ASan runtime on PATH.
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
@@ -186,6 +198,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
       with:
         python-version: ${{ matrix.python }}
