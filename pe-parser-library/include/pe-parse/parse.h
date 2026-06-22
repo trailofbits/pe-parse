@@ -162,6 +162,8 @@ bounded_buffer *readFileToFileBuffer(const char *filePath);
 bounded_buffer *makeBufferFromPointer(std::uint8_t *data, std::uint32_t sz);
 bounded_buffer *
 splitBuffer(bounded_buffer *b, std::uint32_t from, std::uint32_t to);
+bounded_buffer *
+splitBufferByLength(bounded_buffer *b, std::uint32_t from, std::uint32_t len);
 void deleteBuffer(bounded_buffer *b);
 uint64_t bufLen(bounded_buffer *b);
 

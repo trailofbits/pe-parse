@@ -68,6 +68,23 @@ inline uint64_t byteSwapUint64(std::uint64_t val) {
 #endif
 }
 
+peparse::bounded_buffer *makeBufferView(peparse::bounded_buffer *b,
+                                        std::uint32_t from,
+                                        std::uint32_t len) {
+  auto newBuff = new (std::nothrow) peparse::bounded_buffer();
+  if (newBuff == nullptr) {
+    return nullptr;
+  }
+
+  newBuff->copy = true;
+  newBuff->detail = nullptr;
+  newBuff->buf = b->buf + from;
+  newBuff->bufLen = len;
+  newBuff->swapBytes = b->swapBytes;
+
+  return newBuff;
+}
+
 } // anonymous namespace
 
 namespace peparse {
@@ -325,29 +342,30 @@ bounded_buffer *makeBufferFromPointer(std::uint8_t *data, std::uint32_t sz) {
   return p;
 }
 
-// split buffer inclusively from from to to by offset
 bounded_buffer *
 splitBuffer(bounded_buffer *b, std::uint32_t from, std::uint32_t to) {
   if (b == nullptr) {
     return nullptr;
   }
 
-  // safety checks
-  if (to < from || to > b->bufLen) {
+  if (to < from) {
     return nullptr;
   }
 
-  // make a new buffer
-  auto newBuff = new (std::nothrow) bounded_buffer();
-  if (newBuff == nullptr) {
+  return splitBufferByLength(b, from, to - from);
+}
+
+bounded_buffer *
+splitBufferByLength(bounded_buffer *b, std::uint32_t from, std::uint32_t len) {
+  if (b == nullptr) {
     return nullptr;
   }
 
-  newBuff->copy = true;
-  newBuff->buf = b->buf + from;
-  newBuff->bufLen = (to - from);
+  if (from > b->bufLen || len > b->bufLen - from) {
+    return nullptr;
+  }
 
-  return newBuff;
+  return makeBufferView(b, from, len);
 }
 
 void deleteBuffer(bounded_buffer *b) {

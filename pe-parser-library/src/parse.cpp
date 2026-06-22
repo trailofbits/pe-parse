@@ -591,6 +591,10 @@ static bool readCString(const bounded_buffer &buffer,
   return false;
 }
 
+static bool rvaInDataDirectory(std::uint32_t rva, const data_directory &dir) {
+  return rva >= dir.VirtualAddress && rva - dir.VirtualAddress < dir.Size;
+}
+
 bool getSecForVA(const std::vector<section> &secs, VA v, section &sec) {
   for (section s : secs) {
     std::uint64_t low = s.sectionBase;
@@ -941,13 +945,12 @@ bool getSections(bounded_buffer *b,
     }
 
     thisSec.sec = curSec;
-    std::uint32_t lowOff = curSec.PointerToRawData;
-    std::uint32_t highOff = lowOff + curSec.SizeOfRawData;
-    thisSec.sectionData = splitBuffer(fileBegin, lowOff, highOff);
+    thisSec.sectionData = splitBufferByLength(
+        fileBegin, curSec.PointerToRawData, curSec.SizeOfRawData);
 
-    // GH#109: we trusted [lowOff, highOff) to be a range that yields
+    // GH#109: we trusted section raw data to be a range that yields
     // a valid bounded_buffer, despite these being user-controllable.
-    // splitBuffer correctly handles this, but we failed to check for
+    // splitBufferByLength correctly handles this, but we failed to check for
     // the nullptr it returns as a sentinel.
     if (thisSec.sectionData == nullptr) {
       return false;
@@ -1674,9 +1677,7 @@ bool getExports(parsed_pe *p) {
           return false;
         }
 
-        bool isForwarded =
-            ((symRVA >= exportDir.VirtualAddress) &&
-             (symRVA < exportDir.VirtualAddress + exportDir.Size));
+        bool isForwarded = rvaInDataDirectory(symRVA, exportDir);
 
         VA symVA;
         if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
@@ -1900,15 +1901,14 @@ bool getDebugDir(parsed_pe *p) {
       debugent ent;
 
       auto dataofft = static_cast<std::uint32_t>(rawData - dataSec.sectionBase);
-      if (dataofft + curEnt.SizeOfData > dataSec.sectionData->bufLen) {
+      ent.data =
+          splitBufferByLength(dataSec.sectionData, dataofft, curEnt.SizeOfData);
+      if (ent.data == nullptr) {
         // The debug entry data stretches outside the containing section. It is
         // malformed. Skip it and the rest, similar to the above.
         break;
       }
       ent.type = curEnt.Type;
-      ent.data = makeBufferFromPointer(
-          reinterpret_cast<std::uint8_t *>(dataSec.sectionData->buf + dataofft),
-          curEnt.SizeOfData);
 
       p->internal->debugdirs.push_back(ent);
 
@@ -2862,8 +2862,8 @@ bool GetDataDirectoryEntry(parsed_pe *pe,
    * https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#the-attribute-certificate-table-image-only
    */
   if (dirnum == DIR_SECURITY) {
-    auto *buf = splitBuffer(
-        pe->fileBuffer, dir.VirtualAddress, dir.VirtualAddress + dir.Size);
+    auto *buf =
+        splitBufferByLength(pe->fileBuffer, dir.VirtualAddress, dir.Size);
     if (buf == nullptr) {
       PE_ERR(PEERR_SIZE);
       return false;
@@ -2879,13 +2879,14 @@ bool GetDataDirectoryEntry(parsed_pe *pe,
     }
 
     auto off = static_cast<std::uint32_t>(addr - sec.sectionBase);
-    if (off + dir.Size >= sec.sectionData->bufLen) {
+    auto *buf = splitBufferByLength(sec.sectionData, off, dir.Size);
+    if (buf == nullptr) {
       PE_ERR(PEERR_SIZE);
       return false;
     }
 
-    raw_entry.assign(sec.sectionData->buf + off,
-                     sec.sectionData->buf + off + dir.Size);
+    raw_entry.assign(buf->buf, buf->buf + buf->bufLen);
+    deleteBuffer(buf);
   }
 
   return true;
