@@ -12,6 +12,8 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif ()
 
+option(PEPARSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+
 include(cmake/compilation_flags.cmake)
 list(APPEND GLOBAL_CXXFLAGS ${DEFAULT_CXX_FLAGS})
 
@@ -59,6 +61,7 @@ add_custom_target(
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Build Shared: ${BUILD_SHARED_LIBS} ${BUILD_SHARED_LIBS_MESSAGE}")
 message(STATUS "Build Command Line Tools: ${BUILD_COMMAND_LINE_TOOLS}")
+message(STATUS "Warnings as Errors: ${PEPARSE_WARNINGS_AS_ERRORS}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
 
 option(PEPARSE_ENABLE_EXAMPLES "Enable building examples" OFF)

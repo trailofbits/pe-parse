@@ -30,7 +30,7 @@ jobs:
       - name: lint
         run: |
           mkdir build && cd build
-          cmake ..
+          cmake -DPEPARSE_WARNINGS_AS_ERRORS=ON ..
           cmake --build . --target peparse_format
           cd .. && git diff --exit-code
 
@@ -81,6 +81,7 @@ jobs:
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }}
           -DPEPARSE_ENABLE_TESTING=ON
           -DPEPARSE_ENABLE_EXAMPLES=ON
+          -DPEPARSE_WARNINGS_AS_ERRORS=ON
         )
         if [ -n "${SANITIZER_FLAG:-}" ]; then
           cmake_args+=("${SANITIZER_FLAG}")
@@ -163,6 +164,7 @@ jobs:
           -DBUILD_SHARED_LIBS=${{ matrix.build-shared }} `
           -DPEPARSE_ENABLE_TESTING=ON `
           -DPEPARSE_ENABLE_EXAMPLES=ON `
+          -DPEPARSE_WARNINGS_AS_ERRORS=ON `
           $Env:SANITIZER_FLAG `
           ..
         cmake --build . --config ${{ matrix.build-type }}

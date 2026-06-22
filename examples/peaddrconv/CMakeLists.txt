@@ -5,6 +5,8 @@ if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE PATH "Default install directory" FORCE)
 endif ()
 
+option(PEPARSE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+
 if (MSVC)
   # Default CMAKE_PREFIX_PATH is empty and CMAKE_SYSTEM_PREFIX_PATH is
   # set to a list of Program Files directories, which is a problem because
@@ -12,7 +14,11 @@ if (MSVC)
   # directory on Windows its not found by CMake when performing its search.
   list(APPEND CMAKE_PREFIX_PATH /usr/lib/cmake)
 
-  list(APPEND PEADDRCONV_CXXFLAGS /W4 /WX /analyze)
+  list(APPEND PEADDRCONV_CXXFLAGS /W4 /analyze)
+
+  if (PEPARSE_WARNINGS_AS_ERRORS)
+    list(APPEND PEADDRCONV_CXXFLAGS /WX)
+  endif ()
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     list(APPEND PEADDRCONV_CXXFLAGS /Zi)
@@ -26,9 +32,13 @@ else ()
     -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization
     -Wformat=2 -Winit-self -Wlong-long -Wmissing-declarations -Wmissing-include-dirs -Wcomment
     -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion
-    -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wunused -Wuninitialized
+    -Wsign-promo -Wstrict-overflow=5 -Wswitch-default -Wundef -Wunused -Wuninitialized
     -Wno-missing-declarations
   )
+
+  if (PEPARSE_WARNINGS_AS_ERRORS)
+    list(APPEND PEADDRCONV_CXXFLAGS -Werror)
+  endif ()
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     list(APPEND PEADDRCONV_CXXFLAGS -gdwarf-2 -g3)
