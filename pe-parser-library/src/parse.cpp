@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -55,6 +56,20 @@ struct exportent {
   std::string symbolName;
   std::string moduleName;
   std::string forwardName;
+};
+
+struct named_export {
+  std::uint32_t eatIndex;
+  std::string symbolName;
+};
+
+struct export_table_context {
+  const std::vector<section> &sections;
+  data_directory exportDir;
+  VA imageBase;
+  section eatSec;
+  std::uint32_t eatOff;
+  std::string moduleName;
 };
 
 struct reloc {
@@ -607,6 +622,106 @@ bool getSecForVA(const std::vector<section> &secs, VA v, section &sec) {
   }
 
   return false;
+}
+
+static VA rvaToVA(VA imageBase, std::uint32_t rva) {
+  return static_cast<VA>(rva) + imageBase;
+}
+
+static bool getSectionForRVA(const std::vector<section> &secs,
+                             VA imageBase,
+                             std::uint32_t rva,
+                             section &sec,
+                             std::uint32_t &off) {
+  VA va = rvaToVA(imageBase, rva);
+  if (!getSecForVA(secs, va, sec)) {
+    return false;
+  }
+
+  off = static_cast<std::uint32_t>(va - sec.sectionBase);
+  return true;
+}
+
+static bool readRvaCString(const std::vector<section> &secs,
+                           VA imageBase,
+                           std::uint32_t rva,
+                           std::string &result) {
+  section stringSec;
+  std::uint32_t stringOff;
+  if (!getSectionForRVA(secs, imageBase, rva, stringSec, stringOff)) {
+    return false;
+  }
+
+  return readCString(*stringSec.sectionData, stringOff, result);
+}
+
+static bool checkedTableOffset(std::uint32_t base,
+                               std::uint32_t index,
+                               std::uint32_t width,
+                               std::uint32_t &off) {
+  if (width == 0 ||
+      index > (std::numeric_limits<std::uint32_t>::max() - base) / width) {
+    return false;
+  }
+
+  off = base + (index * width);
+  return true;
+}
+
+static bool readExportRVA(const export_table_context &exports,
+                          std::uint32_t eatIndex,
+                          std::uint32_t &symRVA) {
+  if (eatIndex > std::numeric_limits<std::uint16_t>::max()) {
+    return false;
+  }
+
+  std::uint32_t eatEntryOff;
+  if (!checkedTableOffset(
+          exports.eatOff, eatIndex, sizeof(std::uint32_t), eatEntryOff)) {
+    return false;
+  }
+
+  if (!readDword(exports.eatSec.sectionData, eatEntryOff, symRVA)) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool exportRvaToEntry(const export_table_context &exports,
+                             std::uint32_t eatIndex,
+                             std::uint32_t symRVA,
+                             exportent &entry) {
+  entry.ordinal = static_cast<std::uint16_t>(eatIndex);
+  entry.symbolName.clear();
+  entry.moduleName = exports.moduleName;
+
+  if (!rvaInDataDirectory(symRVA, exports.exportDir)) {
+    entry.addr = rvaToVA(exports.imageBase, symRVA);
+    entry.forwardName.clear();
+    return true;
+  }
+
+  std::string forwardName;
+  if (!readRvaCString(
+          exports.sections, exports.imageBase, symRVA, forwardName)) {
+    return false;
+  }
+
+  entry.addr = 0;
+  entry.forwardName = forwardName;
+  return true;
+}
+
+static bool readExportEntry(const export_table_context &exports,
+                            std::uint32_t eatIndex,
+                            exportent &entry) {
+  std::uint32_t symRVA;
+  if (!readExportRVA(exports, eatIndex, symRVA)) {
+    return false;
+  }
+
+  return exportRvaToEntry(exports, eatIndex, symRVA, entry);
 }
 
 void IterRich(parsed_pe *pe, iterRich cb, void *cbd) {
@@ -1470,250 +1585,205 @@ bool getHeader(bounded_buffer *file, pe_header &p, bounded_buffer *&rem) {
   return true;
 }
 
+static bool parseExports(parsed_pe *p,
+                         const data_directory &exportDir,
+                         VA imageBase,
+                         std::vector<exportent> &parsedExports) {
+  const std::vector<section> &sections = p->internal->secs;
+
+  section s;
+  std::uint32_t rvaofft;
+  if (!getSectionForRVA(
+          sections, imageBase, exportDir.VirtualAddress, s, rvaofft)) {
+    return false;
+  }
+
+  // get the name of this module
+  std::uint32_t nameRva;
+  if (!readDword(s.sectionData,
+                 rvaofft + offsetof(export_dir_table, NameRVA),
+                 nameRva)) {
+    return false;
+  }
+
+  std::string modName;
+  if (!readRvaCString(sections, imageBase, nameRva, modName)) {
+    return false;
+  }
+
+  // get the EAT section
+  std::uint32_t addressTableEntries;
+  if (!readDword(s.sectionData,
+                 rvaofft + offsetof(export_dir_table, AddressTableEntries),
+                 addressTableEntries)) {
+    return false;
+  }
+
+  if (addressTableEntries == 0) {
+    return true;
+  }
+
+  std::uint32_t eatRVA;
+  if (!readDword(s.sectionData,
+                 rvaofft + offsetof(export_dir_table, ExportAddressTableRVA),
+                 eatRVA)) {
+    return false;
+  }
+
+  section eatSec;
+  std::uint32_t eatOff;
+  if (!getSectionForRVA(sections, imageBase, eatRVA, eatSec, eatOff)) {
+    return false;
+  }
+
+  export_table_context exports{
+      sections, exportDir, imageBase, eatSec, eatOff, modName};
+
+  // The name and ordinal tables annotate entries in the EAT. Preserve the
+  // historic named-export iteration order, then emit unannotated EAT entries.
+  std::uint32_t numNames;
+  if (!readDword(s.sectionData,
+                 rvaofft + offsetof(export_dir_table, NumberOfNamePointers),
+                 numNames)) {
+    return false;
+  }
+
+  std::vector<named_export> namedExports;
+  if (numNames > 0) {
+    // get the names section
+    std::uint32_t namesRVA;
+    if (!readDword(s.sectionData,
+                   rvaofft + offsetof(export_dir_table, NamePointerRVA),
+                   namesRVA)) {
+      return false;
+    }
+
+    section namesSec;
+    std::uint32_t namesOff;
+    if (!getSectionForRVA(sections, imageBase, namesRVA, namesSec, namesOff)) {
+      return false;
+    }
+
+    // get the ordinal table
+    std::uint32_t ordinalTableRVA;
+    if (!readDword(s.sectionData,
+                   rvaofft + offsetof(export_dir_table, OrdinalTableRVA),
+                   ordinalTableRVA)) {
+      return false;
+    }
+
+    section ordinalTableSec;
+    std::uint32_t ordinalOff;
+    if (!getSectionForRVA(sections,
+                          imageBase,
+                          ordinalTableRVA,
+                          ordinalTableSec,
+                          ordinalOff)) {
+      return false;
+    }
+
+    for (std::uint32_t i = 0; i < numNames; i++) {
+      std::uint32_t curNameRvaOff;
+      if (!checkedTableOffset(
+              namesOff, i, sizeof(std::uint32_t), curNameRvaOff)) {
+        return false;
+      }
+
+      std::uint32_t curNameRVA;
+      if (!readDword(namesSec.sectionData, curNameRvaOff, curNameRVA)) {
+        return false;
+      }
+
+      std::string symName;
+      if (!readRvaCString(sections, imageBase, curNameRVA, symName)) {
+        return false;
+      }
+
+      std::uint32_t ordinalEntryOff;
+      if (!checkedTableOffset(
+              ordinalOff, i, sizeof(std::uint16_t), ordinalEntryOff)) {
+        return false;
+      }
+
+      // now, for this i, look it up in the ExportOrdinalTable
+      std::uint16_t ordinal;
+      if (!readWord(ordinalTableSec.sectionData, ordinalEntryOff, ordinal)) {
+        return false;
+      }
+
+      if (ordinal >= addressTableEntries) {
+        return false;
+      }
+
+      namedExports.push_back({ordinal, symName});
+    }
+  }
+
+  std::vector<std::uint32_t> namedExportIndexes;
+  namedExportIndexes.reserve(namedExports.size());
+  for (const named_export &namedExport : namedExports) {
+    exportent a;
+    if (!readExportEntry(exports, namedExport.eatIndex, a)) {
+      return false;
+    }
+
+    a.symbolName = namedExport.symbolName;
+    parsedExports.push_back(a);
+    namedExportIndexes.push_back(namedExport.eatIndex);
+  }
+
+  std::sort(namedExportIndexes.begin(), namedExportIndexes.end());
+  for (std::uint32_t i = 0; i < addressTableEntries; i++) {
+    if (std::binary_search(
+            namedExportIndexes.begin(), namedExportIndexes.end(), i)) {
+      continue;
+    }
+
+    std::uint32_t symRVA;
+    if (!readExportRVA(exports, i, symRVA)) {
+      return false;
+    }
+
+    if (symRVA == 0) {
+      continue;
+    }
+
+    exportent a;
+    if (!exportRvaToEntry(exports, i, symRVA, a)) {
+      return false;
+    }
+
+    parsedExports.push_back(a);
+  }
+
+  return true;
+}
+
 bool getExports(parsed_pe *p) {
   data_directory exportDir;
+  VA imageBase;
+
   if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
     exportDir = p->peHeader.nt.OptionalHeader.DataDirectory[DIR_EXPORT];
+    imageBase = p->peHeader.nt.OptionalHeader.ImageBase;
   } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
     exportDir = p->peHeader.nt.OptionalHeader64.DataDirectory[DIR_EXPORT];
+    imageBase = p->peHeader.nt.OptionalHeader64.ImageBase;
   } else {
     return false;
   }
 
-  if (exportDir.Size != 0) {
-    section s;
-    VA addr;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      addr = exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      addr =
-          exportDir.VirtualAddress + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      return false;
-    }
-
-    if (!getSecForVA(p->internal->secs, addr, s)) {
-      return false;
-    }
-
-    auto rvaofft = static_cast<std::uint32_t>(addr - s.sectionBase);
-
-    // get the name of this module
-    std::uint32_t nameRva;
-    if (!readDword(s.sectionData,
-                   rvaofft + offsetof(export_dir_table, NameRVA),
-                   nameRva)) {
-      return false;
-    }
-
-    VA nameVA;
-    if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-      nameVA = nameRva + p->peHeader.nt.OptionalHeader.ImageBase;
-    } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-      nameVA = nameRva + p->peHeader.nt.OptionalHeader64.ImageBase;
-    } else {
-      return false;
-    }
-
-    section nameSec;
-    if (!getSecForVA(p->internal->secs, nameVA, nameSec)) {
-      return false;
-    }
-
-    auto nameOff = static_cast<std::uint32_t>(nameVA - nameSec.sectionBase);
-    std::string modName;
-    if (!readCString(*nameSec.sectionData, nameOff, modName)) {
-      return false;
-    }
-
-    // now, get all the named export symbols
-    std::uint32_t numNames;
-    if (!readDword(s.sectionData,
-                   rvaofft + offsetof(export_dir_table, NumberOfNamePointers),
-                   numNames)) {
-      return false;
-    }
-
-    if (numNames > 0) {
-      // get the names section
-      std::uint32_t namesRVA;
-      if (!readDword(s.sectionData,
-                     rvaofft + offsetof(export_dir_table, NamePointerRVA),
-                     namesRVA)) {
-        return false;
-      }
-
-      VA namesVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        namesVA = namesRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        namesVA = namesRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        return false;
-      }
-
-      section namesSec;
-      if (!getSecForVA(p->internal->secs, namesVA, namesSec)) {
-        return false;
-      }
-
-      auto namesOff =
-          static_cast<std::uint32_t>(namesVA - namesSec.sectionBase);
-
-      // get the EAT section
-      std::uint32_t eatRVA;
-      if (!readDword(s.sectionData,
-                     rvaofft +
-                         offsetof(export_dir_table, ExportAddressTableRVA),
-                     eatRVA)) {
-        return false;
-      }
-
-      VA eatVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        eatVA = eatRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        eatVA = eatRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        return false;
-      }
-
-      section eatSec;
-      if (!getSecForVA(p->internal->secs, eatVA, eatSec)) {
-        return false;
-      }
-
-      auto eatOff = static_cast<std::uint32_t>(eatVA - eatSec.sectionBase);
-
-      // get the ordinal base
-      std::uint32_t ordinalBase;
-      if (!readDword(s.sectionData,
-                     rvaofft + offsetof(export_dir_table, OrdinalBase),
-                     ordinalBase)) {
-        return false;
-      }
-
-      // get the ordinal table
-      std::uint32_t ordinalTableRVA;
-      if (!readDword(s.sectionData,
-                     rvaofft + offsetof(export_dir_table, OrdinalTableRVA),
-                     ordinalTableRVA)) {
-        return false;
-      }
-
-      VA ordinalTableVA;
-      if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-        ordinalTableVA =
-            ordinalTableRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-      } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-        ordinalTableVA =
-            ordinalTableRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-      } else {
-        return false;
-      }
-
-      section ordinalTableSec;
-      if (!getSecForVA(p->internal->secs, ordinalTableVA, ordinalTableSec)) {
-        return false;
-      }
-
-      auto ordinalOff = static_cast<std::uint32_t>(ordinalTableVA -
-                                                   ordinalTableSec.sectionBase);
-
-      for (std::uint32_t i = 0; i < numNames; i++) {
-        std::uint32_t curNameRVA;
-        if (!readDword(namesSec.sectionData,
-                       namesOff + (i * sizeof(std::uint32_t)),
-                       curNameRVA)) {
-          return false;
-        }
-
-        VA curNameVA;
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          curNameVA = curNameRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          return false;
-        }
-
-        section curNameSec;
-
-        if (!getSecForVA(p->internal->secs, curNameVA, curNameSec)) {
-          return false;
-        }
-
-        auto curNameOff =
-            static_cast<std::uint32_t>(curNameVA - curNameSec.sectionBase);
-        std::string symName;
-        std::uint8_t d;
-
-        do {
-          if (!readByte(curNameSec.sectionData, curNameOff, d)) {
-            return false;
-          }
-
-          if (d == 0) {
-            break;
-          }
-
-          symName.push_back(static_cast<char>(d));
-          curNameOff++;
-        } while (true);
-
-        // now, for this i, look it up in the ExportOrdinalTable
-        std::uint16_t ordinal;
-        if (!readWord(ordinalTableSec.sectionData,
-                      ordinalOff + (i * sizeof(std::uint16_t)),
-                      ordinal)) {
-          return false;
-        }
-
-        //::uint32_t  eatIdx = ordinal - ordinalBase;
-        std::uint32_t eatIdx = (ordinal * sizeof(std::uint32_t));
-
-        std::uint32_t symRVA;
-        if (!readDword(eatSec.sectionData, eatOff + eatIdx, symRVA)) {
-          return false;
-        }
-
-        bool isForwarded = rvaInDataDirectory(symRVA, exportDir);
-
-        VA symVA;
-        if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_32_MAGIC) {
-          symVA = symRVA + p->peHeader.nt.OptionalHeader.ImageBase;
-        } else if (p->peHeader.nt.OptionalMagic == NT_OPTIONAL_64_MAGIC) {
-          symVA = symRVA + p->peHeader.nt.OptionalHeader64.ImageBase;
-        } else {
-          return false;
-        }
-
-        exportent a;
-        a.ordinal = ordinal;
-        a.symbolName = symName;
-        a.moduleName = modName;
-
-        if (!isForwarded) {
-          a.addr = symVA;
-          a.forwardName.clear();
-        } else {
-          section fwdSec;
-          if (!getSecForVA(p->internal->secs, symVA, fwdSec)) {
-            return false;
-          }
-          auto fwdOff = static_cast<std::uint32_t>(symVA - fwdSec.sectionBase);
-
-          a.addr = 0;
-          if (!readCString(*fwdSec.sectionData, fwdOff, a.forwardName)) {
-            return false;
-          }
-        }
-
-        p->internal->exports.push_back(a);
-      }
-    }
+  if (exportDir.VirtualAddress == 0) {
+    return true;
   }
 
+  std::vector<exportent> parsedExports;
+  if (!parseExports(p, exportDir, imageBase, parsedExports)) {
+    return exportDir.Size == 0;
+  }
+
+  p->internal->exports.insert(
+      p->internal->exports.end(), parsedExports.begin(), parsedExports.end());
   return true;
 }
 

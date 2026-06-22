@@ -24,6 +24,13 @@ constexpr std::size_t kFileSize = kSectionRawOffset + kSectionRawSize;
 using TestPe = std::array<std::uint8_t, kFileSize>;
 using ParsedPePtr = std::unique_ptr<parsed_pe, void (*)(parsed_pe *)>;
 
+struct ExportInfo {
+  VA addr;
+  std::uint16_t ordinal;
+  std::string symbolName;
+  std::string forwardName;
+};
+
 template <typename T>
 void put16(T &buffer, std::size_t offset, std::uint16_t value) {
   buffer[offset] = static_cast<std::uint8_t>(value);
@@ -76,6 +83,14 @@ std::size_t sectionOffset(std::uint32_t rva) {
   return kSectionRawOffset + (rva - kSectionRva);
 }
 
+std::size_t sectionOffset(std::uint32_t sectionRva, std::uint32_t rva) {
+  return kSectionRawOffset + (rva - sectionRva);
+}
+
+std::uint32_t sectionRvaAt(std::uint32_t sectionRva, std::uint32_t offset) {
+  return sectionRva + offset;
+}
+
 std::size_t debugEntryOffset() {
   return sectionOffset(kDebugDirectoryRva);
 }
@@ -101,6 +116,36 @@ void putDebugEntry(TestPe &pe,
   put32(pe,
         debugEntryOffset() + offsetof(debug_dir_entry, AddressOfRawData),
         addressOfRawData);
+}
+
+void putExportDirectoryDword(TestPe &pe,
+                             std::uint32_t exportSectionRva,
+                             std::size_t fieldOffset,
+                             std::uint32_t value) {
+  put32(pe,
+        sectionOffset(exportSectionRva, exportSectionRva) + fieldOffset,
+        value);
+}
+
+void putExportDword(TestPe &pe,
+                    std::uint32_t exportSectionRva,
+                    std::uint32_t rva,
+                    std::uint32_t value) {
+  put32(pe, sectionOffset(exportSectionRva, rva), value);
+}
+
+void putExportWord(TestPe &pe,
+                   std::uint32_t exportSectionRva,
+                   std::uint32_t rva,
+                   std::uint16_t value) {
+  put16(pe, sectionOffset(exportSectionRva, rva), value);
+}
+
+void putExportCString(TestPe &pe,
+                      std::uint32_t exportSectionRva,
+                      std::uint32_t rva,
+                      const char *value) {
+  putCString(pe, sectionOffset(exportSectionRva, rva), value);
 }
 
 TestPe makeMinimalPe(std::uint32_t sectionRva = kSectionRva,
@@ -162,12 +207,12 @@ int captureDebugDataSize(void *ctx,
 
 int captureExport(void *ctx,
                   const VA &addr,
-                  std::uint16_t,
+                  std::uint16_t ordinal,
                   const std::string &,
-                  const std::string &,
+                  const std::string &symbolName,
                   const std::string &forwardName) {
-  auto *exports = static_cast<std::vector<std::pair<VA, std::string>> *>(ctx);
-  exports->emplace_back(addr, forwardName);
+  auto *exports = static_cast<std::vector<ExportInfo> *>(ctx);
+  exports->push_back({addr, ordinal, symbolName, forwardName});
   return 0;
 }
 
@@ -304,13 +349,6 @@ TEST_CASE("overflowing export directory range can contain forwarded exports",
   auto pe = makeMinimalPe(kExportSectionRva, kExportDirectorySize);
   putDataDirectory(pe, DIR_EXPORT, kExportSectionRva, kExportDirectorySize);
 
-  const auto exportSectionOffset = [=](std::uint32_t rva) {
-    return kSectionRawOffset + (rva - kExportSectionRva);
-  };
-  const auto exportRvaAt = [=](std::uint32_t offset) {
-    return kExportSectionRva + offset;
-  };
-
   constexpr std::uint32_t kAddressTableOffset = 0x40;
   constexpr std::uint32_t kNamePointerOffset = 0x50;
   constexpr std::uint32_t kOrdinalTableOffset = 0x60;
@@ -318,52 +356,281 @@ TEST_CASE("overflowing export directory range can contain forwarded exports",
   constexpr std::uint32_t kModuleNameOffset = 0x80;
   constexpr std::uint32_t kForwardNameOffset = 0x90;
 
-  put32(pe,
-        exportSectionOffset(kExportSectionRva) +
-            offsetof(export_dir_table, NameRVA),
-        exportRvaAt(kModuleNameOffset));
-  put32(pe,
-        exportSectionOffset(kExportSectionRva) +
-            offsetof(export_dir_table, NumberOfNamePointers),
-        1);
-  put32(pe,
-        exportSectionOffset(kExportSectionRva) +
-            offsetof(export_dir_table, ExportAddressTableRVA),
-        exportRvaAt(kAddressTableOffset));
-  put32(pe,
-        exportSectionOffset(kExportSectionRva) +
-            offsetof(export_dir_table, NamePointerRVA),
-        exportRvaAt(kNamePointerOffset));
-  put32(pe,
-        exportSectionOffset(kExportSectionRva) +
-            offsetof(export_dir_table, OrdinalTableRVA),
-        exportRvaAt(kOrdinalTableOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NameRVA),
+                          sectionRvaAt(kExportSectionRva, kModuleNameOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NumberOfNamePointers),
+                          1);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, AddressTableEntries),
+                          1);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, ExportAddressTableRVA),
+                          sectionRvaAt(kExportSectionRva, kAddressTableOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NamePointerRVA),
+                          sectionRvaAt(kExportSectionRva, kNamePointerOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, OrdinalTableRVA),
+                          sectionRvaAt(kExportSectionRva, kOrdinalTableOffset));
 
-  put32(pe,
-        exportSectionOffset(exportRvaAt(kAddressTableOffset)),
-        exportRvaAt(kForwardNameOffset));
-  put32(pe,
-        exportSectionOffset(exportRvaAt(kNamePointerOffset)),
-        exportRvaAt(kExportNameOffset));
-  put16(pe, exportSectionOffset(exportRvaAt(kOrdinalTableOffset)), 0);
-  putCString(
-      pe, exportSectionOffset(exportRvaAt(kExportNameOffset)), "Exported");
-  putCString(
-      pe, exportSectionOffset(exportRvaAt(kModuleNameOffset)), "module.dll");
-  putCString(pe,
-             exportSectionOffset(exportRvaAt(kForwardNameOffset)),
-             "target.dll.Func");
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset),
+                 sectionRvaAt(kExportSectionRva, kForwardNameOffset));
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kNamePointerOffset),
+                 sectionRvaAt(kExportSectionRva, kExportNameOffset));
+  putExportWord(pe,
+                kExportSectionRva,
+                sectionRvaAt(kExportSectionRva, kOrdinalTableOffset),
+                0);
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kExportNameOffset),
+                   "Exported");
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kModuleNameOffset),
+                   "module.dll");
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kForwardNameOffset),
+                   "target.dll.Func");
 
   auto p = parse(pe);
   INFO(GetPEErrString() << " at " << GetPEErrLoc());
   REQUIRE(p);
 
-  std::vector<std::pair<VA, std::string>> exports;
+  std::vector<ExportInfo> exports;
   IterExpFull(p.get(), captureExport, &exports);
 
   REQUIRE(exports.size() == 1);
-  REQUIRE(exports[0].first == 0);
-  REQUIRE(exports[0].second == "target.dll.Func");
+  REQUIRE(exports[0].addr == 0);
+  REQUIRE(exports[0].forwardName == "target.dll.Func");
+}
+
+TEST_CASE("ordinal-only exports are included", "[exports]") {
+  constexpr std::uint32_t kExportSectionRva = kSectionRva;
+  constexpr std::uint32_t kExportDirectorySize = 0x100;
+  constexpr std::uint32_t kAddressTableOffset = 0x40;
+  constexpr std::uint32_t kModuleNameOffset = 0x80;
+  constexpr std::uint32_t kExportTargetRva = kExportSectionRva + 0x300;
+
+  auto pe = makeMinimalPe(kExportSectionRva);
+  putDataDirectory(pe, DIR_EXPORT, kExportSectionRva, kExportDirectorySize);
+
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NameRVA),
+                          sectionRvaAt(kExportSectionRva, kModuleNameOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, AddressTableEntries),
+                          1);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NumberOfNamePointers),
+                          0);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, ExportAddressTableRVA),
+                          sectionRvaAt(kExportSectionRva, kAddressTableOffset));
+
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset),
+                 kExportTargetRva);
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kModuleNameOffset),
+                   "module.dll");
+
+  auto p = parse(pe);
+  INFO(GetPEErrString() << " at " << GetPEErrLoc());
+  REQUIRE(p);
+
+  std::vector<ExportInfo> exports;
+  IterExpFull(p.get(), captureExport, &exports);
+
+  REQUIRE(exports.size() == 1);
+  REQUIRE(exports[0].addr == kExportTargetRva);
+  REQUIRE(exports[0].ordinal == 0);
+  REQUIRE(exports[0].symbolName.empty());
+  REQUIRE(exports[0].forwardName.empty());
+}
+
+TEST_CASE("empty ordinal-only export slots are skipped", "[exports]") {
+  constexpr std::uint32_t kExportSectionRva = kSectionRva;
+  constexpr std::uint32_t kExportDirectorySize = 0x100;
+  constexpr std::uint32_t kAddressTableOffset = 0x40;
+  constexpr std::uint32_t kModuleNameOffset = 0x80;
+  constexpr std::uint32_t kExportTargetRva = kExportSectionRva + 0x300;
+
+  auto pe = makeMinimalPe(kExportSectionRva);
+  putDataDirectory(pe, DIR_EXPORT, kExportSectionRva, kExportDirectorySize);
+
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NameRVA),
+                          sectionRvaAt(kExportSectionRva, kModuleNameOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, AddressTableEntries),
+                          2);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NumberOfNamePointers),
+                          0);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, ExportAddressTableRVA),
+                          sectionRvaAt(kExportSectionRva, kAddressTableOffset));
+
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset),
+                 0);
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset + 4),
+                 kExportTargetRva);
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kModuleNameOffset),
+                   "module.dll");
+
+  auto p = parse(pe);
+  INFO(GetPEErrString() << " at " << GetPEErrLoc());
+  REQUIRE(p);
+
+  std::vector<ExportInfo> exports;
+  IterExpFull(p.get(), captureExport, &exports);
+
+  REQUIRE(exports.size() == 1);
+  REQUIRE(exports[0].addr == kExportTargetRva);
+  REQUIRE(exports[0].ordinal == 1);
+  REQUIRE(exports[0].symbolName.empty());
+  REQUIRE(exports[0].forwardName.empty());
+}
+
+TEST_CASE("mixed named and ordinal-only exports are included once",
+          "[exports]") {
+  constexpr std::uint32_t kExportSectionRva = kSectionRva;
+  constexpr std::uint32_t kExportDirectorySize = 0x180;
+  constexpr std::uint32_t kAddressTableOffset = 0x40;
+  constexpr std::uint32_t kNamePointerOffset = 0x60;
+  constexpr std::uint32_t kOrdinalTableOffset = 0x70;
+  constexpr std::uint32_t kNameTwoOffset = 0x80;
+  constexpr std::uint32_t kNameZeroOffset = 0x90;
+  constexpr std::uint32_t kModuleNameOffset = 0xa0;
+  constexpr std::uint32_t kForwardNameOffset = 0xb0;
+  constexpr std::uint32_t kNamedZeroTargetRva = kExportSectionRva + 0x300;
+  constexpr std::uint32_t kNamedTwoTargetRva = kExportSectionRva + 0x304;
+
+  auto pe = makeMinimalPe(kExportSectionRva);
+  putDataDirectory(pe, DIR_EXPORT, kExportSectionRva, kExportDirectorySize);
+
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NameRVA),
+                          sectionRvaAt(kExportSectionRva, kModuleNameOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, AddressTableEntries),
+                          3);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NumberOfNamePointers),
+                          2);
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, ExportAddressTableRVA),
+                          sectionRvaAt(kExportSectionRva, kAddressTableOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, NamePointerRVA),
+                          sectionRvaAt(kExportSectionRva, kNamePointerOffset));
+  putExportDirectoryDword(pe,
+                          kExportSectionRva,
+                          offsetof(export_dir_table, OrdinalTableRVA),
+                          sectionRvaAt(kExportSectionRva, kOrdinalTableOffset));
+
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset),
+                 kNamedZeroTargetRva);
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset + 4),
+                 sectionRvaAt(kExportSectionRva, kForwardNameOffset));
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kAddressTableOffset + 8),
+                 kNamedTwoTargetRva);
+
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kNamePointerOffset),
+                 sectionRvaAt(kExportSectionRva, kNameTwoOffset));
+  putExportDword(pe,
+                 kExportSectionRva,
+                 sectionRvaAt(kExportSectionRva, kNamePointerOffset + 4),
+                 sectionRvaAt(kExportSectionRva, kNameZeroOffset));
+  putExportWord(pe,
+                kExportSectionRva,
+                sectionRvaAt(kExportSectionRva, kOrdinalTableOffset),
+                2);
+  putExportWord(pe,
+                kExportSectionRva,
+                sectionRvaAt(kExportSectionRva, kOrdinalTableOffset + 2),
+                0);
+
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kNameTwoOffset),
+                   "NamedTwo");
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kNameZeroOffset),
+                   "NamedZero");
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kModuleNameOffset),
+                   "module.dll");
+  putExportCString(pe,
+                   kExportSectionRva,
+                   sectionRvaAt(kExportSectionRva, kForwardNameOffset),
+                   "target.dll.Func");
+
+  auto p = parse(pe);
+  INFO(GetPEErrString() << " at " << GetPEErrLoc());
+  REQUIRE(p);
+
+  std::vector<ExportInfo> exports;
+  IterExpFull(p.get(), captureExport, &exports);
+
+  REQUIRE(exports.size() == 3);
+  REQUIRE(exports[0].addr == kNamedTwoTargetRva);
+  REQUIRE(exports[0].ordinal == 2);
+  REQUIRE(exports[0].symbolName == "NamedTwo");
+  REQUIRE(exports[0].forwardName.empty());
+  REQUIRE(exports[1].addr == kNamedZeroTargetRva);
+  REQUIRE(exports[1].ordinal == 0);
+  REQUIRE(exports[1].symbolName == "NamedZero");
+  REQUIRE(exports[1].forwardName.empty());
+  REQUIRE(exports[2].addr == 0);
+  REQUIRE(exports[2].ordinal == 1);
+  REQUIRE(exports[2].symbolName.empty());
+  REQUIRE(exports[2].forwardName == "target.dll.Func");
 }
 
 } // namespace peparse

@@ -1,6 +1,7 @@
 #include <pe-parse/parse.h>
 
 #include <catch2/catch.hpp>
+#include <cstdint>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -30,6 +31,24 @@ static std::vector<fs::path> PEFilesInDir(const fs::path &dir) {
 }
 
 namespace peparse {
+
+struct ExportInfo {
+  VA addr;
+  std::uint16_t ordinal;
+  std::string symbolName;
+  std::string forwardName;
+};
+
+static int captureExport(void *ctx,
+                         const VA &addr,
+                         std::uint16_t ordinal,
+                         const std::string &,
+                         const std::string &symbolName,
+                         const std::string &forwardName) {
+  auto *exports = static_cast<std::vector<ExportInfo> *>(ctx);
+  exports->push_back({addr, ordinal, symbolName, forwardName});
+  return 0;
+}
 
 static const std::unordered_set<std::string> kKnownPEFailure{
     "virtsectblXP.exe", "maxsec_lowaligW7.exe",
@@ -68,6 +87,25 @@ TEST_CASE("Corkami PEs smoketest", "[corkami]") {
       }
     }
   }
+}
+
+TEST_CASE("Corkami ordinal-only export is reported", "[corkami][exports]") {
+  fs::path path = fs::path(CORKAMI_PE_PATH) / "dllemptyexp.dll";
+  REQUIRE(fs::exists(path));
+
+  parsed_pe *p = ParsePEFromFile(path.string().c_str());
+  INFO(GetPEErrString() << " at " << GetPEErrLoc());
+  REQUIRE(p);
+
+  std::vector<ExportInfo> exports;
+  IterExpFull(p, captureExport, &exports);
+  DestructParsedPE(p);
+
+  REQUIRE(exports.size() == 1);
+  REQUIRE(exports[0].addr == 0x1001008);
+  REQUIRE(exports[0].ordinal == 0);
+  REQUIRE(exports[0].symbolName.empty());
+  REQUIRE(exports[0].forwardName.empty());
 }
 
 } // namespace peparse
