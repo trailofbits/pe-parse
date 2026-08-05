@@ -38,7 +38,10 @@ else ()
     list(APPEND DEFAULT_CXX_FLAGS -gdwarf-2 -g3)
   endif ()
 
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  # These suppressions are for Clang-only warnings. GCC rejects
+  # -Wno-missing-prototypes and -Wno-missing-variable-declarations in C++ mode,
+  # which becomes a hard error under -Werror.
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     list(APPEND DEFAULT_CXX_FLAGS
       -Wno-c++98-compat -Wno-missing-prototypes
       -Wno-missing-variable-declarations -Wno-global-constructors
