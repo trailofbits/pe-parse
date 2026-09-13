@@ -2405,17 +2405,21 @@ bool getSymbolTable(parsed_pe *p) {
       for (std::uint8_t n = 0; n < sym.numberOfAuxSymbols; n++) {
         aux_symbol_f3 asym;
 
-        // Read line number
+        // Read tag index
         if (!readDword(p->fileBuffer, offset, asym.tagIndex)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
+
+        offset += sizeof(std::uint32_t);
 
         // Read characteristics
         if (!readDword(p->fileBuffer, offset, asym.characteristics)) {
           PE_ERR(PEERR_MAGIC);
           return false;
         }
+
+        offset += sizeof(std::uint32_t);
 
         // Skip unused 10 bytes
         offset += sizeof(std::uint8_t) * 10;
