@@ -1816,7 +1816,8 @@ bool getRelocations(parsed_pe *p) {
 
     auto rvaofft = static_cast<std::uint32_t>(vaAddr - d.sectionBase);
 
-    while (rvaofft < relocDir.Size) {
+    const auto endOffset = static_cast<std::uint64_t>(rvaofft) + relocDir.Size;
+    while (rvaofft < endOffset) {
       std::uint32_t pageRva;
       std::uint32_t blockSize;
 
