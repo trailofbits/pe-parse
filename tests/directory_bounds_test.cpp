@@ -271,6 +271,35 @@ TEST_CASE("oversized section raw data range is rejected", "[sections]") {
   REQUIRE(GetPEErr() == PEERR_SECT);
 }
 
+TEST_CASE("relocation directories can start inside a section",
+          "[relocations]") {
+  const auto directoryOffset = GENERATE(0U, 0x100U);
+  auto pe = makeMinimalPe();
+  putDataDirectory(pe, DIR_BASERELOC, kSectionRva + directoryOffset, 24);
+  const auto rawOffset = sectionOffset(kSectionRva + directoryOffset);
+  put32(pe, rawOffset, 0x2000);
+  put32(pe, rawOffset + 4, 12);
+  put16(pe, rawOffset + 8, 0x3020);
+  put32(pe, rawOffset + 12, 0x3000);
+  put32(pe, rawOffset + 16, 12);
+  put16(pe, rawOffset + 20, 0x3030);
+
+  auto p = parse(pe);
+  REQUIRE(p);
+
+  std::vector<VA> addresses;
+  IterRelocs(
+      p.get(),
+      [](void *ctx, const VA &address, const reloc_type &type) {
+        if (type == RELOC_HIGHLOW) {
+          static_cast<std::vector<VA> *>(ctx)->push_back(address);
+        }
+        return 0;
+      },
+      &addresses);
+  REQUIRE(addresses == std::vector<VA>{0x2020, 0x3030});
+}
+
 TEST_CASE("debug directory data can end at section boundary", "[debug]") {
   auto pe = makeMinimalPe();
   putDataDirectory(pe, DIR_DEBUG, kDebugDirectoryRva, sizeof(debug_dir_entry));
